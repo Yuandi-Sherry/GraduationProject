@@ -35,6 +35,8 @@ const unsigned int SCR_HEIGHT = 1200;
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 50.0f);
 GLfloat Near = 0.1f;
 Camera camera(cameraPos);
+Camera* curCamera = NULL;
+glm::mat4x4* curTransformMat = NULL;
 // mouse parameters
 	// current mouse position
 float lastX = SCR_WIDTH / 2.0f;
@@ -51,13 +53,9 @@ Light light;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-glm::mat4x4 rotationMat = glm::mat4x4(1.0f);
-
 // select area
-enum SELECT_AREA
-{
-	MAIN, VESSEL, TUMOR, BONES
-};
+Area mainArea, vesselArea, tumorArea, bonesArea;
+Area* currentArea = &mainArea;
 // toolbar
 Toolbar toolbar;
 int main()
@@ -109,27 +107,31 @@ int main()
 	vessel.initVertexObject();
 	tumor.initVertexObject();
 	bones.initVertexObject();
+	std::vector<BaseModel> models;
+	models.push_back(vessel);
+	models.push_back(tumor);
+	models.push_back(bones);
 	// vessel.initVertexObject();
 
-	Area mainArea, vesselArea, tumorArea, bonesArea;
-	std::vector<BaseModel> tmp;
+	
+	std::vector<GLint> tmp;
 	tmp.clear();
-	tmp.push_back(vessel);
-	tmp.push_back(tumor);
-	tmp.push_back(bones);
-	mainArea.setModels(tmp);
+	tmp.push_back(0);
+	tmp.push_back(1);
+	tmp.push_back(2);
+	mainArea.setModelsID(tmp);
 
 	tmp.clear();
-	tmp.push_back(vessel);
-	vesselArea.setModels(tmp);
+	tmp.push_back(1);
+	vesselArea.setModelsID(tmp);
 	
 	tmp.clear();
-	tmp.push_back(bones);
-	tumorArea.setModels(tmp);
+	tmp.push_back(2);
+	tumorArea.setModelsID(tmp);
 
 	tmp.clear();
-	tmp.push_back(tumor);
-	bonesArea.setModels(tmp);
+	tmp.push_back(3);
+	bonesArea.setModelsID(tmp);
 
 	// game loop
 	while (!glfwWindowShouldClose(window))
@@ -145,11 +147,6 @@ int main()
 		// Clear the colorbuffer
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-		// main viewport
-		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-
 		// send parameters to the shader
 		ourShader.use();
 		GLint lightColorLoc = glGetUniformLocation(ourShader.ID, "lightColor");
@@ -161,28 +158,15 @@ int main()
 
 		// send parameters of camera
 		// set camera related matrix
-		// pass projection matrix to shader (note that in this case it could change every frame)
-		//mainArea.setBound(0, 0, SCR_WIDTH, SCR_HEIGHT);
-		//mainArea.initModels();
-		// mainArea.setShader(ourShader);
-		// mainArea.editShader();
-		ourShader.setMat4("projection", camera.projection);
-		// camera/view transformation
-		glm::mat4 view = camera.GetViewMatrix();
-		ourShader.setMat4("view", view);
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-		ourShader.setMat4("model", rotationMat * model);
-		
-		//std::cout << "shader ID in main" << ourShader.ID << std::endl;
-		// mainArea.draw();
+		mainArea.setBound(0, 0, SCR_WIDTH * 3 /4.0f, SCR_HEIGHT);
+		mainArea.draw(ourShader, models);
 
-		ourShader.setInt("type", 1);
-		vessel.draw();
-		ourShader.setInt("type", 2);
-		tumor.draw();
-		ourShader.setInt("type", 3);
-		bones.draw();
+		/*ourShader.setInt("type", models[0].getColor());
+		models[0].draw();
+		ourShader.setInt("type", models[1].getColor());
+		models[1].draw();
+		ourShader.setInt("type", models[2].getColor());
+		models[2].draw();*/
 		/*
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		
@@ -260,16 +244,16 @@ void processInput(GLFWwindow *window)
 		glfwSetWindowShouldClose(window, true);
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.ProcessKeyboard(FORWARD, deltaTime);
+		(*(*currentArea).getCamera()).ProcessKeyboard(FORWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
+		(*(*currentArea).getCamera()).ProcessKeyboard(BACKWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.ProcessKeyboard(LEFT, deltaTime);
+		(*(*currentArea).getCamera()).ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.ProcessKeyboard(RIGHT, deltaTime);
+		(*(*currentArea).getCamera()).ProcessKeyboard(RIGHT, deltaTime);
 
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
-		camera.alterMouse();
+		(*(*currentArea).getCamera()).alterMouse();
 
 	
 }
@@ -317,12 +301,31 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 		rotationMatY = glm::rotate(rotationMatY, xoffset * deltaTime * R_SPEED, glm::vec3(0, 1, 0));
 		rotationMatX = glm::rotate(rotationMatX, -yoffset * deltaTime * R_SPEED, glm::vec3(1, 0, 0));
-		rotationMat = rotationMatY * rotationMatX * rotationMat;
+		// todo
+		 (*currentArea).setTransformMat(rotationMatY * rotationMatX *((*currentArea).getTransformMat()));
 		// camera.ProcessMouseDragging(translationMat);
 	}
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+	// select area
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
+		if (GLFW_PRESS == action) {
+			// main
+			if (lastX < SCR_WIDTH*3.0f / 4.0f) {
+				currentArea = &mainArea;
+			}
+			else if (lastY < SCR_HEIGHT / 3.0f){
+				currentArea =  &vesselArea;
+			}
+			else if (lastY < SCR_HEIGHT * 2.0f / 3.0f) {
+				currentArea = &tumorArea;
+			}
+			else {
+				currentArea = &bonesArea;
+			}
+		}
+	}
 	// mouse dragging
 	if (!toolbar.ruler && !toolbar.cutface) {
 		if (button == GLFW_MOUSE_BUTTON_RIGHT) {

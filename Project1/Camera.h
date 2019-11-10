@@ -43,6 +43,9 @@ public:
 	float MovementSpeed;
 	float MouseSensitivity;
 	float Zoom;
+	// size parameters
+	float width;
+	float height;
 
 	bool mouseLock = true;
 
@@ -74,6 +77,12 @@ public:
 	void setPosition(glm::vec3 position) {
 		Position = position;
 	}
+
+	void setSize(float width, float height) {
+		this->width = width;
+		this->height = height;
+	}
+
 	// Returns the view matrix calculated using Euler Angles and the LookAt Matrix
 	glm::mat4 GetViewMatrix()
 	{
@@ -133,9 +142,14 @@ public:
 		Position = transformMat * glm::vec4(Position, 0.0f);
 	}
 
-	glm::mat4 projection = glm::perspective(glm::radians(Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, Near, 1000.0f);
+	glm::mat4 getProjection() {
+		projection = glm::perspective(glm::radians(Zoom), width / height, Near, 1000.0f);
+		return projection;
+	}
+	
 
 private:
+	glm::mat4 projection;
 	// Calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors()
 	{

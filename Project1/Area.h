@@ -20,85 +20,74 @@ class Area
 public:
 	Area();
 	~Area();
-	void setModels(const std::vector<BaseModel>&);
+	void setModelsID(const std::vector<GLint>&);
 	void initModels();
-	void setShader(Shader & shader);
 	void setBound(GLfloat left, GLfloat button, GLfloat right, GLfloat top);
-	void editShader();
-	void draw(Shader & shader);
-	void draw();
+	void draw(Shader & shader, std::vector<BaseModel> & models);
+	Camera* getCamera() {
+		return &camera;
+	}
+	glm::mat4x4 getTransformMat() {
+		return transformMat;
+	}
+	void setTransformMat(const glm::mat4x4& curMat) {
+		transformMat = curMat;
+	}
+	
 private:
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 50.0f);
-	std::vector<BaseModel> models;
+	std::vector<GLint> modelsID;
 	Camera camera;
-	glm::mat4x4 transformMat;
-	Shader * myShader;
 	GLfloat bound[4];
-	// Shader myShader("phongShader.vs", "phongShader.frag");
+	glm::mat4x4 transformMat;
 };
 
 Area::Area()
 {
 	// init 
-	models.clear();	
+	modelsID.clear();
 	GLfloat Near = 0.1f;
 	camera.setPosition(cameraPos);
-	glm::mat4x4 transformMat = glm::mat4x4(1.0f);
+	transformMat = glm::mat4(1.0f);
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			std::cout << transformMat[i][j] << " ";
+		}
+		std::cout << std::endl;
+	}
 }
 
 Area::~Area()
 {
 }
 
-void Area::setModels(const std::vector<BaseModel>& models) {
-	this->models.assign(models.begin(), models.end());
+void Area::setModelsID(const std::vector<GLint>& models) {
+	this->modelsID.assign(models.begin(), models.end());
 }
 
 void Area::initModels() {
-	for (int i = 0; i < models.size(); i++) {
-		models[i].initVertexObject();
-	}
+
 }
 
-void Area::setBound(GLfloat left, GLfloat button, GLfloat right, GLfloat top) {
+void Area::setBound(GLfloat left, GLfloat bottom, GLfloat right, GLfloat top) {
 	bound[0] = left;
-	bound[1] = button;
+	bound[1] = bottom;
 	bound[2] = right;
 	bound[3] = top;
+	camera.setSize(right - left, top - bottom);
 }
-void Area::setShader(Shader & shader) {
-	shader.setMat4("projection", camera.projection);
-	// camera/view transformation
+
+void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
+	glViewport(bound[0], bound[1], bound[2], bound[3]); 
+	shader.setMat4("projection", camera.getProjection());
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 	shader.setMat4("model", transformMat * model);
-}
-void Area::editShader() {
-	(*myShader).setMat4("projection", camera.projection);
-	// camera/view transformation
-	glm::mat4 view = camera.GetViewMatrix();
-	(*myShader).setMat4("view", view);
-	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-	(*myShader).setMat4("model", transformMat * model);
-}
-
-void Area::draw(Shader & shader) {
-	glViewport(bound[0], bound[1], bound[2], bound[3]); 
-	// std::cout << "shader ID in function" <<  shader.ID << std::endl;
-	for (int i = 1; i < 4; i++) {
-		shader.setInt("type", models[i - 1].getColor());
-		models[i - 1].draw();
+	for (int i = 0; i < modelsID.size(); i++) {
+		shader.setInt("type", models[modelsID[i]].getColor());
+		models[modelsID[i]].draw();
 	}
-}
-
-void Area::draw() {
-	glViewport(bound[0], bound[1], bound[2], bound[3]); 
-		// std::cout << "shader ID in function" <<  shader.ID << std::endl;
-		for (int i = 1; i < 4; i++) {
-			models[i - 1].draw();
-		}
 }
 #endif
