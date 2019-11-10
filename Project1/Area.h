@@ -33,6 +33,9 @@ public:
 	void setTransformMat(const glm::mat4x4& curMat) {
 		transformMat = curMat;
 	}
+	glm::vec4 getBound() {
+		return glm::vec4(bound[0], bound[1], bound[2], bound[3]);
+	}
 	
 private:
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 200.0f);

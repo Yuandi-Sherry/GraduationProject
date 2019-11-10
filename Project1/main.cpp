@@ -42,7 +42,7 @@ glm::mat4x4* curTransformMat = NULL;
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
-
+glm::vec3 getObjCoor(GLfloat x, GLfloat y);
 	// dragging mode detection
 bool rbutton_down = false;
 bool lbutton_down = false;
@@ -292,6 +292,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	// select area
 	if (button == GLFW_MOUSE_BUTTON_LEFT) {
 		if (GLFW_PRESS == action) {
+			getObjCoor(lastX, lastY);
 			lbutton_down = true;
 			// main
 			if (lastX < SCR_WIDTH*3.0f / 4.0f) {
@@ -359,4 +360,39 @@ void initGUI(GLFWwindow* window) {
 	// Setup Platform/Renderer bindings
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
+}
+
+glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
+	// todo from screen to viewport
+	GLfloat z;
+	glm::mat4 modelview = (*currentArea).getCamera()->GetViewMatrix() * (*currentArea).getTransformMat();
+	glm::mat4 proj = (*currentArea).getCamera()->getProjection();
+	glm::vec4 viewport = (*currentArea).getBound();
+	x = x - viewport.x;
+	y = y - viewport.y;
+	glReadBuffer(GL_BACK);
+	glReadPixels(x, int((float)viewport.z - (float)y - 1.0f), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+	std::cout << "x " << x << " y " << y << " z " << z << std::endl;
+	glm::vec3 win = glm::vec3(x, y, z);
+	glm::vec3 ans = glm::unProject(win, modelview, proj, viewport);
+	return ans;
+	/*GLint viewport[4];
+	GLdouble modelview[16];
+	GLdouble projection[16];
+	GLfloat winX, winY, winZ;
+	GLdouble object_x, object_y, object_z;
+	int mouse_x = x;
+	int mouse_y = y;
+	glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+	glGetDoublev(GL_PROJECTION_MATRIX, projection);
+	glGetIntegerv(GL_VIEWPORT, viewport);
+
+	winX = (float)mouse_x;
+	winY = (float)viewport[3] - (float)mouse_y - 1.0f;
+	glReadBuffer(GL_BACK);
+	glReadPixels(mouse_x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
+	glm::unProject((GLdouble)winX, (GLdouble)winY, (GLdouble)winZ, modelview, projection, viewport, &object_x, &object_y, &object_z);
+	*pp.x = object_x;
+	*pp.y = object_y;
+	*pp.z = object_z;*/
 }
