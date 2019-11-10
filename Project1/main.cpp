@@ -45,6 +45,7 @@ bool firstMouse = true;
 
 	// dragging mode detection
 bool rbutton_down = false;
+bool lbutton_down = false;
 float xoffset = 0, yoffset = 0;
 // light
 Light light;
@@ -122,15 +123,15 @@ int main()
 	mainArea.setModelsID(tmp);
 
 	tmp.clear();
-	tmp.push_back(1);
+	tmp.push_back(0);
 	vesselArea.setModelsID(tmp);
 	
 	tmp.clear();
-	tmp.push_back(2);
+	tmp.push_back(1);
 	tumorArea.setModelsID(tmp);
 
 	tmp.clear();
-	tmp.push_back(3);
+	tmp.push_back(2);
 	bonesArea.setModelsID(tmp);
 
 	// game loop
@@ -158,23 +159,15 @@ int main()
 
 		// send parameters of camera
 		// set camera related matrix
-		mainArea.setBound(0, 0, SCR_WIDTH * 3 /4.0f, SCR_HEIGHT);
+		mainArea.setBound(0, 0, SCR_WIDTH*3/4.0f, SCR_HEIGHT);
 		mainArea.draw(ourShader, models);
-
-		/*ourShader.setInt("type", models[0].getColor());
-		models[0].draw();
-		ourShader.setInt("type", models[1].getColor());
-		models[1].draw();
-		ourShader.setInt("type", models[2].getColor());
-		models[2].draw();*/
-		/*
-		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		vesselArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT/3.0f);
+		vesselArea.draw(ourShader, models);
+		tumorArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
+		tumorArea.draw(ourShader, models);
+		bonesArea.setBound(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
+		bonesArea.draw(ourShader, models);
 		
-		//for (int i = 1; i < 4; i++) {
-			ourShader.setInt("type", vessel.getColor());
-			vessel.draw();
-		//}
-
 		// draw light
 		/*lightShader.use();
 		lightShader.setMat4("projection", camera.projection);
@@ -183,27 +176,6 @@ int main()
 		model = glm::mat4(1.0f);
 		lightShader.setMat4("model", model);
 		light.draw();*/
-
-
-		// ----------------------------
-		/*glViewport(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH * 3 / 4.0f, height/3.0f);
-		ourShader.use();
-		model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-		ourShader.setInt("type", 1);
-		vessel.draw();
-
-		glViewport(SCR_WIDTH * 3 / 4.0f, height / 3.0f, SCR_WIDTH * 3 / 4.0f, height / 3.0f);
-		ourShader.use();
-		model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-		ourShader.setInt("type", 2);
-		tumor.draw();
-
-		glViewport(SCR_WIDTH * 3 / 4.0f, height*2 / 3.0f, SCR_WIDTH * 3 / 4.0f, height / 3.0f);
-		ourShader.use();
-		model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-		ourShader.setInt("type", 3);
-		bones.draw();*/
-
 
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
@@ -288,7 +260,16 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	// todo 根据鼠标的坐标判断选定的区域
 	// std::cout << "xpos " << xpos << " ypos " << ypos << std::endl;
 	//camera.ProcessMouseMovement(xoffset, yoffset);
+	if (lbutton_down) {
+		//std::cout << "mouse is clicked" << std::endl;
+		// modify camera position
+		// todo
+		const float M_SPEED = 0.1f;
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(xoffset * deltaTime * M_SPEED, yoffset * deltaTime * M_SPEED, 0));
 
+		// (*currentArea).getCamera()->setPosition(model * glm::vec4((*currentArea).getCamera()->Position, 0));
+	}
 	if (rbutton_down) {
 		// std::cout << "mouse is clicked" << std::endl;
 		glm::mat4x4 rotationMatY = glm::mat4x4(1.0f);
@@ -311,6 +292,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	// select area
 	if (button == GLFW_MOUSE_BUTTON_LEFT) {
 		if (GLFW_PRESS == action) {
+			lbutton_down = true;
 			// main
 			if (lastX < SCR_WIDTH*3.0f / 4.0f) {
 				currentArea = &mainArea;
@@ -325,8 +307,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 				currentArea = &bonesArea;
 			}
 		}
+		else if (GLFW_RELEASE == action)
+			lbutton_down = false;
 	}
-	// mouse dragging
+	// right button dragging
 	if (!toolbar.ruler && !toolbar.cutface) {
 		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 			if (GLFW_PRESS == action)

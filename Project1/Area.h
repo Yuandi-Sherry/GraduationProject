@@ -35,7 +35,7 @@ public:
 	}
 	
 private:
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 50.0f);
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 200.0f);
 	std::vector<GLint> modelsID;
 	Camera camera;
 	GLfloat bound[4];
@@ -49,12 +49,6 @@ Area::Area()
 	GLfloat Near = 0.1f;
 	camera.setPosition(cameraPos);
 	transformMat = glm::mat4(1.0f);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			std::cout << transformMat[i][j] << " ";
-		}
-		std::cout << std::endl;
-	}
 }
 
 Area::~Area()
@@ -69,12 +63,12 @@ void Area::initModels() {
 
 }
 
-void Area::setBound(GLfloat left, GLfloat bottom, GLfloat right, GLfloat top) {
+void Area::setBound(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
 	bound[0] = left;
 	bound[1] = bottom;
-	bound[2] = right;
-	bound[3] = top;
-	camera.setSize(right - left, top - bottom);
+	bound[2] = width;
+	bound[3] = height;
+	camera.setSize(width, height);
 }
 
 void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
