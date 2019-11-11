@@ -159,12 +159,18 @@ int main()
 		mainArea.draw(ourShader, models);
 		// draw light
 		mainArea.drawLight(lightShader, light);
+
 		vesselArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT/3.0f);
 		vesselArea.draw(ourShader, models);
+		vesselArea.drawLight(lightShader, light);
+
 		tumorArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
 		tumorArea.draw(ourShader, models);
+		tumorArea.drawLight(lightShader, light);
+
 		bonesArea.setBound(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
 		bonesArea.draw(ourShader, models);
+		bonesArea.drawLight(lightShader, light);
 		
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
@@ -296,7 +302,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			else {
 				currentArea = &bonesArea;
 			}
-			getObjCoor(lastX, lastY);
+			
 		}
 		else if (GLFW_RELEASE == action)
 			lbutton_down = false;
@@ -314,19 +320,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	if (toolbar.ruler) {
 		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 			if (GLFW_PRESS == action) {
-				// deal with ray detection
-				/*std::cout << "lastX: " << lastX << " lastY: " << lastY << std::endl;
-				float scale_h = tanf(camera.Zoom)*Near;   //投影窗口高度的一半
-				float scale_w = ((GLfloat)SCR_WIDTH/SCR_HEIGHT) * scale_h;
-				// TODO: 改成viewport的尺寸
-				// aim is the mouse position in range (-1.0, 1.0), clip coordinate
-				//glm::vec3 aim = glm::vec3(scale_w*(static_cast<float>(lastX) / static_cast<float>(SCR_WIDTH)*2.f - 1.f),
-					//scale_h*(1.f - static_cast<float>(lastY) / static_cast<float>(SCR_HEIGHT)*2.f), 0.0f);
-				glm::vec3 aim = glm::vec3(lastX, SCR_HEIGHT - lastY, 1.0f);
-				// std::cout << "mouse position " << aim.x << " " << aim.y << " " << aim.z << std::endl;
-				// from view coordinate to world coordinate
-				glm::vec3 viewCor = glm::unProject(aim, camera.GetViewMatrix(), glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, Near, 1000.0f), glm::vec4(0, 0, SCR_WIDTH, SCR_HEIGHT));
-				std::cout << "mouse position " << viewCor.x << " " << viewCor.y << " " << viewCor.z << std::endl;*/
+				toolbar.setVertex(getObjCoor(lastX, lastY));
 			}
 				
 		}
@@ -353,21 +347,18 @@ void initGUI(GLFWwindow* window) {
 }
 
 glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
-	std::cout << "first x " << x << " first y " << y << std::endl;
 	// todo from screen to viewport
 	GLfloat z;
 	glm::mat4 modelview = (*currentArea).getCamera()->GetViewMatrix() * (*currentArea).getTransformMat();
 	glm::mat4 proj = (*currentArea).getCamera()->getProjection();
 	glm::vec4 viewport = (*currentArea).getBound();
-	x = x - viewport.x;
-	y = SCR_HEIGHT - y - viewport.y;
+	x = x;
+	y = SCR_HEIGHT - y;
+	
 	glReadBuffer(GL_BACK);
 	glReadPixels(x,y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
-	//std::cout << "x " << x << " y " << y << " z " << z << std::endl;
 	glm::vec3 win = glm::vec3(x, y, z);
 	glm::vec3 ans = glm::unProject(win, modelview, proj, viewport);
-	//ans = (*currentArea).getTransformMat() * glm::vec4(ans, 0.0f);
-	//std::cout << "worldPos " << worldPos.x << " " << worldPos.y << " " << worldPos.z << std::endl;
 	light.Position.x = ans.x;
 	light.Position.y = ans.y;
 	light.Position.z = ans.z;
