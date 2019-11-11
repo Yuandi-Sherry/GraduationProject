@@ -147,7 +147,17 @@ public:
 		return projection;
 	}
 	
+	glm::vec3 getN() {
+		return Front;
+	}
 
+	glm::vec3 getU() {
+		return Right;
+	}
+
+	glm::vec3 getV() {
+		return Up;
+	}
 private:
 	glm::mat4 projection;
 	// Calculates the front vector from the Camera's (updated) Euler Angles

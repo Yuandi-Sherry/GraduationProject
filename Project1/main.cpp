@@ -28,15 +28,12 @@ void processInput(GLFWwindow *window);
 void initGUI(GLFWwindow* window);
 
 // settings
-const unsigned int SCR_WIDTH = 1800;
+const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
 
 // camera
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 50.0f);
 GLfloat Near = 0.1f;
-Camera camera(cameraPos);
-Camera* curCamera = NULL;
-glm::mat4x4* curTransformMat = NULL;
 // mouse parameters
 	// current mouse position
 float lastX = SCR_WIDTH / 2.0f;
@@ -108,6 +105,7 @@ int main()
 	vessel.initVertexObject();
 	tumor.initVertexObject();
 	bones.initVertexObject();
+	light.initVertexObject();
 	std::vector<BaseModel> models;
 	models.push_back(vessel);
 	models.push_back(tumor);
@@ -152,15 +150,15 @@ int main()
 		ourShader.use();
 		GLint lightColorLoc = glGetUniformLocation(ourShader.ID, "lightColor");
 		GLint lightPosLoc = glGetUniformLocation(ourShader.ID, "lightPos");
-		GLint viewPosLoc = glGetUniformLocation(ourShader.ID, "viewPos");
 		glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
 		glUniform3f(lightPosLoc, light.Position.x, light.Position.y, light.Position.z);
-		glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
-
+		
 		// send parameters of camera
 		// set camera related matrix
 		mainArea.setBound(0, 0, SCR_WIDTH*3/4.0f, SCR_HEIGHT);
 		mainArea.draw(ourShader, models);
+		// draw light
+		mainArea.drawLight(lightShader, light);
 		vesselArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT/3.0f);
 		vesselArea.draw(ourShader, models);
 		tumorArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
@@ -168,15 +166,6 @@ int main()
 		bonesArea.setBound(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
 		bonesArea.draw(ourShader, models);
 		
-		// draw light
-		/*lightShader.use();
-		lightShader.setMat4("projection", camera.projection);
-		// camera/view transformation
-		lightShader.setMat4("view", glm::translate(camra,light.Position));
-		model = glm::mat4(1.0f);
-		lightShader.setMat4("model", model);
-		light.draw();*/
-
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -292,7 +281,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	// select area
 	if (button == GLFW_MOUSE_BUTTON_LEFT) {
 		if (GLFW_PRESS == action) {
-			getObjCoor(lastX, lastY);
+			
 			lbutton_down = true;
 			// main
 			if (lastX < SCR_WIDTH*3.0f / 4.0f) {
@@ -307,6 +296,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			else {
 				currentArea = &bonesArea;
 			}
+			getObjCoor(lastX, lastY);
 		}
 		else if (GLFW_RELEASE == action)
 			lbutton_down = false;
@@ -325,7 +315,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 			if (GLFW_PRESS == action) {
 				// deal with ray detection
-				std::cout << "lastX: " << lastX << " lastY: " << lastY << std::endl;
+				/*std::cout << "lastX: " << lastX << " lastY: " << lastY << std::endl;
 				float scale_h = tanf(camera.Zoom)*Near;   //投影窗口高度的一半
 				float scale_w = ((GLfloat)SCR_WIDTH/SCR_HEIGHT) * scale_h;
 				// TODO: 改成viewport的尺寸
@@ -336,7 +326,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 				// std::cout << "mouse position " << aim.x << " " << aim.y << " " << aim.z << std::endl;
 				// from view coordinate to world coordinate
 				glm::vec3 viewCor = glm::unProject(aim, camera.GetViewMatrix(), glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, Near, 1000.0f), glm::vec4(0, 0, SCR_WIDTH, SCR_HEIGHT));
-				std::cout << "mouse position " << viewCor.x << " " << viewCor.y << " " << viewCor.z << std::endl;
+				std::cout << "mouse position " << viewCor.x << " " << viewCor.y << " " << viewCor.z << std::endl;*/
 			}
 				
 		}
@@ -347,7 +337,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	camera.ProcessMouseScroll(yoffset);
+	// camera.ProcessMouseScroll(yoffset);
 }
 
 void initGUI(GLFWwindow* window) {
@@ -363,36 +353,23 @@ void initGUI(GLFWwindow* window) {
 }
 
 glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
+	std::cout << "first x " << x << " first y " << y << std::endl;
 	// todo from screen to viewport
 	GLfloat z;
 	glm::mat4 modelview = (*currentArea).getCamera()->GetViewMatrix() * (*currentArea).getTransformMat();
 	glm::mat4 proj = (*currentArea).getCamera()->getProjection();
 	glm::vec4 viewport = (*currentArea).getBound();
 	x = x - viewport.x;
-	y = y - viewport.y;
+	y = SCR_HEIGHT - y - viewport.y;
 	glReadBuffer(GL_BACK);
-	glReadPixels(x, int((float)viewport.z - (float)y - 1.0f), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
-	std::cout << "x " << x << " y " << y << " z " << z << std::endl;
+	glReadPixels(x,y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+	//std::cout << "x " << x << " y " << y << " z " << z << std::endl;
 	glm::vec3 win = glm::vec3(x, y, z);
 	glm::vec3 ans = glm::unProject(win, modelview, proj, viewport);
+	//ans = (*currentArea).getTransformMat() * glm::vec4(ans, 0.0f);
+	//std::cout << "worldPos " << worldPos.x << " " << worldPos.y << " " << worldPos.z << std::endl;
+	light.Position.x = ans.x;
+	light.Position.y = ans.y;
+	light.Position.z = ans.z;
 	return ans;
-	/*GLint viewport[4];
-	GLdouble modelview[16];
-	GLdouble projection[16];
-	GLfloat winX, winY, winZ;
-	GLdouble object_x, object_y, object_z;
-	int mouse_x = x;
-	int mouse_y = y;
-	glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-	glGetDoublev(GL_PROJECTION_MATRIX, projection);
-	glGetIntegerv(GL_VIEWPORT, viewport);
-
-	winX = (float)mouse_x;
-	winY = (float)viewport[3] - (float)mouse_y - 1.0f;
-	glReadBuffer(GL_BACK);
-	glReadPixels(mouse_x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
-	glm::unProject((GLdouble)winX, (GLdouble)winY, (GLdouble)winZ, modelview, projection, viewport, &object_x, &object_y, &object_z);
-	*pp.x = object_x;
-	*pp.y = object_y;
-	*pp.z = object_z;*/
 }

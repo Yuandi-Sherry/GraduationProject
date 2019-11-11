@@ -14,6 +14,7 @@
 #include "BaseModel.h"
 #include "Camera.h"
 #include "Shader.h"
+#include "Light.h"
 
 class Area
 {
@@ -36,13 +37,14 @@ public:
 	glm::vec4 getBound() {
 		return glm::vec4(bound[0], bound[1], bound[2], bound[3]);
 	}
-	
+	void drawLight(Shader & shader, Light& light);
 private:
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 200.0f);
 	std::vector<GLint> modelsID;
 	Camera camera;
 	GLfloat bound[4];
 	glm::mat4x4 transformMat;
+	glm::vec3 ruler[2];//start coordinate & end coordinate
 };
 
 Area::Area()
@@ -75,6 +77,7 @@ void Area::setBound(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height)
 }
 
 void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
+	shader.use();
 	glViewport(bound[0], bound[1], bound[2], bound[3]); 
 	shader.setMat4("projection", camera.getProjection());
 	glm::mat4 view = camera.GetViewMatrix();
@@ -86,5 +89,19 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 		shader.setInt("type", models[modelsID[i]].getColor());
 		models[modelsID[i]].draw();
 	}
+}
+
+void Area::drawLight(Shader & shader, Light& light) {
+	shader.use();
+	GLint viewPosLoc = glGetUniformLocation(shader.ID, "viewPos");
+	glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
+	shader.setMat4("projection", camera.getProjection());
+	// camera/view transformation
+	shader.setMat4("view", camera.GetViewMatrix());
+	glm::mat4 model = glm::mat4(1.0f);
+	//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+	shader.setMat4("model", transformMat * glm::translate(model, light.Position));
+	//shader.setMat4("model", glm::mat4(1.0f));
+	light.draw();
 }
 #endif
