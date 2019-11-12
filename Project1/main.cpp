@@ -99,9 +99,9 @@ int main()
 	Shader ourShader("phongShader.vs", "phongShader.frag");
 	Shader lightShader("camera.vs", "camera.frag");
 	// load model
-	BaseModel vessel("vessel.stl", 1);
-	BaseModel tumor("tumor.stl", 2);
-	BaseModel bones("bones.stl", 3);
+	BaseModel vessel("vessel.stl", 1, TRIANGLE);
+	BaseModel tumor("tumor.stl", 2, TRIANGLE);
+	BaseModel bones("bones.stl", 3, TRIANGLE);
 	vessel.initVertexObject();
 	tumor.initVertexObject();
 	bones.initVertexObject();
@@ -152,6 +152,7 @@ int main()
 		GLint lightPosLoc = glGetUniformLocation(ourShader.ID, "lightPos");
 		glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
 		glUniform3f(lightPosLoc, light.Position.x, light.Position.y, light.Position.z);
+		glUniform1i(glGetUniformLocation(ourShader.ID, "withLight"), 1);
 		
 		// send parameters of camera
 		// set camera related matrix
@@ -159,6 +160,7 @@ int main()
 		mainArea.draw(ourShader, models);
 		// draw light
 		mainArea.drawLight(lightShader, light);
+		mainArea.drawLine(ourShader);
 
 		vesselArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT/3.0f);
 		vesselArea.draw(ourShader, models);
@@ -177,11 +179,7 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::Begin("Options", NULL, ImGuiWindowFlags_MenuBar);
-		ImGui::InputFloat("lightPos x", &light.Position.x);
-		ImGui::InputFloat("lightPos y", &light.Position.y);
-		ImGui::InputFloat("lightPos z", &light.Position.z);
-		ImGui::Checkbox("±ê³ß", &toolbar.ruler);
-		ImGui::Checkbox("½ØÃæ", &toolbar.cutface);
+		ImGui::Checkbox("RULER", &toolbar.ruler);
 		ImGui::End();
 
 		// Rendering
@@ -211,16 +209,16 @@ void processInput(GLFWwindow *window)
 		glfwSetWindowShouldClose(window, true);
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		(*(*currentArea).getCamera()).ProcessKeyboard(FORWARD, deltaTime);
+		(*currentArea->getCamera()).ProcessKeyboard(FORWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		(*(*currentArea).getCamera()).ProcessKeyboard(BACKWARD, deltaTime);
+		(*currentArea->getCamera()).ProcessKeyboard(BACKWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		(*(*currentArea).getCamera()).ProcessKeyboard(LEFT, deltaTime);
+		(*currentArea->getCamera()).ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		(*(*currentArea).getCamera()).ProcessKeyboard(RIGHT, deltaTime);
+		(*currentArea->getCamera()).ProcessKeyboard(RIGHT, deltaTime);
 
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
-		(*(*currentArea).getCamera()).alterMouse();
+		(*currentArea->getCamera()).alterMouse();
 
 	
 }
@@ -263,7 +261,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(xoffset * deltaTime * M_SPEED, yoffset * deltaTime * M_SPEED, 0));
 
-		// (*currentArea).getCamera()->setPosition(model * glm::vec4((*currentArea).getCamera()->Position, 0));
+		// currentArea->getCamera()->setPosition(model * glm::vec4(currentArea->getCamera()->Position, 0));
 	}
 	if (rbutton_down) {
 		// std::cout << "mouse is clicked" << std::endl;
@@ -278,7 +276,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 		rotationMatY = glm::rotate(rotationMatY, xoffset * deltaTime * R_SPEED, glm::vec3(0, 1, 0));
 		rotationMatX = glm::rotate(rotationMatX, -yoffset * deltaTime * R_SPEED, glm::vec3(1, 0, 0));
 		// todo
-		 (*currentArea).setTransformMat(rotationMatY * rotationMatX *((*currentArea).getTransformMat()));
+		 currentArea->setTransformMat(rotationMatY * rotationMatX *(currentArea->getTransformMat()));
 		// camera.ProcessMouseDragging(translationMat);
 	}
 }
@@ -308,19 +306,17 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			lbutton_down = false;
 	}
 	// right button dragging
-	if (!toolbar.ruler && !toolbar.cutface) {
-		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			if (GLFW_PRESS == action)
-				rbutton_down = true;
-			else if (GLFW_RELEASE == action)
-				rbutton_down = false;
-		}
+	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+		if (GLFW_PRESS == action)
+			rbutton_down = true;
+		else if (GLFW_RELEASE == action)
+			rbutton_down = false;
 	}
 	// mouse click, ruler mode
 	if (toolbar.ruler) {
-		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (GLFW_PRESS == action) {
-				toolbar.setVertex(getObjCoor(lastX, lastY));
+				currentArea->setVertex(getObjCoor(lastX, lastY));
 			}
 				
 		}
@@ -349,9 +345,9 @@ void initGUI(GLFWwindow* window) {
 glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
 	// todo from screen to viewport
 	GLfloat z;
-	glm::mat4 modelview = (*currentArea).getCamera()->GetViewMatrix() * (*currentArea).getTransformMat();
-	glm::mat4 proj = (*currentArea).getCamera()->getProjection();
-	glm::vec4 viewport = (*currentArea).getBound();
+	glm::mat4 modelview = currentArea->getCamera()->GetViewMatrix() * currentArea->getTransformMat();
+	glm::mat4 proj = currentArea->getCamera()->getProjection();
+	glm::vec4 viewport = currentArea->getBound();
 	x = x;
 	y = SCR_HEIGHT - y;
 	

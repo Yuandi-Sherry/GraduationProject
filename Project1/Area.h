@@ -38,13 +38,40 @@ public:
 		return glm::vec4(bound[0], bound[1], bound[2], bound[3]);
 	}
 	void drawLight(Shader & shader, Light& light);
+	void setVertex(const glm::vec3 & vertexPosition) {
+		tmpVertices[currentRulerIndex] = vertexPosition;
+		if (currentRulerIndex == 0) {
+			currentRulerIndex = 1;
+		}
+		else if (currentRulerIndex == 1) {
+			// add to rulerLines vector
+			std::vector<GLfloat> tmp = {
+				tmpVertices[0].x,
+				tmpVertices[0].y,
+				tmpVertices[0].z,
+				tmpVertices[1].x,
+				tmpVertices[1].y,
+				tmpVertices[1].z
+			};
+			BaseModel newLine(tmp, 4, LINE);
+			newLine.initVertexObject();
+			rulerLines.push_back(newLine);
+			currentRulerIndex = 0;
+		}
+		
+		// std::cout << "current size of lines"
+	}
+
+	void drawLine(Shader & shader);
 private:
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 200.0f);
 	std::vector<GLint> modelsID;
 	Camera camera;
 	GLfloat bound[4];
 	glm::mat4x4 transformMat;
-	glm::vec3 ruler[2];//start coordinate & end coordinate
+	glm::vec3 tmpVertices[2];
+	int currentRulerIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
+	std::vector<BaseModel> rulerLines;
 };
 
 Area::Area()
@@ -86,7 +113,7 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 	shader.setMat4("model", transformMat * model);
 	for (int i = 0; i < modelsID.size(); i++) {
-		shader.setInt("type", models[modelsID[i]].getColor());
+		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();
 	}
 }
@@ -103,5 +130,19 @@ void Area::drawLight(Shader & shader, Light& light) {
 	shader.setMat4("model", transformMat * glm::translate(model, light.Position));
 	//shader.setMat4("model", glm::mat4(1.0f));
 	light.draw();
+}
+
+void Area::drawLine(Shader & shader) {
+	shader.use();
+	// in phongShader do not use lighting
+	glUniform1i(glGetUniformLocation(shader.ID, "withLight"), 0);
+	glm::mat4 model = glm::mat4(1.0f);
+	// model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+	shader.setMat4("model", transformMat * model);
+	shader.setInt("type", 4);
+	for (int i = 0; i < rulerLines.size(); i++) {
+		
+		rulerLines[i].draw();
+	}
 }
 #endif
