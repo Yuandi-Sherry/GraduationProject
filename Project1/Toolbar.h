@@ -1,6 +1,11 @@
 #ifndef _TOOL_BAR_
 #define _TOOL_BAR_
-
+#include <iostream>
+// glm
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glad/glad.h>
 class Toolbar
 {
 public:
@@ -32,14 +37,5 @@ private:
 	int currentIndex; // 0, 1
 };
 
-Toolbar::Toolbar()
-{
-	ruler = false;
-	cutface = false;
-	currentIndex = 0;
-}
 
-Toolbar::~Toolbar()
-{
-}
 #endif

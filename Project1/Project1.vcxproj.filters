@@ -48,6 +48,18 @@
     <ClCompile Include="Light.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Area.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseModel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Toolbar.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Line.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">
@@ -87,6 +99,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Area.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Line.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

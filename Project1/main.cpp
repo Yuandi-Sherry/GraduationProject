@@ -165,14 +165,17 @@ int main()
 		vesselArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT/3.0f);
 		vesselArea.draw(ourShader, models);
 		vesselArea.drawLight(lightShader, light);
+		vesselArea.drawLine(ourShader);
 
 		tumorArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
 		tumorArea.draw(ourShader, models);
 		tumorArea.drawLight(lightShader, light);
+		tumorArea.drawLine(ourShader);
 
 		bonesArea.setBound(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
 		bonesArea.draw(ourShader, models);
 		bonesArea.drawLight(lightShader, light);
+		bonesArea.drawLine(ourShader);
 		
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
@@ -180,6 +183,7 @@ int main()
 		ImGui::NewFrame();
 		ImGui::Begin("Options", NULL, ImGuiWindowFlags_MenuBar);
 		ImGui::Checkbox("RULER", &toolbar.ruler);
+		currentArea->displayGUI();
 		ImGui::End();
 
 		// Rendering

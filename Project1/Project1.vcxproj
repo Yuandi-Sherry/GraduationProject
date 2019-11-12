@@ -128,12 +128,16 @@
     <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_demo.cpp" />
     <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_draw.cpp" />
     <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_widgets.cpp" />
+    <ClCompile Include="Area.cpp" />
+    <ClCompile Include="BaseModel.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="imgui_impl_glfw.cpp" />
     <ClCompile Include="imgui_impl_opengl3.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Light.h" />
+    <ClCompile Include="Line.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Toolbar.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imconfig.h" />
@@ -147,6 +151,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="imgui_impl_glfw.h" />
     <ClInclude Include="imgui_impl_opengl3.h" />
+    <ClInclude Include="Line.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Toolbar.h" />
   </ItemGroup>
