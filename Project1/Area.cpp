@@ -71,17 +71,18 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 	//model = transformMat*glm::mat4(1.0f);
 	//model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f));
 	model = glm::mat4(1.0f);
-	shader.setMat4("model", model);
-	csPlane.draw();
+	//shader.setMat4("model", model);
+	//csPlane.draw();
 	model = glm::mat4(1.0f);
-	shader.setMat4("model", model);
+	shader.setMat4("model", /*transformMat */ model);
+	//shader.setMat4("model", model);
 	if (testPlane != NULL) {
 		
 		
 		//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 		
-		shader.setInt("type", 4);
-		//testPlane->draw();
+		//shader.setInt("type", 4);
+		testPlane->draw();
 		//glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
 	}
 	//shader.setMat4("model", transformMat * model);
@@ -141,7 +142,14 @@ void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 }
 
 void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
-	tmpCutFaceVertices[currentCutFaceIndex] = vertexPosition;
+	// get local pos
+	glm::vec3 localPos = glm::vec3(1.0f);
+	localPos = glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
+	glm::vec3 testPos = transformMat * glm::vec4(localPos, 1.0f);
+	std::cout << "world coor " << vertexPosition.x << " " << vertexPosition.y << " " << vertexPosition.z << std::endl;
+	std::cout << "local coor " << localPos.x << " " << localPos.y << " " << localPos.z << std::endl;
+	std::cout << "test coor " << testPos.x << " " << testPos.y << " " << testPos.z << std::endl;
+	transCutFaceVertices[currentCutFaceIndex] = localPos;
 	if (currentCutFaceIndex == 0) {
 		currentCutFaceIndex = 1;
 	}
@@ -157,11 +165,6 @@ void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
 void Area::calculatePlane() {
 	if (testPlane != NULL) {
 		delete testPlane;
-	}
-	if (rotate == false) {
-		for (int i = 0; i < 3; i++) {
-			transCutFaceVertices[i] = tmpCutFaceVertices[i];
-		}
 	}
 	glm::vec3 vector1 = glm::vec3(transCutFaceVertices[0].x - transCutFaceVertices[1].x, transCutFaceVertices[0].y - transCutFaceVertices[1].y, transCutFaceVertices[0].z - transCutFaceVertices[1].z);
 	glm::vec3 vector2 = glm::vec3(transCutFaceVertices[0].x - transCutFaceVertices[2].x, transCutFaceVertices[0].y - transCutFaceVertices[2].y, transCutFaceVertices[0].z - transCutFaceVertices[2].z);
@@ -184,8 +187,8 @@ void Area::calculatePlane() {
 	};
 	csPlane.setCoeff(planeCoeff);
 	
-	//testPlane = new Plane(tmpVec, 4, TRIANGLE);
-	//testPlane->initVertexObject();
+	testPlane = new Plane(tmpVec, 4, TRIANGLE);
+	testPlane->initVertexObject();
 }
 
 void Area::displayGUI() {

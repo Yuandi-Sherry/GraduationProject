@@ -17,7 +17,7 @@ uniform int withLight;
 
 void main()
 {
-    interPos = model * vec4(aPos, 1.0);
+    interPos = vec4(aPos, 1.0);
 	gl_Position = projection *view * model * vec4(aPos, 1.0);
     vec3 Position = vec3(model * vec4(aPos, 1.0));
 	if(withLight == 1) {

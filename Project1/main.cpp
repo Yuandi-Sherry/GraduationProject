@@ -280,10 +280,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 		rotationMatY = glm::rotate(rotationMatY, xoffset * deltaTime * R_SPEED, glm::vec3(0, 1, 0));
 		rotationMatX = glm::rotate(rotationMatX, -yoffset * deltaTime * R_SPEED, glm::vec3(1, 0, 0));
 		currentArea->setTransformMat(rotationMatY * rotationMatX *(currentArea->getTransformMat()));
-		currentArea->transCutFaceVertices[0] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[0], 0.0f);
+		/*currentArea->transCutFaceVertices[0] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[0], 0.0f);
 		currentArea->transCutFaceVertices[1] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[1], 0.0f);
-		currentArea->transCutFaceVertices[2] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[2], 0.0f);
-		currentArea->calculatePlane();
+		currentArea->transCutFaceVertices[2] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[2], 0.0f);*/
+		//currentArea->calculatePlane();
 	}
 }
 
@@ -365,6 +365,9 @@ glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
 	glReadPixels(x,y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
 	glm::vec3 win = glm::vec3(x, y, z);
 	glm::vec3 ans = glm::unProject(win, modelview, proj, viewport);
+	light.Position.x = ans.x;
+	light.Position.y = ans.y;
+	light.Position.z = ans.z;
 	return ans;
 }
 
