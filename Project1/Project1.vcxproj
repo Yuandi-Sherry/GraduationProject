@@ -131,6 +131,7 @@
     <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\作业\Homework5\Project1\Project1\Triangle.cpp" />
     <ClCompile Include="Area.cpp" />
     <ClCompile Include="BaseModel.cpp" />
+    <ClCompile Include="CrossSectionPlane.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="imgui_impl_glfw.cpp" />
     <ClCompile Include="imgui_impl_opengl3.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="Area.h" />
     <ClInclude Include="BaseModel.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CrossSectionPlane.h" />
     <ClInclude Include="imgui_impl_glfw.h" />
     <ClInclude Include="imgui_impl_opengl3.h" />
     <ClInclude Include="Line.h" />

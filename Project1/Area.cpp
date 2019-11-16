@@ -7,12 +7,11 @@
 #include <string>
 Area::Area()
 {
-	// init 
 	modelsID.clear();
-	GLfloat Near = 0.1f;
-	camera.setPosition(cameraPos);
 	transformMat = glm::mat4(1.0f);
 	testPlane = NULL;
+
+	
 }
 
 Area::~Area()
@@ -22,6 +21,13 @@ Area::~Area()
 	}
 }
 
+void Area::init() {
+	// init 
+	GLfloat Near = 0.1f;
+	camera.setPosition(cameraPos);
+	
+	csPlane.initVertexObject();
+}
 void Area::setModelsID(const std::vector<GLint>& models) {
 	this->modelsID.assign(models.begin(), models.end());
 }
@@ -52,20 +58,34 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 	shader.setMat4("model", transformMat * model);
+	shader.setInt("withLight", 1);
+	shader.setInt("isPlane", 0);
 	for (int i = 0; i < modelsID.size(); i++) {
 		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();
 	}
+	
+	// plane
+	shader.setInt("withLight", 0);
+	shader.setInt("isPlane", 1);
+	//model = transformMat*glm::mat4(1.0f);
+	//model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f));
+	model = glm::mat4(1.0f);
+	shader.setMat4("model", model);
+	csPlane.draw();
+	model = glm::mat4(1.0f);
+	shader.setMat4("model", model);
 	if (testPlane != NULL) {
-		glUniform1i(glGetUniformLocation(shader.ID, "withLight"), 0);
-		glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 1);
-		glm::mat4 model = glm::mat4(1.0f);
+		
+		
 		//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-		shader.setMat4("model", /*transformMat */ model);
+		
 		shader.setInt("type", 4);
-		testPlane->draw();
-		glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
+		//testPlane->draw();
+		//glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
 	}
+	//shader.setMat4("model", transformMat * model);
+	
 }
 
 void Area::drawLight(Shader & shader, Light& light) {
@@ -138,8 +158,14 @@ void Area::calculatePlane() {
 	if (testPlane != NULL) {
 		delete testPlane;
 	}
+	if (rotate == false) {
+		for (int i = 0; i < 3; i++) {
+			transCutFaceVertices[i] = tmpCutFaceVertices[i];
+		}
+	}
 	glm::vec3 vector1 = glm::vec3(transCutFaceVertices[0].x - transCutFaceVertices[1].x, transCutFaceVertices[0].y - transCutFaceVertices[1].y, transCutFaceVertices[0].z - transCutFaceVertices[1].z);
 	glm::vec3 vector2 = glm::vec3(transCutFaceVertices[0].x - transCutFaceVertices[2].x, transCutFaceVertices[0].y - transCutFaceVertices[2].y, transCutFaceVertices[0].z - transCutFaceVertices[2].z);
+	//std::cout << " vector1 " << vector1.x << "  " << vector1.y << "  " << vector1.z  << std::endl;
 	GLfloat a = (transCutFaceVertices[1].y - transCutFaceVertices[0].y) * (transCutFaceVertices[2].z - transCutFaceVertices[0].z) - (transCutFaceVertices[2].y - transCutFaceVertices[0].y) * (transCutFaceVertices[1].z - transCutFaceVertices[0].z);
 	GLfloat b = (transCutFaceVertices[1].z - transCutFaceVertices[0].z) * (transCutFaceVertices[2].x - transCutFaceVertices[0].x) - (transCutFaceVertices[2].z - transCutFaceVertices[0].z) * (transCutFaceVertices[1].x - transCutFaceVertices[0].x);
 	GLfloat c = (transCutFaceVertices[1].x - transCutFaceVertices[0].x) * (transCutFaceVertices[2].x - transCutFaceVertices[0].y) - (transCutFaceVertices[2].x - transCutFaceVertices[0].x) * (transCutFaceVertices[1].y - transCutFaceVertices[0].y);
@@ -148,15 +174,18 @@ void Area::calculatePlane() {
 	planeCoeff[1] = b;
 	planeCoeff[2] = c;
 	planeCoeff[3] = d;
+
+	//std::cout << " a = " << a << " b = " << b << " c = " << c << " d = " << d << std::endl;
 	// test part
 	std::vector<GLfloat> tmpVec = {
 		transCutFaceVertices[0].x, transCutFaceVertices[0].y, transCutFaceVertices[0].z,
 		transCutFaceVertices[1].x, transCutFaceVertices[1].y, transCutFaceVertices[1].z,
 		transCutFaceVertices[2].x, transCutFaceVertices[2].y, transCutFaceVertices[2].z
 	};
+	csPlane.setCoeff(planeCoeff);
 	
-	testPlane = new Plane(tmpVec, 4, TRIANGLE);
-	testPlane->initVertexObject();
+	//testPlane = new Plane(tmpVec, 4, TRIANGLE);
+	//testPlane->initVertexObject();
 }
 
 void Area::displayGUI() {

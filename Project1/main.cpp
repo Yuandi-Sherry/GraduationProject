@@ -134,6 +134,11 @@ int main()
 	tmp.push_back(2);
 	bonesArea.setModelsID(tmp);
 
+	mainArea.init();
+	vesselArea.init();
+	tumorArea.init();
+	bonesArea.init();
+
 	// game loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -266,6 +271,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	lastY = ypos;
 
 	if (rbutton_down) {
+		currentArea->rotate = true;
 		glm::mat4x4 rotationMatY = glm::mat4x4(1.0f);
 		glm::mat4x4 rotationMatX = glm::mat4x4(1.0f);
 		const float R_SPEED = 0.1f;
@@ -361,3 +367,4 @@ glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
 	glm::vec3 ans = glm::unProject(win, modelview, proj, viewport);
 	return ans;
 }
+

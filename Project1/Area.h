@@ -16,6 +16,7 @@
 #include "Shader.h"
 #include "Light.h"
 #include "Plane.h"
+#include "CrossSectionPlane.h"
 
 class Area
 {
@@ -36,6 +37,7 @@ public:
 		transformMat = curMat;
 	}
 	glm::vec4 getViewport();
+	void init();
 	void drawLight(Shader & shader, Light& light);
 	void setRulerVertex(const glm::vec3 & vertexPosition);
 	void drawLine(Shader & shader);
@@ -45,8 +47,9 @@ public:
 	glm::vec4 planeCoeff = glm::vec4(1, 1, 1, 0); // coefficient of plane equation: ax + by + cz + d = 0;
 	glm::vec3 tmpCutFaceVertices[3]; // current operating line vertices
 	glm::vec3 transCutFaceVertices[3]; // current operating line vertices
+	bool rotate = false;
 private:
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 200.0f);
+	glm::vec3 cameraPos = glm::vec3(100.0f, 20.0f, 200.0f);
 	std::vector<GLint> modelsID;// the index of model in the model array in main function 
 	Camera camera;
 	GLfloat viewportPara[4];// 4 parameters of viewport: x, y, w, h
@@ -58,6 +61,7 @@ private:
 	
 	int currentCutFaceIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
 	Plane * testPlane;
+	CrossSectionPlane csPlane;
 };
 
 
