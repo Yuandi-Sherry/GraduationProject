@@ -7,6 +7,7 @@ public:
 	Line(const std::vector<GLfloat> &vertices, int colorID, PrimitiveType type);
 	~Line();
 	GLfloat getDistance();
+	void initVertexObject();
 private:
 
 };

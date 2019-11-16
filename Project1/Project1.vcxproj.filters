@@ -60,6 +60,12 @@
     <ClCompile Include="Line.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Plane.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\作业\Homework5\Project1\Project1\Triangle.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">
@@ -102,6 +108,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Line.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Plane.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\作业\Homework5\Project1\Project1\Triangle.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

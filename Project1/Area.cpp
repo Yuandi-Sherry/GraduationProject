@@ -1,4 +1,5 @@
 #include "Area.h"
+#include "Plane.h"
 // imgui
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -11,10 +12,14 @@ Area::Area()
 	GLfloat Near = 0.1f;
 	camera.setPosition(cameraPos);
 	transformMat = glm::mat4(1.0f);
+	testPlane = NULL;
 }
 
 Area::~Area()
 {
+	if (testPlane != NULL) {
+		delete testPlane;
+	}
 }
 
 void Area::setModelsID(const std::vector<GLint>& models) {
@@ -25,17 +30,22 @@ void Area::initModels() {
 
 }
 
-void Area::setBound(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
-	bound[0] = left;
-	bound[1] = bottom;
-	bound[2] = width;
-	bound[3] = height;
+void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
+	viewportPara[0] = left;
+	viewportPara[1] = bottom;
+	viewportPara[2] = width;
+	viewportPara[3] = height;
 	camera.setSize(width, height);
+}
+
+glm::vec4 Area::getViewport() {
+	return glm::vec4(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 }
 
 void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 	shader.use();
-	glViewport(bound[0], bound[1], bound[2], bound[3]);
+	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	shader.setVec4("plane", planeCoeff);
 	shader.setMat4("projection", camera.getProjection());
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
@@ -45,6 +55,16 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 	for (int i = 0; i < modelsID.size(); i++) {
 		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();
+	}
+	if (testPlane != NULL) {
+		glUniform1i(glGetUniformLocation(shader.ID, "withLight"), 0);
+		glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 1);
+		glm::mat4 model = glm::mat4(1.0f);
+		//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+		shader.setMat4("model", /*transformMat */ model);
+		shader.setInt("type", 4);
+		testPlane->draw();
+		glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
 	}
 }
 
@@ -76,7 +96,7 @@ void Area::drawLine(Shader & shader) {
 	}
 }
 
-void Area::setVertex(const glm::vec3 & vertexPosition) {
+void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 	tmpVertices[currentRulerIndex] = vertexPosition;
 	if (currentRulerIndex == 0) {
 		currentRulerIndex = 1;
@@ -98,6 +118,45 @@ void Area::setVertex(const glm::vec3 & vertexPosition) {
 	}
 
 	// std::cout << "current size of lines"
+}
+
+void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
+	tmpCutFaceVertices[currentCutFaceIndex] = vertexPosition;
+	if (currentCutFaceIndex == 0) {
+		currentCutFaceIndex = 1;
+	}
+	else if (currentCutFaceIndex == 1) {
+		currentCutFaceIndex = 2;
+	}
+	else if (currentCutFaceIndex == 2) {
+		currentCutFaceIndex = 0;
+		calculatePlane();
+	}
+}
+
+void Area::calculatePlane() {
+	if (testPlane != NULL) {
+		delete testPlane;
+	}
+	glm::vec3 vector1 = glm::vec3(transCutFaceVertices[0].x - transCutFaceVertices[1].x, transCutFaceVertices[0].y - transCutFaceVertices[1].y, transCutFaceVertices[0].z - transCutFaceVertices[1].z);
+	glm::vec3 vector2 = glm::vec3(transCutFaceVertices[0].x - transCutFaceVertices[2].x, transCutFaceVertices[0].y - transCutFaceVertices[2].y, transCutFaceVertices[0].z - transCutFaceVertices[2].z);
+	GLfloat a = (transCutFaceVertices[1].y - transCutFaceVertices[0].y) * (transCutFaceVertices[2].z - transCutFaceVertices[0].z) - (transCutFaceVertices[2].y - transCutFaceVertices[0].y) * (transCutFaceVertices[1].z - transCutFaceVertices[0].z);
+	GLfloat b = (transCutFaceVertices[1].z - transCutFaceVertices[0].z) * (transCutFaceVertices[2].x - transCutFaceVertices[0].x) - (transCutFaceVertices[2].z - transCutFaceVertices[0].z) * (transCutFaceVertices[1].x - transCutFaceVertices[0].x);
+	GLfloat c = (transCutFaceVertices[1].x - transCutFaceVertices[0].x) * (transCutFaceVertices[2].x - transCutFaceVertices[0].y) - (transCutFaceVertices[2].x - transCutFaceVertices[0].x) * (transCutFaceVertices[1].y - transCutFaceVertices[0].y);
+	GLfloat d = -a * transCutFaceVertices[0].x - b * transCutFaceVertices[0].y - c * transCutFaceVertices[0].z;
+	planeCoeff[0] = a;
+	planeCoeff[1] = b;
+	planeCoeff[2] = c;
+	planeCoeff[3] = d;
+	// test part
+	std::vector<GLfloat> tmpVec = {
+		transCutFaceVertices[0].x, transCutFaceVertices[0].y, transCutFaceVertices[0].z,
+		transCutFaceVertices[1].x, transCutFaceVertices[1].y, transCutFaceVertices[1].z,
+		transCutFaceVertices[2].x, transCutFaceVertices[2].y, transCutFaceVertices[2].z
+	};
+	
+	testPlane = new Plane(tmpVec, 4, TRIANGLE);
+	testPlane->initVertexObject();
 }
 
 void Area::displayGUI() {

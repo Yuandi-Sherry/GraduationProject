@@ -91,6 +91,8 @@ int main()
 	// configure global opengl state
 	// -----------------------------
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+
 	// set viewport
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
@@ -142,10 +144,18 @@ int main()
 		// -----
 		processInput(window);
 
+		// state change
+		if (toolbar.ruler) {
+			toolbar.cutface = false;
+		}
+		else if (toolbar.cutface) {
+			toolbar.ruler = false;
+		}
+
 		// Render
 		// Clear the colorbuffer
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		// send parameters to the shader
 		ourShader.use();
 		GLint lightColorLoc = glGetUniformLocation(ourShader.ID, "lightColor");
@@ -156,23 +166,23 @@ int main()
 		
 		// send parameters of camera
 		// set camera related matrix
-		mainArea.setBound(0, 0, SCR_WIDTH*3/4.0f, SCR_HEIGHT);
+		mainArea.setViewport(0, 0, SCR_WIDTH*3/4.0f, SCR_HEIGHT);
 		mainArea.draw(ourShader, models);
 		// draw light
 		mainArea.drawLight(lightShader, light);
 		mainArea.drawLine(ourShader);
 
-		vesselArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT/3.0f);
+		vesselArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT/3.0f);
 		vesselArea.draw(ourShader, models);
 		vesselArea.drawLight(lightShader, light);
 		vesselArea.drawLine(ourShader);
 
-		tumorArea.setBound(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
+		tumorArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
 		tumorArea.draw(ourShader, models);
 		tumorArea.drawLight(lightShader, light);
 		tumorArea.drawLine(ourShader);
 
-		bonesArea.setBound(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
+		bonesArea.setViewport(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
 		bonesArea.draw(ourShader, models);
 		bonesArea.drawLight(lightShader, light);
 		bonesArea.drawLine(ourShader);
@@ -183,6 +193,7 @@ int main()
 		ImGui::NewFrame();
 		ImGui::Begin("Options", NULL, ImGuiWindowFlags_MenuBar);
 		ImGui::Checkbox("RULER", &toolbar.ruler);
+		ImGui::Checkbox("CUT FACE", &toolbar.cutface);
 		currentArea->displayGUI();
 		ImGui::End();
 
@@ -254,34 +265,19 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	lastX = xpos;
 	lastY = ypos;
 
-	// todo 根据鼠标的坐标判断选定的区域
-	// std::cout << "xpos " << xpos << " ypos " << ypos << std::endl;
-	//camera.ProcessMouseMovement(xoffset, yoffset);
-	if (lbutton_down) {
-		//std::cout << "mouse is clicked" << std::endl;
-		// modify camera position
-		// todo
-		const float M_SPEED = 0.1f;
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(xoffset * deltaTime * M_SPEED, yoffset * deltaTime * M_SPEED, 0));
-
-		// currentArea->getCamera()->setPosition(model * glm::vec4(currentArea->getCamera()->Position, 0));
-	}
 	if (rbutton_down) {
-		// std::cout << "mouse is clicked" << std::endl;
 		glm::mat4x4 rotationMatY = glm::mat4x4(1.0f);
 		glm::mat4x4 rotationMatX = glm::mat4x4(1.0f);
-		
 		const float R_SPEED = 0.1f;
-
 		// Rotate the camera around with the mouse according to how much it's moved 
 		// since the last frame 
-
 		rotationMatY = glm::rotate(rotationMatY, xoffset * deltaTime * R_SPEED, glm::vec3(0, 1, 0));
 		rotationMatX = glm::rotate(rotationMatX, -yoffset * deltaTime * R_SPEED, glm::vec3(1, 0, 0));
-		// todo
-		 currentArea->setTransformMat(rotationMatY * rotationMatX *(currentArea->getTransformMat()));
-		// camera.ProcessMouseDragging(translationMat);
+		currentArea->setTransformMat(rotationMatY * rotationMatX *(currentArea->getTransformMat()));
+		currentArea->transCutFaceVertices[0] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[0], 0.0f);
+		currentArea->transCutFaceVertices[1] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[1], 0.0f);
+		currentArea->transCutFaceVertices[2] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[2], 0.0f);
+		currentArea->calculatePlane();
 	}
 }
 
@@ -289,9 +285,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	// select area
 	if (button == GLFW_MOUSE_BUTTON_LEFT) {
 		if (GLFW_PRESS == action) {
-			
 			lbutton_down = true;
-			// main
 			if (lastX < SCR_WIDTH*3.0f / 4.0f) {
 				currentArea = &mainArea;
 			}
@@ -304,7 +298,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			else {
 				currentArea = &bonesArea;
 			}
-			
 		}
 		else if (GLFW_RELEASE == action)
 			lbutton_down = false;
@@ -320,9 +313,15 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	if (toolbar.ruler) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (GLFW_PRESS == action) {
-				currentArea->setVertex(getObjCoor(lastX, lastY));
+				currentArea->setRulerVertex(getObjCoor(lastX, lastY));
 			}
-				
+		}
+	}
+	else if (toolbar.cutface) {
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			if (GLFW_PRESS == action) {
+				currentArea->setCutFaceVertex(getObjCoor(lastX, lastY));
+			}
 		}
 	}
 }
@@ -345,13 +344,14 @@ void initGUI(GLFWwindow* window) {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 }
-
+/*
+ get vertex position from screen coordinate to world coordinate
+ */
 glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
-	// todo from screen to viewport
 	GLfloat z;
 	glm::mat4 modelview = currentArea->getCamera()->GetViewMatrix() * currentArea->getTransformMat();
 	glm::mat4 proj = currentArea->getCamera()->getProjection();
-	glm::vec4 viewport = currentArea->getBound();
+	glm::vec4 viewport = currentArea->getViewport();
 	x = x;
 	y = SCR_HEIGHT - y;
 	
@@ -359,8 +359,5 @@ glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
 	glReadPixels(x,y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
 	glm::vec3 win = glm::vec3(x, y, z);
 	glm::vec3 ans = glm::unProject(win, modelview, proj, viewport);
-	light.Position.x = ans.x;
-	light.Position.y = ans.y;
-	light.Position.z = ans.z;
 	return ans;
 }

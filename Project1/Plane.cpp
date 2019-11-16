@@ -1,18 +1,15 @@
-#include "Line.h"
-Line::Line(const std::vector<GLfloat> &vertices, int colorID, PrimitiveType type) : BaseModel(vertices, colorID, type)
+#include <vector>
+#include "Plane.h"
+Plane::Plane(const std::vector<GLfloat> &vertices, int colorID, PrimitiveType type):BaseModel(vertices, colorID, type)
+{
+
+}
+
+Plane::~Plane()
 {
 }
 
-Line:: ~Line()
-{
-}
-
-GLfloat Line::getDistance() {
-	return sqrt(pow((*getVertices())[0] - (*getVertices())[3], 2) + pow((*getVertices())[1] - (*getVertices())[4], 2) + pow((*getVertices())[2] - (*getVertices())[5], 2));
-}
-
-void Line::initVertexObject() {
-	
+void Plane::initVertexObject() {
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	// Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
@@ -23,6 +20,6 @@ void Line::initVertexObject() {
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
 	glEnableVertexAttribArray(0);
-
+	
 	glBindVertexArray(0); // Unbind VAO
 }
