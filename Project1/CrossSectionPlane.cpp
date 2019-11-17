@@ -18,7 +18,7 @@ void CrossSectionPlane::initVertexObject() {
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -38,7 +38,7 @@ void CrossSectionPlane::setCoeff(glm::vec4 newCoeff) {
 void CrossSectionPlane::draw() {
 	calVertices();
 	
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	// glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
@@ -48,8 +48,8 @@ void CrossSectionPlane::calVertices() {
 
 	for (int i = 0; i < 4; i++) {
 		vertices[i * 3 + 2] = (-coeff[3] - coeff[0] * vertices[i * 3] - coeff[1] * vertices[i * 3 + 1]) / coeff[2];
-		std::cout << vertices[i * 3 + 2] << " ";
+		//std::cout << vertices[i * 3 + 2] << " ";
 	}
-	std::cout << std::endl;
+	//std::cout << std::endl;
 
 }

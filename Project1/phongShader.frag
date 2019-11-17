@@ -13,7 +13,7 @@ void main()
 	if(isPlane == 1) {
 		FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	} else {
-		if(plane.x * interPos.x + plane.y * interPos.y + plane.z * interPos.z + plane.w * 2 > 0) {
+		if(plane.x * interPos.x + plane.y * interPos.y + plane.z * interPos.z + plane.w > 0) {
 			 FragColor = LightingColor * vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		} else {
 			// debugging code start

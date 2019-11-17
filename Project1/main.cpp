@@ -355,7 +355,7 @@ void initGUI(GLFWwindow* window) {
  */
 glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
 	GLfloat z;
-	glm::mat4 modelview = currentArea->getCamera()->GetViewMatrix() * currentArea->getTransformMat();
+	glm::mat4 modelview = currentArea->getCamera()->GetViewMatrix();
 	glm::mat4 proj = currentArea->getCamera()->getProjection();
 	glm::vec4 viewport = currentArea->getViewport();
 	x = x;

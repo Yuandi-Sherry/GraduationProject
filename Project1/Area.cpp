@@ -68,13 +68,9 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 	// plane
 	shader.setInt("withLight", 0);
 	shader.setInt("isPlane", 1);
-	//model = transformMat*glm::mat4(1.0f);
-	//model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f));
-	model = glm::mat4(1.0f);
-	//shader.setMat4("model", model);
-	//csPlane.draw();
-	model = glm::mat4(1.0f);
-	shader.setMat4("model", /*transformMat */ model);
+	//shader.setMat4("model", glm::mat4(1.0f));
+	shader.setMat4("model", transformMat * /*transformMat **/ glm::mat4(1.0f));
+	//shader.setMat4("model", glm::translate(transformMat * model, glm::vec3(4.38f, 201.899f, -148.987f)));
 	//shader.setMat4("model", model);
 	if (testPlane != NULL) {
 		
@@ -85,6 +81,7 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 		testPlane->draw();
 		//glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
 	}
+	//csPlane.draw();
 	//shader.setMat4("model", transformMat * model);
 	
 }
@@ -144,11 +141,20 @@ void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
 	// get local pos
 	glm::vec3 localPos = glm::vec3(1.0f);
-	localPos = glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
-	glm::vec3 testPos = transformMat * glm::vec4(localPos, 1.0f);
+	localPos = /*glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f))) * */glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			std::cout << transformMat[i][j] << " ";
+ 		}
+		std::cout << std::endl;
+	}
+	
+	std::cout << std::endl;
+	/*glm::vec3 testPos = transformMat * glm::vec4(localPos, 1.0f);
 	std::cout << "world coor " << vertexPosition.x << " " << vertexPosition.y << " " << vertexPosition.z << std::endl;
 	std::cout << "local coor " << localPos.x << " " << localPos.y << " " << localPos.z << std::endl;
-	std::cout << "test coor " << testPos.x << " " << testPos.y << " " << testPos.z << std::endl;
+	std::cout << "test coor " << testPos.x << " " << testPos.y << " " << testPos.z << std::endl;*/
+	tmpCutFaceVertices[currentCutFaceIndex] = localPos;
 	transCutFaceVertices[currentCutFaceIndex] = localPos;
 	if (currentCutFaceIndex == 0) {
 		currentCutFaceIndex = 1;
@@ -181,9 +187,9 @@ void Area::calculatePlane() {
 	//std::cout << " a = " << a << " b = " << b << " c = " << c << " d = " << d << std::endl;
 	// test part
 	std::vector<GLfloat> tmpVec = {
-		transCutFaceVertices[0].x, transCutFaceVertices[0].y, transCutFaceVertices[0].z,
-		transCutFaceVertices[1].x, transCutFaceVertices[1].y, transCutFaceVertices[1].z,
-		transCutFaceVertices[2].x, transCutFaceVertices[2].y, transCutFaceVertices[2].z
+		tmpCutFaceVertices[0].x, tmpCutFaceVertices[0].y, tmpCutFaceVertices[0].z,
+		tmpCutFaceVertices[1].x, tmpCutFaceVertices[1].y, tmpCutFaceVertices[1].z,
+		tmpCutFaceVertices[2].x, tmpCutFaceVertices[2].y, tmpCutFaceVertices[2].z
 	};
 	csPlane.setCoeff(planeCoeff);
 	
