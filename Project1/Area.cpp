@@ -143,14 +143,6 @@ void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
 	// get local pos
 	glm::vec3 localPos = glm::vec3(1.0f);
 	localPos = glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f))) * glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			std::cout << transformMat[i][j] << " ";
- 		}
-		std::cout << std::endl;
-	}
-	
-	std::cout << std::endl;
 	/*glm::vec3 testPos = transformMat * glm::vec4(localPos, 1.0f);
 	std::cout << "world coor " << vertexPosition.x << " " << vertexPosition.y << " " << vertexPosition.z << std::endl;
 	std::cout << "local coor " << localPos.x << " " << localPos.y << " " << localPos.z << std::endl;
@@ -173,24 +165,24 @@ void Area::calculatePlane() {
 	if (testPlane != NULL) {
 		delete testPlane;
 	}
-	glm::vec3 vector1 = glm::vec3(transCutFaceVertices[0].x - transCutFaceVertices[1].x, transCutFaceVertices[0].y - transCutFaceVertices[1].y, transCutFaceVertices[0].z - transCutFaceVertices[1].z);
-	glm::vec3 vector2 = glm::vec3(transCutFaceVertices[0].x - transCutFaceVertices[2].x, transCutFaceVertices[0].y - transCutFaceVertices[2].y, transCutFaceVertices[0].z - transCutFaceVertices[2].z);
-	//std::cout << " vector1 " << vector1.x << "  " << vector1.y << "  " << vector1.z  << std::endl;
 	GLfloat a = (transCutFaceVertices[1].y - transCutFaceVertices[0].y) * (transCutFaceVertices[2].z - transCutFaceVertices[0].z) - (transCutFaceVertices[2].y - transCutFaceVertices[0].y) * (transCutFaceVertices[1].z - transCutFaceVertices[0].z);
 	GLfloat b = (transCutFaceVertices[1].z - transCutFaceVertices[0].z) * (transCutFaceVertices[2].x - transCutFaceVertices[0].x) - (transCutFaceVertices[2].z - transCutFaceVertices[0].z) * (transCutFaceVertices[1].x - transCutFaceVertices[0].x);
-	GLfloat c = (transCutFaceVertices[1].x - transCutFaceVertices[0].x) * (transCutFaceVertices[2].x - transCutFaceVertices[0].y) - (transCutFaceVertices[2].x - transCutFaceVertices[0].x) * (transCutFaceVertices[1].y - transCutFaceVertices[0].y);
+	GLfloat c = (transCutFaceVertices[1].x - transCutFaceVertices[0].x) * (transCutFaceVertices[2].y - transCutFaceVertices[0].y) - (transCutFaceVertices[2].x - transCutFaceVertices[0].x) * (transCutFaceVertices[1].y - transCutFaceVertices[0].y);
 	GLfloat d = -a * transCutFaceVertices[0].x - b * transCutFaceVertices[0].y - c * transCutFaceVertices[0].z;
 	planeCoeff[0] = a;
 	planeCoeff[1] = b;
 	planeCoeff[2] = c;
 	planeCoeff[3] = d;
 
-	//std::cout << " a = " << a << " b = " << b << " c = " << c << " d = " << d << std::endl;
+	std::cout << " a = " << a << " b = " << b << " c = " << c << " d = " << d << std::endl;
+	std::cout << "result" << a * transCutFaceVertices[0].x + b * transCutFaceVertices[0].y + transCutFaceVertices[0].z * c + d << std::endl;
+	std::cout << "result" << a * transCutFaceVertices[1].x + b * transCutFaceVertices[1].y + transCutFaceVertices[1].z * c + d << std::endl;
+	std::cout << "result" << a * transCutFaceVertices[2].x + b * transCutFaceVertices[2].y + transCutFaceVertices[2].z * c + d << std::endl;
 	// test part
 	std::vector<GLfloat> tmpVec = {
-		tmpCutFaceVertices[0].x, tmpCutFaceVertices[0].y, tmpCutFaceVertices[0].z,
-		tmpCutFaceVertices[1].x, tmpCutFaceVertices[1].y, tmpCutFaceVertices[1].z,
-		tmpCutFaceVertices[2].x, tmpCutFaceVertices[2].y, tmpCutFaceVertices[2].z
+		transCutFaceVertices[0].x, transCutFaceVertices[0].y, transCutFaceVertices[0].z,
+		transCutFaceVertices[1].x, transCutFaceVertices[1].y, transCutFaceVertices[1].z,
+		transCutFaceVertices[2].x, transCutFaceVertices[2].y, transCutFaceVertices[2].z
 	};
 	csPlane.setCoeff(planeCoeff);
 	
