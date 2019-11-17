@@ -62,6 +62,7 @@ private:
 	int currentCutFaceIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
 	Plane * testPlane;
 	CrossSectionPlane csPlane;
+	GLfloat tmpCoor[3] = { 1.0f,1.0f,1.0f };
 };
 
 

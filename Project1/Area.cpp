@@ -69,7 +69,7 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 	shader.setInt("withLight", 0);
 	shader.setInt("isPlane", 1);
 	//shader.setMat4("model", glm::mat4(1.0f));
-	shader.setMat4("model", transformMat * /*transformMat **/ glm::mat4(1.0f));
+	//shader.setMat4("model", transformMat * /*transformMat **/ glm::mat4(1.0f));
 	//shader.setMat4("model", glm::translate(transformMat * model, glm::vec3(4.38f, 201.899f, -148.987f)));
 	//shader.setMat4("model", model);
 	if (testPlane != NULL) {
@@ -81,7 +81,8 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 		testPlane->draw();
 		//glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
 	}
-	//csPlane.draw();
+	//shader.setMat4("model", glm::translate(transformMat *  glm::mat4(1.0f), glm::vec3(tmpCoor[0], tmpCoor[1], tmpCoor[2])));
+	csPlane.draw();
 	//shader.setMat4("model", transformMat * model);
 	
 }
@@ -141,7 +142,7 @@ void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
 	// get local pos
 	glm::vec3 localPos = glm::vec3(1.0f);
-	localPos = /*glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f))) * */glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
+	localPos = glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f))) * glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			std::cout << transformMat[i][j] << " ";
@@ -203,6 +204,7 @@ void Area::displayGUI() {
 		std::string str = "line" + std::to_string(i+1) + " : " + std::to_string(rulerLines[i].getDistance());
 		ImGui::TextDisabled(str.c_str());
 	}
-	
-	
+	ImGui::DragFloat("x", &tmpCoor[0], 1.0f, -100, 100);
+	ImGui::DragFloat("y", &tmpCoor[1], 1.0f, -100, 100);
+	ImGui::DragFloat("z", &tmpCoor[2], 1.0f, -100, 100);
 }

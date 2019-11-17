@@ -17,11 +17,12 @@ private:
 	GLuint VAO, VBO, EBO;
 	glm::vec4 coeff;
 	GLfloat vertices[12] = {
-		 100.0f,  100.0f, 0.0f,// top right
-		 100.0f, -100.0f, 0.0f,// bottom right
-		-100.0f, -100.0f, 0.0f,// bottom left
-		-100.0f,  100.0f, 0.0f
+		 100.0f + 4.38f,  100.0f + 201.899f, -200.0f,// top right
+		 100.0f + 4.38f, -100.0f + 201.899f, 0.0f,// bottom right
+		-100.0f + 4.38f, -100.0f + 201.899f, 200.0f,// bottom left
+		-100.0f + 4.38f,  100.0f + 201.899f, 0.0f
 	};
+	//-4.38f, -201.899f,
 	GLuint indices[6] = {
 		 0, 1, 3, // first triangle
 		1, 2, 3  // second triangle
