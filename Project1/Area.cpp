@@ -106,7 +106,7 @@ void Area::drawLine(Shader & shader) {
 	// in phongShader do not use lighting
 	glUniform1i(glGetUniformLocation(shader.ID, "withLight"), 0);
 	glm::mat4 model = glm::mat4(1.0f);
-	// model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+	//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 	shader.setMat4("model", transformMat * model);
 	shader.setInt("type", 4);
 	for (int i = 0; i < rulerLines.size(); i++) {
@@ -116,7 +116,8 @@ void Area::drawLine(Shader & shader) {
 }
 
 void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
-	tmpVertices[currentRulerIndex] = vertexPosition;
+	glm::vec3 localPos = glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
+	tmpVertices[currentRulerIndex] = localPos;
 	if (currentRulerIndex == 0) {
 		currentRulerIndex = 1;
 	}
