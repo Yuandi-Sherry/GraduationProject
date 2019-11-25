@@ -91,8 +91,8 @@ int main()
 	// configure global opengl state
 	// -----------------------------
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_STENCIL_TEST);
-
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// set viewport
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
@@ -169,6 +169,20 @@ int main()
 		glUniform3f(lightPosLoc, light.Position.x, light.Position.y, light.Position.z);
 		glUniform1i(glGetUniformLocation(ourShader.ID, "withLight"), 1);
 		
+
+		if (toolbar.ruler) {
+			mainArea.drawLine(ourShader);
+			vesselArea.drawLine(ourShader);
+			tumorArea.drawLine(ourShader);
+			bonesArea.drawLine(ourShader);
+		}
+		else if (toolbar.cutface) {
+			ourShader.setInt("cut", 1);
+			mainArea.drawCutFace(ourShader);
+			vesselArea.drawCutFace(ourShader);
+			tumorArea.drawCutFace(ourShader);
+			bonesArea.drawCutFace(ourShader);
+		}
 		// send parameters of camera
 		// set camera related matrix
 		mainArea.setViewport(0, 0, SCR_WIDTH*3/4.0f, SCR_HEIGHT);
@@ -180,17 +194,16 @@ int main()
 		vesselArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT/3.0f);
 		vesselArea.draw(ourShader, models);
 		vesselArea.drawLight(lightShader, light);
-		vesselArea.drawLine(ourShader);
 
 		tumorArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
 		tumorArea.draw(ourShader, models);
 		tumorArea.drawLight(lightShader, light);
-		tumorArea.drawLine(ourShader);
 
 		bonesArea.setViewport(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
 		bonesArea.draw(ourShader, models);
 		bonesArea.drawLight(lightShader, light);
-		bonesArea.drawLine(ourShader);
+
+		
 		
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
@@ -198,7 +211,11 @@ int main()
 		ImGui::NewFrame();
 		ImGui::Begin("Options", NULL, ImGuiWindowFlags_MenuBar);
 		ImGui::Checkbox("RULER", &toolbar.ruler);
-		ImGui::Checkbox("CUT FACE", &toolbar.cutface);
+		ImGui::Checkbox("CROSS SECTION", &toolbar.cutface);
+		ImGui::DragFloat("lightx", &light.Position.x);
+		ImGui::DragFloat("lighty", &light.Position.y);
+		ImGui::DragFloat("lightz", &light.Position.z);
+
 		currentArea->displayGUI();
 		ImGui::End();
 
@@ -271,7 +288,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	lastY = ypos;
 
 	if (rbutton_down) {
-		currentArea->rotate = true;
 		glm::mat4x4 rotationMatY = glm::mat4x4(1.0f);
 		glm::mat4x4 rotationMatX = glm::mat4x4(1.0f);
 		const float R_SPEED = 0.1f;

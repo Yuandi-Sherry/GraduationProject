@@ -78,13 +78,43 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 		//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 		
 		//shader.setInt("type", 4);
-		testPlane->draw();
+		//testPlane->draw();
 		//glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
 	}
 	//shader.setMat4("model", glm::translate(transformMat *  glm::mat4(1.0f), glm::vec3(tmpCoor[0], tmpCoor[1], tmpCoor[2])));
 	csPlane.draw();
 	//shader.setMat4("model", transformMat * model);
 	
+}
+
+void Area::drawCutFace(Shader & shader) {
+	shader.use();
+	shader.setVec4("plane", planeCoeff);
+	shader.setMat4("projection", camera.getProjection());
+	glm::mat4 view = camera.GetViewMatrix();
+	shader.setMat4("view", view);
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+	shader.setMat4("model", transformMat * model);
+	// plane
+	shader.setInt("withLight", 0);
+	shader.setInt("isPlane", 1);
+	//shader.setMat4("model", glm::mat4(1.0f));
+	//shader.setMat4("model", transformMat * /*transformMat **/ glm::mat4(1.0f));
+	//shader.setMat4("model", glm::translate(transformMat * model, glm::vec3(4.38f, 201.899f, -148.987f)));
+	//shader.setMat4("model", model);
+	//if (testPlane != NULL) {
+
+
+		//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+
+		//shader.setInt("type", 4);
+		//testPlane->draw();
+		//glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
+	//}
+	//shader.setMat4("model", glm::translate(transformMat *  glm::mat4(1.0f), glm::vec3(tmpCoor[0], tmpCoor[1], tmpCoor[2])));
+	//csPlane.draw();
+	//shader.setMat4("model", transformMat * model);
 }
 
 void Area::drawLight(Shader & shader, Light& light) {
@@ -197,7 +227,4 @@ void Area::displayGUI() {
 		std::string str = "line" + std::to_string(i+1) + " : " + std::to_string(rulerLines[i].getDistance());
 		ImGui::TextDisabled(str.c_str());
 	}
-	ImGui::DragFloat("x", &tmpCoor[0], 1.0f, -100, 100);
-	ImGui::DragFloat("y", &tmpCoor[1], 1.0f, -100, 100);
-	ImGui::DragFloat("z", &tmpCoor[2], 1.0f, -100, 100);
 }

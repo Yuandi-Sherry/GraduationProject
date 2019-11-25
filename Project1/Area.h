@@ -47,7 +47,7 @@ public:
 	glm::vec4 planeCoeff = glm::vec4(1, 1, 1, 0); // coefficient of plane equation: ax + by + cz + d = 0;
 	glm::vec3 tmpCutFaceVertices[3]; // current operating line vertices
 	glm::vec3 transCutFaceVertices[3]; // current operating line vertices
-	bool rotate = false;
+	void drawCutFace(Shader & shader);
 private:
 	glm::vec3 cameraPos = glm::vec3(100.0f, 20.0f, 200.0f);
 	std::vector<GLint> modelsID;// the index of model in the model array in main function 
@@ -62,7 +62,6 @@ private:
 	int currentCutFaceIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
 	Plane * testPlane;
 	CrossSectionPlane csPlane;
-	GLfloat tmpCoor[3] = { 1.0f,1.0f,1.0f };
 };
 
 
