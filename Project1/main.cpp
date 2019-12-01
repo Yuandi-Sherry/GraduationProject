@@ -170,6 +170,20 @@ int main()
 		glUniform1i(glGetUniformLocation(ourShader.ID, "withLight"), 1);
 		
 
+		// send parameters of camera
+		// set camera related matrix
+		mainArea.setViewport(0, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT);
+		mainArea.drawLight(lightShader, light);
+
+		vesselArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH  / 4.0f, SCR_HEIGHT / 3.0f);
+		vesselArea.drawLight(lightShader, light);
+
+		tumorArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH  / 4.0f, SCR_HEIGHT / 3.0f);
+		tumorArea.drawLight(lightShader, light);
+
+		bonesArea.setViewport(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH / 4.0f, SCR_HEIGHT / 3.0f);
+		bonesArea.drawLight(lightShader, light);
+
 		if (toolbar.ruler) {
 			mainArea.drawLine(ourShader);
 			vesselArea.drawLine(ourShader);
@@ -177,33 +191,17 @@ int main()
 			bonesArea.drawLine(ourShader);
 		}
 		else if (toolbar.cutface) {
-			ourShader.setInt("cut", 1);
-			mainArea.drawCutFace(ourShader);
-			vesselArea.drawCutFace(ourShader);
-			tumorArea.drawCutFace(ourShader);
-			bonesArea.drawCutFace(ourShader);
+			mainArea.tackleCrossIntersection(ourShader, models);
+			vesselArea.tackleCrossIntersection(ourShader, models);
+			tumorArea.tackleCrossIntersection(ourShader, models);
+			bonesArea.tackleCrossIntersection(ourShader, models);
 		}
-		// send parameters of camera
-		// set camera related matrix
-		mainArea.setViewport(0, 0, SCR_WIDTH*3/4.0f, SCR_HEIGHT);
-		mainArea.draw(ourShader, models);
-		// draw light
-		mainArea.drawLight(lightShader, light);
-		mainArea.drawLine(ourShader);
-
-		vesselArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT/3.0f);
-		vesselArea.draw(ourShader, models);
-		vesselArea.drawLight(lightShader, light);
-
-		tumorArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
-		tumorArea.draw(ourShader, models);
-		tumorArea.drawLight(lightShader, light);
-
-		bonesArea.setViewport(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f);
-		bonesArea.draw(ourShader, models);
-		bonesArea.drawLight(lightShader, light);
-
-		
+		else {
+			mainArea.draw(ourShader, models);
+			vesselArea.draw(ourShader, models);
+			tumorArea.draw(ourShader, models);
+			bonesArea.draw(ourShader, models);
+		}
 		
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
@@ -256,6 +254,12 @@ void processInput(GLFWwindow *window)
 
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
 		(*currentArea->getCamera()).alterMouse();
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && currentArea->getCutMode() == 2) {
+		currentArea->setCutMode(3);
+	}
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && currentArea->getCutMode() == 3) {
+		currentArea->setCutMode(1);
+	}
 
 	
 }
@@ -295,11 +299,14 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 		// since the last frame 
 		rotationMatY = glm::rotate(rotationMatY, xoffset * deltaTime * R_SPEED, glm::vec3(0, 1, 0));
 		rotationMatX = glm::rotate(rotationMatX, -yoffset * deltaTime * R_SPEED, glm::vec3(1, 0, 0));
-		currentArea->setTransformMat(rotationMatY * rotationMatX *(currentArea->getTransformMat()));
-		/*currentArea->transCutFaceVertices[0] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[0], 0.0f);
-		currentArea->transCutFaceVertices[1] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[1], 0.0f);
-		currentArea->transCutFaceVertices[2] = currentArea->getTransformMat() * glm::vec4(currentArea->tmpCutFaceVertices[2], 0.0f);*/
-		//currentArea->calculatePlane();
+		if (toolbar.cutface && currentArea->getCutMode() == 3) {
+			//currentArea->updateTransformForCut();
+			currentArea->setCutTransformMat(rotationMatY * rotationMatX);
+		}
+		else {
+			currentArea->setTransformMat(rotationMatY * rotationMatX *(currentArea->getTransformMat()));
+		}
+		
 	}
 }
 
@@ -320,6 +327,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			else {
 				currentArea = &bonesArea;
 			}
+			if (toolbar.cutface && currentArea->getCutMode() == 3) {
+				if (lastX < currentArea->getViewport()[0] + currentArea->getViewport()[2] / 2) {
+					currentArea->selectedCutAreaIndex = 0;
+				}
+				else {
+					currentArea->selectedCutAreaIndex = 1;
+				}
+			}
 		}
 		else if (GLFW_RELEASE == action)
 			lbutton_down = false;
@@ -339,7 +354,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			}
 		}
 	}
-	else if (toolbar.cutface) {
+	else if (toolbar.cutface && currentArea->getCutMode() == 1) { // selecting mode
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (GLFW_PRESS == action) {
 				currentArea->setCutFaceVertex(getObjCoor(lastX, lastY));

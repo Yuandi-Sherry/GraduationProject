@@ -36,6 +36,9 @@ public:
 	void setTransformMat(const glm::mat4x4& curMat) {
 		transformMat = curMat;
 	}
+	void setCutTransformMat(const glm::mat4x4& curMat) {
+		transformForCut[selectedCutAreaIndex] = curMat * transformForCut[selectedCutAreaIndex];
+	}
 	glm::vec4 getViewport();
 	void init();
 	void drawLight(Shader & shader, Light& light);
@@ -47,7 +50,31 @@ public:
 	glm::vec4 planeCoeff = glm::vec4(1, 1, 1, 0); // coefficient of plane equation: ax + by + cz + d = 0;
 	glm::vec3 tmpCutFaceVertices[3]; // current operating line vertices
 	glm::vec3 transCutFaceVertices[3]; // current operating line vertices
-	void drawCutFace(Shader & shader);
+	
+	// ruler
+
+
+
+	// cut 
+	// bool confirmedCut = false;//
+	void tackleCrossIntersection(Shader & shader, std::vector<BaseModel> & models);
+	void drawCutFace(Shader & shader, std::vector<BaseModel> & models);
+	void drawSelectedFace(Shader & shader);
+	glm::mat4x4 transformForCut[2];
+	void calcalateTransMatForCut();
+
+	int getCutMode() {
+		return cutMode;
+	}
+	int selectedCutAreaIndex;
+	void setCutMode(const int mode) {
+		std::cout << " setCutMode" << mode << std::endl;
+		cutMode = mode;
+		if (mode == 3) {
+			transformForCut[0] = transformMat;
+			transformForCut[1] = transformMat;
+		}
+	}
 private:
 	glm::vec3 cameraPos = glm::vec3(100.0f, 20.0f, 200.0f);
 	std::vector<GLint> modelsID;// the index of model in the model array in main function 
@@ -62,6 +89,9 @@ private:
 	int currentCutFaceIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
 	Plane * testPlane;
 	CrossSectionPlane csPlane;
+
+	int cutMode; // 1->selecting, 2->confirming, 3-> confirmed;
+	
 };
 
 

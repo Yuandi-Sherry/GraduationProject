@@ -25,7 +25,7 @@ void Area::init() {
 	// init 
 	GLfloat Near = 0.1f;
 	camera.setPosition(cameraPos);
-	
+	cutMode = 1;
 	csPlane.initVertexObject();
 }
 void Area::setModelsID(const std::vector<GLint>& models) {
@@ -35,7 +35,23 @@ void Area::setModelsID(const std::vector<GLint>& models) {
 void Area::initModels() {
 
 }
+void Area::tackleCrossIntersection(Shader & shader, std::vector<BaseModel> & models) {
 
+	if (cutMode == 1) { // selecting
+		draw(shader, models);
+	}
+	else if (cutMode == 2) { // confirming
+		camera.setSize(viewportPara[2], viewportPara[3]);
+		draw(shader, models);
+		drawSelectedFace(shader);
+	}
+	else {// confirmed {
+		camera.setSize(viewportPara[2] / 2, viewportPara[3]);
+		drawCutFace(shader, models);
+	}
+
+		
+}
 void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
 	viewportPara[0] = left;
 	viewportPara[1] = bottom;
@@ -51,8 +67,11 @@ glm::vec4 Area::getViewport() {
 void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 	shader.use();
 	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	shader.setInt("cut", 0);
+	//glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 	shader.setVec4("plane", planeCoeff);
 	shader.setMat4("projection", camera.getProjection());
+	//glm::mat4 view = camera.GetViewMatrix();
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
@@ -64,57 +83,66 @@ void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();
 	}
-	
-	// plane
-	shader.setInt("withLight", 0);
-	shader.setInt("isPlane", 1);
-	//shader.setMat4("model", glm::mat4(1.0f));
-	//shader.setMat4("model", transformMat * /*transformMat **/ glm::mat4(1.0f));
-	//shader.setMat4("model", glm::translate(transformMat * model, glm::vec3(4.38f, 201.899f, -148.987f)));
-	//shader.setMat4("model", model);
-	if (testPlane != NULL) {
-		
-		
-		//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-		
-		//shader.setInt("type", 4);
-		//testPlane->draw();
-		//glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
-	}
-	//shader.setMat4("model", glm::translate(transformMat *  glm::mat4(1.0f), glm::vec3(tmpCoor[0], tmpCoor[1], tmpCoor[2])));
-	csPlane.draw();
-	//shader.setMat4("model", transformMat * model);
-	
 }
+void Area::calcalateTransMatForCut() {
+	glm::vec3 normal1 = glm::vec3(planeCoeff[1], planeCoeff[2], planeCoeff[3]);
+	glm::vec3 normal2 = glm::vec3(0.0f, 0.0f, 1.0f);
+	
+	GLfloat angel1 = acos(glm::dot(normal1, normal2) / 2);// angel
+	glm::vec3 axis = glm::cross(normal1, normal2);// axis
+	// std::cout << "angel " << angel1 << std::endl;
+	//transformForCut[0] = glm::rotate(glm::mat4x4(1.0f), angel1, axis);
 
-void Area::drawCutFace(Shader & shader) {
+
+}
+void Area::drawCutFace(Shader & shader, std::vector<BaseModel> & models) {
 	shader.use();
+	// upper part 
+	glViewport(viewportPara[0], viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
+	shader.setInt("cut", 1);
 	shader.setVec4("plane", planeCoeff);
 	shader.setMat4("projection", camera.getProjection());
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-	shader.setMat4("model", transformMat * model);
-	// plane
+	shader.setMat4("model", transformForCut[0] * model);
+	// models
+	shader.setInt("withLight", 1);
+	shader.setInt("isPlane", 0);
+	for (int i = 0; i < modelsID.size(); i++) {
+		shader.setInt("type", models[modelsID[i]].getcolorID());
+		models[modelsID[i]].draw();
+	}
+
+	// lower part
+	glViewport(viewportPara[0] + viewportPara[2] / 2, viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
+	shader.setInt("cut", 2);
+	shader.setMat4("model", transformForCut[1] * model);
+	// models
+	for (int i = 0; i < modelsID.size(); i++) {
+		shader.setInt("type", models[modelsID[i]].getcolorID());
+		models[modelsID[i]].draw();
+	}
+}
+
+void Area::drawSelectedFace(Shader & shader) {
+	shader.use();
+	// upper part 
+	shader.setInt("cut", 2);
+	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	shader.setVec4("plane", planeCoeff);
+	shader.setMat4("projection", camera.getProjection());
+	glm::mat4 view = camera.GetViewMatrix();
+	shader.setMat4("view", view);
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+	// models
+	// plane bug: plane is not transparent
 	shader.setInt("withLight", 0);
 	shader.setInt("isPlane", 1);
-	//shader.setMat4("model", glm::mat4(1.0f));
-	//shader.setMat4("model", transformMat * /*transformMat **/ glm::mat4(1.0f));
-	//shader.setMat4("model", glm::translate(transformMat * model, glm::vec3(4.38f, 201.899f, -148.987f)));
-	//shader.setMat4("model", model);
-	//if (testPlane != NULL) {
-
-
-		//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-
-		//shader.setInt("type", 4);
-		//testPlane->draw();
-		//glUniform1i(glGetUniformLocation(shader.ID, "isPlane"), 0);
-	//}
-	//shader.setMat4("model", glm::translate(transformMat *  glm::mat4(1.0f), glm::vec3(tmpCoor[0], tmpCoor[1], tmpCoor[2])));
-	//csPlane.draw();
-	//shader.setMat4("model", transformMat * model);
+	shader.setMat4("model", transformMat * model);
+	csPlane.draw();
 }
 
 void Area::drawLight(Shader & shader, Light& light) {
@@ -174,10 +202,6 @@ void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
 	// get local pos
 	glm::vec3 localPos = glm::vec3(1.0f);
 	localPos = glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f))) * glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
-	/*glm::vec3 testPos = transformMat * glm::vec4(localPos, 1.0f);
-	std::cout << "world coor " << vertexPosition.x << " " << vertexPosition.y << " " << vertexPosition.z << std::endl;
-	std::cout << "local coor " << localPos.x << " " << localPos.y << " " << localPos.z << std::endl;
-	std::cout << "test coor " << testPos.x << " " << testPos.y << " " << testPos.z << std::endl;*/
 	tmpCutFaceVertices[currentCutFaceIndex] = localPos;
 	transCutFaceVertices[currentCutFaceIndex] = localPos;
 	if (currentCutFaceIndex == 0) {
@@ -189,6 +213,7 @@ void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
 	else if (currentCutFaceIndex == 2) {
 		currentCutFaceIndex = 0;
 		calculatePlane();
+		cutMode = 2;
 	}
 }
 
@@ -204,21 +229,15 @@ void Area::calculatePlane() {
 	planeCoeff[1] = b;
 	planeCoeff[2] = c;
 	planeCoeff[3] = d;
-
-	std::cout << " a = " << a << " b = " << b << " c = " << c << " d = " << d << std::endl;
-	std::cout << "result" << a * transCutFaceVertices[0].x + b * transCutFaceVertices[0].y + transCutFaceVertices[0].z * c + d << std::endl;
-	std::cout << "result" << a * transCutFaceVertices[1].x + b * transCutFaceVertices[1].y + transCutFaceVertices[1].z * c + d << std::endl;
-	std::cout << "result" << a * transCutFaceVertices[2].x + b * transCutFaceVertices[2].y + transCutFaceVertices[2].z * c + d << std::endl;
 	// test part
 	std::vector<GLfloat> tmpVec = {
 		transCutFaceVertices[0].x, transCutFaceVertices[0].y, transCutFaceVertices[0].z,
 		transCutFaceVertices[1].x, transCutFaceVertices[1].y, transCutFaceVertices[1].z,
 		transCutFaceVertices[2].x, transCutFaceVertices[2].y, transCutFaceVertices[2].z
 	};
+	planeCoeff = glm::normalize(planeCoeff);
 	csPlane.setCoeff(planeCoeff);
 	
-	testPlane = new Plane(tmpVec, 4, TRIANGLE);
-	testPlane->initVertexObject();
 }
 
 void Area::displayGUI() {
@@ -226,5 +245,20 @@ void Area::displayGUI() {
 	for (int i = 0; i < rulerLines.size(); i++) {
 		std::string str = "line" + std::to_string(i+1) + " : " + std::to_string(rulerLines[i].getDistance());
 		ImGui::TextDisabled(str.c_str());
+	}
+	if (cutMode == 1) {
+		ImGui::Text("selecting");
+	}
+	else if(cutMode == 2) {
+		ImGui::Text("press C to confirm");
+		/*bool tmp2 = !ImGui::Button("Cancel");
+		if (tmp2) {
+			cutMode = 1;
+		}*/
+		//confirmedCut = !ImGui::Button("Cancel");
+	}
+	else {
+		ImGui::Text("confirmed");
+		/*}*/
 	}
 }

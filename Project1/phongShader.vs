@@ -15,6 +15,7 @@ uniform mat4 projection;
 
 uniform int withLight;
 
+
 void main()
 {
     interPos = vec4(aPos, 1.0);
