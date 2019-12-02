@@ -145,5 +145,11 @@
     <None Include="phongShader.vs">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="shadowMappingDepth.vs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="shadowMappingDepth.frag">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>

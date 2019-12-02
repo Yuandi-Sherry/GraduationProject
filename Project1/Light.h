@@ -17,7 +17,7 @@ public:
 	~Light();
 	void initVertexObject();
 	void draw();
-	glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 Position = glm::vec3(60.0f, -55.0f, -45.0f);
 private:
 	GLuint VAO, VBO;
 	GLfloat vertices[216] = {

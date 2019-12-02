@@ -13,5 +13,5 @@ void main()
 	else if(type == 3)
 		FragColor = vec4(0.0f, 1.0f, 1.0f, 0.0001f);
 	else
-		FragColor = vec4(1.0f, 1.0f, 1.0f, 0.0001f);
+		FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 }

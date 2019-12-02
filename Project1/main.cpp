@@ -46,7 +46,7 @@ bool lbutton_down = false;
 float xoffset = 0, yoffset = 0;
 // light
 Light light;
-
+GLfloat ambientPara = 0.6f , diffusePara = 0.6f, specularPara = 1.0f;
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
@@ -100,6 +100,8 @@ int main()
 	// build and compile the shader
 	Shader ourShader("phongShader.vs", "phongShader.frag");
 	Shader lightShader("camera.vs", "camera.frag");
+	Shader shadowShader("shadowMappingDepth.vs", "shadowMappingDepth.frag");
+	ourShader.setInt("shadowMap", 1);
 	// load model
 	BaseModel vessel("vessel.stl", 1, TRIANGLE);
 	BaseModel tumor("tumor.stl", 2, TRIANGLE);
@@ -161,28 +163,40 @@ int main()
 		// Clear the colorbuffer
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+		glm::mat4 lightProjection, lightView;
+		glm::mat4 lightSpaceMatrix;
+		float near_plane = 1.0f, far_plane = 7.5f;
+		//lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
+		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+		lightView = glm::lookAt(light.Position, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+		lightSpaceMatrix = lightProjection * lightView;
+		
+		shadowShader.use();
+		shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 		// send parameters to the shader
 		ourShader.use();
-		GLint lightColorLoc = glGetUniformLocation(ourShader.ID, "lightColor");
-		GLint lightPosLoc = glGetUniformLocation(ourShader.ID, "lightPos");
-		glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
-		glUniform3f(lightPosLoc, light.Position.x, light.Position.y, light.Position.z);
-		glUniform1i(glGetUniformLocation(ourShader.ID, "withLight"), 1);
-		
+		ourShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+		ourShader.setVec3("lightPos", light.Position);
+		ourShader.setInt("withLight", 1);
+		ourShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		ourShader.setFloat("ambientStrength", ambientPara);
+		ourShader.setFloat("diffuseStrength", diffusePara);
+		ourShader.setFloat("specularStrength", specularPara);
 
 		// send parameters of camera
 		// set camera related matrix
 		mainArea.setViewport(0, 0, SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT);
-		mainArea.drawLight(lightShader, light);
+		
 
 		vesselArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT * 2 / 3.0f, SCR_WIDTH  / 4.0f, SCR_HEIGHT / 3.0f);
-		vesselArea.drawLight(lightShader, light);
+		//vesselArea.drawLight(lightShader, light);
 
 		tumorArea.setViewport(SCR_WIDTH * 3 / 4.0f, SCR_HEIGHT / 3.0f, SCR_WIDTH  / 4.0f, SCR_HEIGHT / 3.0f);
-		tumorArea.drawLight(lightShader, light);
+		//tumorArea.drawLight(lightShader, light);
 
 		bonesArea.setViewport(SCR_WIDTH * 3 / 4.0f, 0, SCR_WIDTH / 4.0f, SCR_HEIGHT / 3.0f);
-		bonesArea.drawLight(lightShader, light);
+		//bonesArea.drawLight(lightShader, light);
 
 		if (toolbar.ruler) {
 			mainArea.drawLine(ourShader);
@@ -197,10 +211,16 @@ int main()
 			bonesArea.tackleCrossIntersection(ourShader, models);
 		}
 		else {
+			mainArea.drawShadow(shadowShader, models);
+			vesselArea.drawShadow(shadowShader, models);
+			tumorArea.drawShadow(shadowShader, models);
+			bonesArea.drawShadow(shadowShader, models);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			mainArea.draw(ourShader, models);
 			vesselArea.draw(ourShader, models);
 			tumorArea.draw(ourShader, models);
 			bonesArea.draw(ourShader, models);
+			//mainArea.drawLight(lightShader, light);
 		}
 		
 		// display GUI
@@ -210,9 +230,13 @@ int main()
 		ImGui::Begin("Options", NULL, ImGuiWindowFlags_MenuBar);
 		ImGui::Checkbox("RULER", &toolbar.ruler);
 		ImGui::Checkbox("CROSS SECTION", &toolbar.cutface);
-		ImGui::DragFloat("lightx", &light.Position.x);
-		ImGui::DragFloat("lighty", &light.Position.y);
-		ImGui::DragFloat("lightz", &light.Position.z);
+		ImGui::InputFloat("lightx", &light.Position.x);
+		ImGui::InputFloat("lighty", &light.Position.y);
+		ImGui::InputFloat("lightz", &light.Position.z);
+
+		ImGui::DragFloat("ambientStrength", &ambientPara, 0.1f, 0.0f, 1.0f);
+		ImGui::DragFloat("diffuseStrength", &diffusePara, 0.1f, 0.0f, 10.0f);
+		ImGui::DragFloat("specularStrength", &specularPara, 0.1f, 0.0f, 10.0f);
 
 		currentArea->displayGUI();
 		ImGui::End();
@@ -361,6 +385,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			}
 		}
 	}
+	else {
+		/*if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			if (GLFW_PRESS == action) {
+				getObjCoor(lastX, lastY);
+			}
+		}*/
+	}
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
@@ -395,7 +426,11 @@ glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
 	glReadBuffer(GL_BACK);
 	glReadPixels(x,y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
 	glm::vec3 win = glm::vec3(x, y, z);
+	std::cout << "winx " << win.x << " winy " << win.y << " winz " << win.z << std::endl;
 	glm::vec3 ans = glm::unProject(win, modelview, proj, viewport);
+
+	//glm::vec3 localPos = glm::inverse(currentArea->getTransformMat()) * glm::vec4(ans, 1.0f);
+
 	light.Position.x = ans.x;
 	light.Position.y = ans.y;
 	light.Position.z = ans.z;

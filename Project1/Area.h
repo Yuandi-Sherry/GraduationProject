@@ -75,6 +75,7 @@ public:
 			transformForCut[1] = transformMat;
 		}
 	}
+	void drawShadow(Shader & shader, std::vector<BaseModel> & models);
 private:
 	glm::vec3 cameraPos = glm::vec3(100.0f, 20.0f, 200.0f);
 	std::vector<GLint> modelsID;// the index of model in the model array in main function 

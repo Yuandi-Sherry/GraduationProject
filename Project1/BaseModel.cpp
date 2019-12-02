@@ -106,3 +106,11 @@ void BaseModel::draw(){
 
 	glBindVertexArray(0);
 }
+
+void BaseModel::renderShadow() {
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	draw();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}

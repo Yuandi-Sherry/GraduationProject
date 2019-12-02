@@ -24,14 +24,20 @@ public:
 	void initVertexObject();
 
 	void draw();
-
+	void renderShadow();
 	GLint getcolorID() {
 		return colorID;
 	}
+
 protected:
 	std::vector<GLfloat> vertices;
 	std::vector<GLint> indices;
 	GLuint VAO, VBO;
+	// shadow
+	GLuint depthMapFBO;
+	GLuint depthMap;
+	const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
 	GLint colorID;
 	PrimitiveType type;
 };

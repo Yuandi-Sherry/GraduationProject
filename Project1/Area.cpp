@@ -63,6 +63,22 @@ void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat heig
 glm::vec4 Area::getViewport() {
 	return glm::vec4(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 }
+void Area::drawShadow(Shader & shader, std::vector<BaseModel> & models) {
+	shader.use();
+	shader.setInt("cut", 0);shader.setVec4("plane", planeCoeff);
+	shader.setMat4("projection", camera.getProjection());
+	glm::mat4 view = camera.GetViewMatrix();
+	shader.setMat4("view", view);
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+	shader.setMat4("model", transformMat * model);
+	shader.setInt("withLight", 1);
+	shader.setInt("isPlane", 0);
+	for (int i = 0; i < modelsID.size(); i++) {
+		shader.setInt("type", models[modelsID[i]].getcolorID());
+		models[modelsID[i]].draw();
+	}
+}
 
 void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
 	shader.use();
@@ -147,6 +163,7 @@ void Area::drawSelectedFace(Shader & shader) {
 
 void Area::drawLight(Shader & shader, Light& light) {
 	shader.use();
+	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 	GLint viewPosLoc = glGetUniformLocation(shader.ID, "viewPos");
 	glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
 	shader.setMat4("projection", camera.getProjection());
@@ -154,8 +171,10 @@ void Area::drawLight(Shader & shader, Light& light) {
 	shader.setMat4("view", camera.GetViewMatrix());
 	glm::mat4 model = glm::mat4(1.0f);
 	//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-	shader.setMat4("model", transformMat * glm::translate(model, light.Position));
-	//shader.setMat4("model", glm::mat4(1.0f));
+	model = transformMat * glm::translate(model, light.Position);
+	//model = glm::translate(model, glm::vec3(4.38f, 201.899f, -148.987f));
+	shader.setMat4("model", model);
+	//shader.setMat4("model", model);
 	light.draw();
 }
 
