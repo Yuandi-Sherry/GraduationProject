@@ -58,7 +58,7 @@ public:
 	// cut 
 	// bool confirmedCut = false;//
 	void tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models);
-	void drawCutFace(Shader & shader, std::vector<BaseModel> & models);
+	void drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models);
 	void drawSelectedFace(Shader & shader);
 	glm::mat4x4 transformForCut[2];
 	void calcalateTransMatForCut();
@@ -96,6 +96,10 @@ private:
 	int cutMode; // 1->selecting, 2->confirming, 3-> confirmed;
 	std::vector<BaseModel> editedModel;
 	std::vector<BaseModel> * models;
+
+	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	unsigned int depthMapFBO;
+	unsigned int depthMap;
 };
 
 

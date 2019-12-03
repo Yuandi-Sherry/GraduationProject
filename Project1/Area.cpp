@@ -25,6 +25,24 @@ void Area::init() {
 	camera.setPosition(cameraPos);
 	cutMode = 1;
 	csPlane.initVertexObject();
+
+
+	glGenFramebuffers(1, &depthMapFBO);
+	// create depth texture
+
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// attach depth texture as FBO's depth buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 void Area::setModelsID(const std::vector<GLint>& modelsIDs, std::vector<BaseModel> & models) {
 	this->modelsID.assign(modelsIDs.begin(), modelsIDs.end());
@@ -46,7 +64,7 @@ void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::
 	}
 	else {// confirmed {
 		camera.setSize(viewportPara[2] / 2, viewportPara[3]);
-		drawCutFace(shader, models);
+		drawCutFace(shader, shadowShader, models);
 	}
 
 		
@@ -61,12 +79,16 @@ void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat heig
 
 void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & models) {
 	shadowShader.use();
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glClear(GL_DEPTH_BUFFER_BIT);
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 	shadowShader.setMat4("model", transformMat * model);
 	for (int i = 0; i < modelsID.size(); i++) {
 		models[modelsID[i]].draw();
 	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
 }
 
 glm::vec4 Area::getViewport() {
@@ -77,7 +99,12 @@ void Area::drawShadow(Shader & shader, std::vector<BaseModel> & models) {
 }
 
 void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
+	shadowShader.use();
+	shadowShader.setInt("cut", 0);
+	renderDepthBuffer(shadowShader, models);
 	shader.use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 	shader.setVec3("viewPos", camera.Position);
 	shader.setInt("cut", 0);
@@ -106,7 +133,11 @@ void Area::calcalateTransMatForCut() {
 
 
 }
-void Area::drawCutFace(Shader & shader, std::vector<BaseModel> & models) {
+void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
+	shadowShader.use();
+	shadowShader.setInt("cut", 1);
+	shadowShader.setVec4("plane", planeCoeff);
+	renderDepthBuffer(shadowShader, models);
 	shader.use();
 	// upper part 
 	glViewport(viewportPara[0], viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
@@ -125,6 +156,11 @@ void Area::drawCutFace(Shader & shader, std::vector<BaseModel> & models) {
 		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();
 	}
+
+	shadowShader.use();
+	shadowShader.setInt("cut", 2);
+	renderDepthBuffer(shadowShader, models);
+	shader.use();
 	// lower part
 	glViewport(viewportPara[0] + viewportPara[2] / 2, viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
 	shader.setInt("cut", 2);
