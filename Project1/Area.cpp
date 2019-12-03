@@ -37,10 +37,10 @@ void Area::initModels() {
 void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
 
 	if (cutMode == 1) { // selecting
+		camera.setSize(viewportPara[2], viewportPara[3]);
 		draw(shader, shadowShader, models);
 	}
 	else if (cutMode == 2) { // confirming
-		camera.setSize(viewportPara[2], viewportPara[3]);
 		draw(shader, shadowShader, models);
 		drawSelectedFace(shader);
 	}
@@ -77,7 +77,7 @@ void Area::drawShadow(Shader & shader, std::vector<BaseModel> & models) {
 }
 
 void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
-	// shader.use();
+	shader.use();
 	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 	shader.setVec3("viewPos", camera.Position);
 	shader.setInt("cut", 0);
@@ -125,12 +125,6 @@ void Area::drawCutFace(Shader & shader, std::vector<BaseModel> & models) {
 		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();
 	}
-	/*for (int i = 0; i < editedModel.size(); i+= 2) {
-		shader.setInt("type", editedModel[i].getcolorID());
-		editedModel[i].draw();
-	}*/
-
-
 	// lower part
 	glViewport(viewportPara[0] + viewportPara[2] / 2, viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
 	shader.setInt("cut", 2);
@@ -163,11 +157,6 @@ void Area::drawSelectedFace(Shader & shader) {
 
 void Area::drawLight(Shader & shader, Light& light) {
 	shader.use();
-	if(cutMode == 3)
-		glViewport(viewportPara[0], viewportPara[1], viewportPara[2] /2, viewportPara[3]);
-	else {
-		glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
-	}
 	GLint viewPosLoc = glGetUniformLocation(shader.ID, "viewPos");
 	glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
 	shader.setMat4("projection", camera.getProjection());
@@ -179,7 +168,17 @@ void Area::drawLight(Shader & shader, Light& light) {
 	//model = glm::translate(model, glm::vec3(4.38f, 201.899f, -148.987f));
 	shader.setMat4("model", model);
 	//shader.setMat4("model", model);
+	if (cutMode == 3){
+		glViewport(viewportPara[0], viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
+		light.draw();
+		glViewport(viewportPara[0] + viewportPara[2] / 2, viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
+	}
+	else {
+		glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	}
 	light.draw();
+	
+	
 }
 
 void Area::drawLine(Shader & shader) {

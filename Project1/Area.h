@@ -79,7 +79,7 @@ public:
 	void renderDepthBuffer(Shader & shadowShaer, std::vector<BaseModel> & models);
 private:
 
-	glm::vec3 cameraPos = glm::vec3(100.0f, 20.0f, 200.0f);
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 200.0f);
 	std::vector<GLint> modelsID;// the index of model in the model array in main function 
 	Camera camera;
 	GLfloat viewportPara[4];// 4 parameters of viewport: x, y, w, h

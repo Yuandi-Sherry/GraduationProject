@@ -47,7 +47,7 @@ bool lbutton_down = false;
 float xoffset = 0, yoffset = 0;
 // light
 Light light;
-GLfloat ambientPara = 0.6f , diffusePara = 0.6f, specularPara = 1.0f;
+GLfloat ambientPara = 0.4f , diffusePara = 1.0f, specularPara = 10.0f;
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
@@ -197,7 +197,8 @@ int main()
 		glm::mat4 lightProjection, lightView;
 		glm::mat4 lightSpaceMatrix;
 
-		lightProjection = glm::ortho(-x, x, -x, x, near_plane, far_plane);
+		//lightProjection = glm::ortho(-x, x, -x, x, near_plane, far_plane);
+		lightProjection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
 		lightView = glm::lookAt(light.Position, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		
@@ -221,10 +222,8 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-		mainArea.draw(ourShader, shadowShader, models);
-		mainArea.drawLight(lightShader, light);
 
-		/*if (toolbar.ruler) {
+		if (toolbar.ruler) {
 			mainArea.drawLine(ourShader);
 			vesselArea.drawLine(ourShader);
 			tumorArea.drawLine(ourShader);
@@ -244,7 +243,7 @@ int main()
 			tumorArea.draw(ourShader, shadowShader, models);
 			bonesArea.draw(ourShader, shadowShader, models);
 			mainArea.drawLight(lightShader, light);
-		}*/
+		}
 		
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
@@ -260,9 +259,9 @@ int main()
 		ImGui::SliderFloat("far_plane", &far_plane, 0, 1000);
 		ImGui::SliderFloat("x", &x, 0, 1000);
 
-		ImGui::InputFloat("ambientStrength", &ambientPara);
-		ImGui::InputFloat("diffuseStrength", &diffusePara);
-		ImGui::InputFloat("specularStrength", &specularPara);
+		ImGui::SliderFloat("ambientStrength", &ambientPara, 0, 10);
+		ImGui::SliderFloat("diffuseStrength", &diffusePara, 0, 10);
+		ImGui::SliderFloat("specularStrength", &specularPara, 0, 10);
 
 		currentArea->displayGUI();
 		ImGui::End();

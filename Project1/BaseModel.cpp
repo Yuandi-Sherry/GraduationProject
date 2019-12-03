@@ -27,6 +27,11 @@ BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 		return;
 	// read triangle mesh in the loop
 	glm::vec3 vector1, vector2, normal, tmpTriangleEdge[3];
+	float texture[6] = {
+		0.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 1.0f
+	};
 	for (int i = 0; i < triangles; i++)
 	{
 		float coorXYZ[12];
@@ -41,7 +46,7 @@ BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 		// 计算法向量
 		vector1 = tmpTriangleEdge[0] - tmpTriangleEdge[1];
 		vector2 = tmpTriangleEdge[0] - tmpTriangleEdge[2];
-		normal = glm::normalize(glm::cross(vector1, vector2));
+		normal = -glm::normalize(glm::cross(vector1, vector2));
 		// 存入vertices
 		for (int j = 0; j < 3; j++) {
 			vertices.push_back(tmpTriangleEdge[j].x);
@@ -50,6 +55,8 @@ BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 			vertices.push_back(normal.x);
 			vertices.push_back(normal.y);
 			vertices.push_back(normal.z);
+			//vertices.push_back(texture[j*2]);
+			//vertices.push_back(texture[j * 2 + 1]);
 		}
 		in.read((char*)coorXYZ, 2);
 	}
@@ -79,8 +86,10 @@ void BaseModel::initVertexObject() {
 	case TRIANGLE:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
+		//glVertexAttribPointer(1, 2, GL_FLOAT, GL_TRUE, 8* sizeof(GLfloat), (GLvoid*)0);
+		//glEnableVertexAttribArray(2);
 		break;
 	case LINE:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
