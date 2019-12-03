@@ -7,6 +7,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+
 BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 {
 	this->colorID = colorID;
@@ -21,30 +23,26 @@ BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 	// record amount of triangles
 	int triangles;
 	in.read((char*)&triangles, sizeof(int));
-	std::cout << "number of triangles in file is " << triangles << std::endl;
 	if (triangles == 0)
 		return;
 	// read triangle mesh in the loop
-	//triangles = 100;
 	glm::vec3 vector1, vector2, normal, tmpTriangleEdge[3];
 	for (int i = 0; i < triangles; i++)
 	{
 		float coorXYZ[12];
 		in.read((char*)coorXYZ, 12 * sizeof(float));
 
-		for (int j = 1; j < 4; j++)
+		for (int j = 1; j < 4; j++) // 三角形三个点的x,y,z
 		{
 			tmpTriangleEdge[j - 1].x = coorXYZ[j * 3];
-
 			tmpTriangleEdge[j - 1].y = coorXYZ[j * 3 + 1];
-
 			tmpTriangleEdge[j - 1].z = coorXYZ[j * 3 + 2];
-
-
 		}
-
-
-		// 
+		// 计算法向量
+		vector1 = tmpTriangleEdge[0] - tmpTriangleEdge[1];
+		vector2 = tmpTriangleEdge[0] - tmpTriangleEdge[2];
+		normal = glm::normalize(glm::cross(vector1, vector2));
+		// 存入vertices
 		for (int j = 0; j < 3; j++) {
 			vertices.push_back(tmpTriangleEdge[j].x);
 			vertices.push_back(tmpTriangleEdge[j].y);
@@ -57,9 +55,7 @@ BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 	}
 	in.close();
 
-	vector1 = tmpTriangleEdge[0] - tmpTriangleEdge[1];
-	vector2 = tmpTriangleEdge[1] - tmpTriangleEdge[2];
-	normal = glm::cross(vector1, vector2);
+	
 }
 
 BaseModel::BaseModel(const std::vector<GLfloat> &vertices, int colorID, PrimitiveType type) {
@@ -91,6 +87,11 @@ void BaseModel::initVertexObject() {
 		glEnableVertexAttribArray(0);
 	}
 	glBindVertexArray(0); // Unbind VAO
+	
+}
+
+void BaseModel::initDepthBuffer() {
+	
 }
 
 void BaseModel::draw(){
@@ -108,7 +109,6 @@ void BaseModel::draw(){
 }
 
 void BaseModel::renderShadow() {
-	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	draw();

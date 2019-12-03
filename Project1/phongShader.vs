@@ -1,4 +1,4 @@
-#version 330 core
+/*#version 330 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 
@@ -7,7 +7,6 @@ out vec4 interPos; // to frag
 out VS_OUT {
     vec3 FragPos;
     vec3 Normal;
-    vec2 TexCoords;
     vec4 FragPosLightSpace;
 } vs_out;
 
@@ -49,33 +48,59 @@ void main()
 	vec3 Position = vec3(model * vec4(aPos, 1.0));
 	vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
     vs_out.Normal = transpose(inverse(mat3(model))) * aNormal;
-    vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
+
+	vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
 	interPos = vec4(aPos, 1.0);
+
 	if(withLight == 1) {
-		vec3 Normal = mat3(transpose(inverse(model))) * aNormal;
+		//vec3 Normal = mat3(transpose(inverse(model))) * aNormal;
+		vec3 Normal = aNormal;
 		
 		// ambient
-		vec3 ambient = ambientStrength * lightColor;
+		vec3 ambient = 0.3 * lightColor;
   	
 		// diffuse 
 		vec3 norm = normalize(Normal);
-		vec3 lightDir = normalize(lightPos - Position);
-		float diff = max(dot(norm, lightDir), 0.0);
+		vec3 lightDir = normalize(aPos -lightPos);
+		float diff = max(dot(norm, lightDir), 0);
 		vec3 diffuse = diffuseStrength * diff * lightColor;
     
 		// specular
 		vec3 viewDir = normalize(viewPos - Position);
 		vec3 reflectDir = reflect(-lightDir, norm);  
 		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-		vec3 specular = specularStrength * spec * lightColor;  
+		vec3 specular = 5 * spec * lightColor;  
 		
 		// shadow
 		float shadow = ShadowCalculation(vs_out.FragPosLightSpace);       
-		vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular));   
-
-		LightingColor = vec4(lighting, 1.0f);
-		//LightingColor = vec4(ambient + diffuse + specular, 1.0f);
+		//vec3 lighting = ((1.0 - shadow) * (diffuse + specular));   
+		//vec3 lighting = (1.0 - shadow) * (diffuse);   
+		//LightingColor = vec4(lighting, 1.0f);
+		LightingColor = vec4(/*ambient + diffuse/* + specular*, 1.0f);
 	} else {
 		LightingColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
+}*/
+
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+
+out VS_OUT {
+    vec3 FragPos;
+    vec3 Normal;
+    vec4 FragPosLightSpace;
+} vs_out;
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;
+uniform mat4 lightSpaceMatrix;
+
+void main()
+{
+    vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
+    vs_out.Normal = transpose(inverse(mat3(model))) * -aNormal;
+    vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
 }

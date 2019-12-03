@@ -10,8 +10,6 @@ Area::Area()
 	modelsID.clear();
 	transformMat = glm::mat4(1.0f);
 	testPlane = NULL;
-
-	
 }
 
 Area::~Area()
@@ -28,21 +26,22 @@ void Area::init() {
 	cutMode = 1;
 	csPlane.initVertexObject();
 }
-void Area::setModelsID(const std::vector<GLint>& models) {
-	this->modelsID.assign(models.begin(), models.end());
+void Area::setModelsID(const std::vector<GLint>& modelsIDs, std::vector<BaseModel> & models) {
+	this->modelsID.assign(modelsIDs.begin(), modelsIDs.end());
+	this->models = &models;
 }
 
 void Area::initModels() {
 
 }
-void Area::tackleCrossIntersection(Shader & shader, std::vector<BaseModel> & models) {
+void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
 
 	if (cutMode == 1) { // selecting
-		draw(shader, models);
+		draw(shader, shadowShader, models);
 	}
 	else if (cutMode == 2) { // confirming
 		camera.setSize(viewportPara[2], viewportPara[3]);
-		draw(shader, models);
+		draw(shader, shadowShader, models);
 		drawSelectedFace(shader);
 	}
 	else {// confirmed {
@@ -60,34 +59,30 @@ void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat heig
 	camera.setSize(width, height);
 }
 
-glm::vec4 Area::getViewport() {
-	return glm::vec4(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
-}
-void Area::drawShadow(Shader & shader, std::vector<BaseModel> & models) {
-	shader.use();
-	shader.setInt("cut", 0);shader.setVec4("plane", planeCoeff);
-	shader.setMat4("projection", camera.getProjection());
-	glm::mat4 view = camera.GetViewMatrix();
-	shader.setMat4("view", view);
+void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & models) {
+	shadowShader.use();
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-	shader.setMat4("model", transformMat * model);
-	shader.setInt("withLight", 1);
-	shader.setInt("isPlane", 0);
+	shadowShader.setMat4("model", transformMat * model);
 	for (int i = 0; i < modelsID.size(); i++) {
-		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();
 	}
 }
 
-void Area::draw(Shader & shader, std::vector<BaseModel> & models) {
-	shader.use();
+glm::vec4 Area::getViewport() {
+	return glm::vec4(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+}
+void Area::drawShadow(Shader & shader, std::vector<BaseModel> & models) {
+	
+}
+
+void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
+	// shader.use();
 	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	shader.setVec3("viewPos", camera.Position);
 	shader.setInt("cut", 0);
-	//glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 	shader.setVec4("plane", planeCoeff);
 	shader.setMat4("projection", camera.getProjection());
-	//glm::mat4 view = camera.GetViewMatrix();
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
@@ -130,6 +125,11 @@ void Area::drawCutFace(Shader & shader, std::vector<BaseModel> & models) {
 		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();
 	}
+	/*for (int i = 0; i < editedModel.size(); i+= 2) {
+		shader.setInt("type", editedModel[i].getcolorID());
+		editedModel[i].draw();
+	}*/
+
 
 	// lower part
 	glViewport(viewportPara[0] + viewportPara[2] / 2, viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
@@ -163,7 +163,11 @@ void Area::drawSelectedFace(Shader & shader) {
 
 void Area::drawLight(Shader & shader, Light& light) {
 	shader.use();
-	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	if(cutMode == 3)
+		glViewport(viewportPara[0], viewportPara[1], viewportPara[2] /2, viewportPara[3]);
+	else {
+		glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	}
 	GLint viewPosLoc = glGetUniformLocation(shader.ID, "viewPos");
 	glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
 	shader.setMat4("projection", camera.getProjection());
@@ -171,7 +175,7 @@ void Area::drawLight(Shader & shader, Light& light) {
 	shader.setMat4("view", camera.GetViewMatrix());
 	glm::mat4 model = glm::mat4(1.0f);
 	//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-	model = transformMat * glm::translate(model, light.Position);
+	model = glm::translate(model, light.Position);
 	//model = glm::translate(model, glm::vec3(4.38f, 201.899f, -148.987f));
 	shader.setMat4("model", model);
 	//shader.setMat4("model", model);
@@ -256,6 +260,37 @@ void Area::calculatePlane() {
 	};
 	planeCoeff = glm::normalize(planeCoeff);
 	csPlane.setCoeff(planeCoeff);
+
+	// editModel
+	/*editedModel.clear();
+	std::vector<GLfloat> upperPart;
+	std::vector<GLfloat> lowerPart;
+	// for each model set initially
+	for (int i = 0; i < modelsID.size(); i++) {
+		std::vector<GLfloat> * tmp = (*models)[i].getVertices();
+		std::cout << "tmp->size()" << tmp->size() << std::endl;
+		for (int j = 0; j < tmp->size(); j += 18) {
+			if ((*tmp)[j] * planeCoeff.x + (*tmp)[j + 1] * planeCoeff.y + (*tmp)[j + 2] * planeCoeff.z + planeCoeff.w > 0) {
+				for (int k = 0; k < 18; k++) {
+					upperPart.push_back((*tmp)[j+k]);
+				}
+			}
+			else {
+				for (int k = 0; k < 18; k++) {
+					lowerPart.push_back((*tmp)[j + k]);
+				}
+			}
+		}
+		BaseModel upperModel(upperPart, (*models)[i].getcolorID(), TRIANGLE);
+		BaseModel lowerModel(lowerPart, (*models)[i].getcolorID(), TRIANGLE);
+		editedModel.push_back(upperModel);
+		editedModel.push_back(lowerModel);
+		upperPart.clear();
+		lowerPart.clear();
+	}
+	for (int i = 0; i < editedModel.size(); i++) {
+		editedModel[i].initVertexObject();
+	}*/
 	
 }
 

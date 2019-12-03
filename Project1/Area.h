@@ -23,10 +23,10 @@ class Area
 public:
 	Area();
 	~Area();
-	void setModelsID(const std::vector<GLint>&);
+	void setModelsID(const std::vector<GLint>&, std::vector<BaseModel> & models);
 	void initModels();
 	void setViewport(GLfloat left, GLfloat button, GLfloat right, GLfloat top);
-	void draw(Shader & shader, std::vector<BaseModel> & models);
+	void draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models);
 	Camera* getCamera() {
 		return &camera;
 	}
@@ -57,7 +57,7 @@ public:
 
 	// cut 
 	// bool confirmedCut = false;//
-	void tackleCrossIntersection(Shader & shader, std::vector<BaseModel> & models);
+	void tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models);
 	void drawCutFace(Shader & shader, std::vector<BaseModel> & models);
 	void drawSelectedFace(Shader & shader);
 	glm::mat4x4 transformForCut[2];
@@ -76,7 +76,9 @@ public:
 		}
 	}
 	void drawShadow(Shader & shader, std::vector<BaseModel> & models);
+	void renderDepthBuffer(Shader & shadowShaer, std::vector<BaseModel> & models);
 private:
+
 	glm::vec3 cameraPos = glm::vec3(100.0f, 20.0f, 200.0f);
 	std::vector<GLint> modelsID;// the index of model in the model array in main function 
 	Camera camera;
@@ -92,7 +94,8 @@ private:
 	CrossSectionPlane csPlane;
 
 	int cutMode; // 1->selecting, 2->confirming, 3-> confirmed;
-	
+	std::vector<BaseModel> editedModel;
+	std::vector<BaseModel> * models;
 };
 
 
