@@ -26,6 +26,9 @@ uniform float ambientStrength;
 uniform float diffuseStrength;
 uniform float specularStrength;
 
+uniform vec3 color1;
+uniform vec3 color2;
+uniform vec3 color3;
 
 float ShadowCalculation(vec4 fragPosLightSpace, float bias)
 {
@@ -33,7 +36,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, float bias)
 	projCoords = projCoords * 0.5 + 0.5;
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
-	float shadow;
+	float shadow =  currentDepth - bias > closestDepth ? 1.0 : 0.0; ;
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
 	for(int x = -1; x <= 1; ++x)
 	{
@@ -47,17 +50,12 @@ float ShadowCalculation(vec4 fragPosLightSpace, float bias)
 	return shadow;
 }
 
-float LinearizeDepth(float depth)
-{
-    float z = depth * 2.0 - 1.0; // Back to NDC 
-    return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
-}
-
 vec3 getLightingColor (vec3 color) {
     vec3 normal = normalize(fs_in.Normal);
     vec3 lightColor = vec3(1.0);
     // Ambient
     vec3 ambient = ambientStrength * color;
+
     // Diffuse
     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
 	float diff;
@@ -66,9 +64,8 @@ vec3 getLightingColor (vec3 color) {
 	} else {
 		diff = abs(dot(lightDir, normal));
 	}
-   // float diff = max(dot(lightDir, normal), 0.0);
-	// float diff = abs(dot(lightDir, normal));
     vec3 diffuse = diffuseStrength * diff * lightColor;
+
     // Specular
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
@@ -76,6 +73,7 @@ vec3 getLightingColor (vec3 color) {
     vec3 halfwayDir = normalize(lightDir + viewDir);  
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
     vec3 specular = specularStrength * spec * lightColor;
+
     // ¼ÆËãÒõÓ°
 	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
     float shadow = ShadowCalculation(fs_in.FragPosLightSpace, bias);  
@@ -93,11 +91,11 @@ void main()
 	}
 	vec3 color;
 	if(type == 1)
-		color = vec3(0.7f, 0.0f, 0.0f);
+		color = color1;
 	else if(type == 2)
-		color = vec3(0.0f, 0.0f, 0.7);
+		color = color2;
 	else if(type == 3)
-		color = vec3(0.7f, 0.7f, 0.0f);
+		color = color3;
 	else
 		color = vec3(1.0f, 1.0f, 1.0f);
 	// no cut 

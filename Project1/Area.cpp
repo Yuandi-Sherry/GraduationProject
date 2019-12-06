@@ -94,19 +94,28 @@ void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & mod
 glm::vec4 Area::getViewport() {
 	return glm::vec4(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 }
-void Area::drawShadow(Shader & shader, std::vector<BaseModel> & models) {
-	
+void Area::drawShadow(Shader & shadowShader, std::vector<BaseModel> & models) {
+	shadowShader.use();
+	shadowShader.setInt("cut", 1);
+	shadowShader.setVec4("plane", planeCoeff);
+	renderDepthBuffer(shadowShader, models);
 }
 
 void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
 	shadowShader.use();
 	shadowShader.setInt("cut", 0);
 	renderDepthBuffer(shadowShader, models);
+
+	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	
 	shader.use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
-	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	
 	shader.setVec3("viewPos", camera.Position);
+	shader.setVec3("lightPos", camera.Position);
 	shader.setInt("cut", 0);
 	shader.setVec4("plane", planeCoeff);
 	shader.setMat4("projection", camera.getProjection());
@@ -122,50 +131,41 @@ void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> &
 		models[modelsID[i]].draw();
 	}
 }
-void Area::calcalateTransMatForCut() {
-	glm::vec3 normal1 = glm::vec3(planeCoeff[1], planeCoeff[2], planeCoeff[3]);
-	glm::vec3 normal2 = glm::vec3(0.0f, 0.0f, 1.0f);
-	
-	GLfloat angel1 = acos(glm::dot(normal1, normal2) / 2);// angel
-	glm::vec3 axis = glm::cross(normal1, normal2);// axis
-	// std::cout << "angel " << angel1 << std::endl;
-	//transformForCut[0] = glm::rotate(glm::mat4x4(1.0f), angel1, axis);
 
-
-}
 void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
 	shadowShader.use();
 	shadowShader.setInt("cut", 1);
-	shadowShader.setVec4("plane", planeCoeff);
 	renderDepthBuffer(shadowShader, models);
+	// left part
 	shader.use();
-	// upper part 
-	glViewport(viewportPara[0], viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
-	shader.setInt("cut", 1);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	shader.setInt("withLight", 1);
+	shader.setInt("isPlane", 0);
 	shader.setVec4("plane", planeCoeff);
 	shader.setMat4("projection", camera.getProjection());
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+	glViewport(viewportPara[0], viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
+	shader.setInt("cut", 1);
 	shader.setMat4("model", transformForCut[0] * model);
-	// models
-	shader.setInt("withLight", 1);
-	shader.setInt("isPlane", 0);
 	for (int i = 0; i < modelsID.size(); i++) {
 		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();
 	}
-
 	shadowShader.use();
+
 	shadowShader.setInt("cut", 2);
 	renderDepthBuffer(shadowShader, models);
+	// right part
 	shader.use();
-	// lower part
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 	glViewport(viewportPara[0] + viewportPara[2] / 2, viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
 	shader.setInt("cut", 2);
 	shader.setMat4("model", transformForCut[1] * model);
-	// models
 	for (int i = 0; i < modelsID.size(); i++) {
 		shader.setInt("type", models[modelsID[i]].getcolorID());
 		models[modelsID[i]].draw();

@@ -25,7 +25,6 @@ public:
 	void initVertexObject();
 
 	void draw();
-	void renderShadow();
 	GLint getcolorID() {
 		return colorID;
 	}
@@ -35,11 +34,6 @@ public:
 protected:
 	std::vector<GLfloat> vertices;
 	GLuint VAO, VBO;
-	// shadow
-	GLuint depthMapFBO;
-	GLuint depthMap;
-	//
-
 	GLint colorID;
 	PrimitiveType type;
 };

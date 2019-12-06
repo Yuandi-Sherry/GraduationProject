@@ -47,11 +47,13 @@ bool lbutton_down = false;
 float xoffset = 0, yoffset = 0;
 // light
 Light light;
-GLfloat ambientPara = 0.4f , diffusePara = 1.0f, specularPara = 10.0f;
+GLfloat ambientPara = 0.4f , diffusePara = 1.0f, specularPara = 0.5f;
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
+
+GLfloat color1[3] = { 0.6f, 0.0f, 0.0f }, color2[3] = {0.5f, 0.5f, 0.6f}, color3[3] = {0.7f, 0.7f, 0.5f};
 // select area
 Area mainArea, vesselArea, tumorArea, bonesArea;
 Area* currentArea = &mainArea;
@@ -66,6 +68,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+	glfwWindowHint(GLFW_SAMPLES, 4);
 	// create window
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr);
 	if (window == nullptr)
@@ -91,6 +94,7 @@ int main()
 
 	// configure global opengl state
 	// -----------------------------
+	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -114,8 +118,6 @@ int main()
 	models.push_back(vessel);
 	models.push_back(tumor);
 	models.push_back(bones);
-	// vessel.initVertexObject();
-
 	
 	std::vector<GLint> tmp = {0, 1, 2};
 	mainArea.setModelsID(tmp, models);
@@ -148,7 +150,7 @@ int main()
 	shadowShader.setInt("shadowMap", 0);
 	ourShader.use();
 	ourShader.setInt("depthMap", 0);
-	float near_plane = 1.0f, far_plane = 100.0f, x = 100.0f;
+	float near_plane = 1.0f, far_plane = 300.0f, x = 150.0f;
 
 	// game loop
 	while (!glfwWindowShouldClose(window))
@@ -176,8 +178,8 @@ int main()
 		glm::mat4 lightProjection, lightView;
 		glm::mat4 lightSpaceMatrix;
 
-		//lightProjection = glm::ortho(-x, x, -x, x, near_plane, far_plane);
-		lightProjection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
+		lightProjection = glm::ortho(-x, x, -x, x, near_plane, far_plane);
+		//lightProjection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
 		lightView = glm::lookAt(light.Position, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 	
@@ -192,6 +194,12 @@ int main()
 		ourShader.setFloat("ambientStrength", ambientPara);
 		ourShader.setFloat("diffuseStrength", diffusePara);
 		ourShader.setFloat("specularStrength", specularPara);
+
+		// debugging for color
+		ourShader.setVec3("color1", glm::vec3( color1[0], color1[1], color1[2]));
+		ourShader.setVec3("color2", glm::vec3(color2[0], color2[1], color2[2]));
+		ourShader.setVec3("color3", glm::vec3(color3[0], color3[1], color3[2]));
+		// debugging for color
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -235,6 +243,10 @@ int main()
 		ImGui::SliderFloat("ambientStrength", &ambientPara, 0, 10);
 		ImGui::SliderFloat("diffuseStrength", &diffusePara, 0, 10);
 		ImGui::SliderFloat("specularStrength", &specularPara, 0, 10);
+
+		ImGui::SliderFloat3("color1", color1, 0, 1);
+		ImGui::SliderFloat3("color2", color2, 0, 1);
+		ImGui::SliderFloat3("color3", color3, 0, 1);
 
 		currentArea->displayGUI();
 		ImGui::End();

@@ -46,7 +46,7 @@ BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 		// 计算法向量
 		vector1 = tmpTriangleEdge[0] - tmpTriangleEdge[1];
 		vector2 = tmpTriangleEdge[0] - tmpTriangleEdge[2];
-		normal = -glm::normalize(glm::cross(vector1, vector2));
+		normal = glm::normalize(glm::cross(vector1, vector2));
 		// 存入vertices
 		for (int j = 0; j < 3; j++) {
 			vertices.push_back(tmpTriangleEdge[j].x);
@@ -115,11 +115,4 @@ void BaseModel::draw(){
 	}
 
 	glBindVertexArray(0);
-}
-
-void BaseModel::renderShadow() {
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	draw();
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
