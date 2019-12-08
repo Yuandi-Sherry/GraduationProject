@@ -107,9 +107,9 @@ int main()
 	Shader lightShader("camera.vs", "camera.frag");
 	Shader shadowShader("shadowMappingDepth.vs", "shadowMappingDepth.frag");
 	// load model
-	BaseModel vessel("tumor_normal.stl", 1, TRIANGLE);
-	BaseModel tumor("tumor_normal.stl", 2, TRIANGLE);
-	BaseModel bones("tumor_normal.stl", 3, TRIANGLE);
+	BaseModel vessel("vessel.stl", 1, TRIANGLE);
+	BaseModel tumor("tumor.stl", 2, TRIANGLE);
+	BaseModel bones("bones.stl", 3, TRIANGLE);
 	vessel.initVertexObject();
 	tumor.initVertexObject();
 	bones.initVertexObject();

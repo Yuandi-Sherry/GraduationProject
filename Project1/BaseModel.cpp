@@ -10,7 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define FIRST 0
+#define FIRST 2
 
 BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 {
@@ -82,7 +82,13 @@ BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 		in.close();
 
 		// 更新顶点法向量
-		for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++) {
+		std::cout << "更新顶点法向量" << std::endl;
+		int i = 0;
+		for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++ , i++) {
+			if (i % 100 == 0) {
+				std::cout << i*100/(float)mapping.size()  << "%" << std::endl;
+			}
+			
 			// 计算平均法向量
 			glm::vec3 normal(0.0f, 0.0f, 0.0f);
 			for (int j = 0; j < it->second.size(); j++) {
@@ -129,60 +135,65 @@ BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 		{
 			float coorXYZ[12];
 			in.read((char*)coorXYZ, 12 * sizeof(float));
-			std::ostringstream ss;
 			std::string key;
 			normal = glm::vec3(coorXYZ[0], coorXYZ[1], coorXYZ[2]);
 			for (int j = 1; j < 4; j++) // 三角形三个点的x,y,z
 			{
+				key.assign((char*)(coorXYZ + j * 3), ((char*)(coorXYZ + j * 3)) + 3 * sizeof(float));
+				
 				vertices.push_back(coorXYZ[j * 3]);
-				vertices.push_back(coorXYZ[j * 3+1]);
-				vertices.push_back(coorXYZ[j * 3+2]);
+				vertices.push_back(coorXYZ[j * 3 + 1]);
+				vertices.push_back(coorXYZ[j * 3 + 2]);
 				vertices.push_back(normal.x);
 				vertices.push_back(normal.y);
 				vertices.push_back(normal.z);
-				/*ss << coorXYZ[j * 3];
-				std::string s1(ss.str());
-				ss << coorXYZ[j * 3 + 1];
-				std::string s2(ss.str());
-				ss << coorXYZ[j * 3 + 2];
-				std::string s3(ss.str());
-				// generate key
-				key = s1 + s2 + s3;
-				tmpTriangleEdge[j - 1].x = coorXYZ[j * 3];
-				tmpTriangleEdge[j - 1].y = coorXYZ[j * 3 + 1];
-				tmpTriangleEdge[j - 1].z = coorXYZ[j * 3 + 2];
-				// 查找key是否存在
 				std::unordered_map< std::string, std::vector<int>> ::const_iterator foundKey = mapping.find(key);
 				if (foundKey == mapping.end()) {
 					std::vector<int> tmp = { i * 18 + (j - 1) * 6 }; // 顶点的X坐标的下标
 					mapping.insert({ key, tmp });
 				}
 				else {
+					//std::cout << "bingo" << std::endl;
 					std::vector<int> tmp = foundKey->second;
 					tmp.push_back(i * 18 + (j - 1) * 6);
 					mapping[key] = tmp;
-				}*/
+				}
 			}
 
-
-			// 计算法向量
-			/*vector1 = tmpTriangleEdge[0] - tmpTriangleEdge[1];
-			vector2 = tmpTriangleEdge[0] - tmpTriangleEdge[2];
-			// normal = glm::normalize(glm::cross(vector1, vector2));
-			// 存入vertices
-			for (int j = 0; j < 3; j++) {
-				vertices.push_back(tmpTriangleEdge[j].x);
-				vertices.push_back(tmpTriangleEdge[j].y);
-				vertices.push_back(tmpTriangleEdge[j].z);
-				vertices.push_back(normal.x);
-				vertices.push_back(normal.y);
-				vertices.push_back(normal.z);
-			}*/
 			in.read((char*)coorXYZ, 2);
 		}
 		in.close();
-
-		
+	
+		/*(for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++) {
+			if (it->second.size() > 1) {
+				std::cout << "bingo" << std::endl;
+			}
+			/*std::cout << it->first <<": ";
+			for (int j = 0; j < it->second.size(); j++) {
+				std::cout << it->second[j] << " ";
+			}
+			std::cout << std::endl;
+		}*/
+		std::cout << "更新顶点法向量" << std::endl;
+		int k = 0;
+		for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++, k++) {
+			if (k % 100 == 0) {
+				std::cout << k * 100 / (float)mapping.size() << "%" << std::endl;
+			}
+			// 计算平均法向量
+			glm::vec3 normal(0.0f, 0.0f, 0.0f);
+			for (int j = 0; j < it->second.size(); j++) {
+				normal.x += vertices[it->second[j] + 3];
+				normal.y += vertices[it->second[j] + 4];
+				normal.z += vertices[it->second[j] + 5];
+			}
+			normal /= sqrt(pow(normal.x, 2) + pow(normal.y, 2) + pow(normal.z, 2));
+			for (int j = 0; j < it->second.size(); j++) {
+				vertices[it->second[j] + 3] = normal.x;
+				vertices[it->second[j] + 4] = normal.y;
+				vertices[it->second[j] + 5] = normal.z;
+			}
+		}
 		std::string outName(cfilename, cfilename + strlen(cfilename));
 		//std::cout << "test name " << outName << std::endl  << std::endl;
 		outName.insert(strlen(cfilename) - 4, "_normal");
