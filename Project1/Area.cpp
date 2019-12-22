@@ -1,7 +1,7 @@
 #include "Area.h"
 #include "Plane.h"
 // imgui
-#include "imgui.h"
+#include "imgui/imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <string>

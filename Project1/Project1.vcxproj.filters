@@ -30,18 +30,6 @@
     <ClCompile Include="imgui_impl_opengl3.cpp">
       <Filter>源文件\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui.cpp">
-      <Filter>源文件\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_demo.cpp">
-      <Filter>源文件\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_draw.cpp">
-      <Filter>源文件\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_widgets.cpp">
-      <Filter>源文件\imgui</Filter>
-    </ClCompile>
     <ClCompile Include="Light.h">
       <Filter>头文件</Filter>
     </ClCompile>
@@ -63,11 +51,20 @@
     <ClCompile Include="Plane.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\作业\Homework5\Project1\Project1\Triangle.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="CrossSectionPlane.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\OpenGL\imGui\imgui.cpp">
+      <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\OpenGL\imGui\imgui_demo.cpp">
+      <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\OpenGL\imGui\imgui_draw.cpp">
+      <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\OpenGL\imGui\imgui_widgets.cpp">
+      <Filter>源文件\imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -84,24 +81,6 @@
       <Filter>源文件\imgui</Filter>
     </ClInclude>
     <ClInclude Include="imgui_impl_opengl3.h">
-      <Filter>源文件\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui.h">
-      <Filter>源文件\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_internal.h">
-      <Filter>源文件\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imstb_rectpack.h">
-      <Filter>源文件\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imstb_textedit.h">
-      <Filter>源文件\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imstb_truetype.h">
-      <Filter>源文件\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imconfig.h">
       <Filter>源文件\imgui</Filter>
     </ClInclude>
     <ClInclude Include="Toolbar.h">
@@ -121,6 +100,24 @@
     </ClInclude>
     <ClInclude Include="CrossSectionPlane.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imconfig.h">
+      <Filter>源文件\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imgui.h">
+      <Filter>源文件\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imgui_internal.h">
+      <Filter>源文件\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imstb_rectpack.h">
+      <Filter>源文件\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imstb_textedit.h">
+      <Filter>源文件\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imstb_truetype.h">
+      <Filter>源文件\imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -22,32 +22,32 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{2337D0FD-A111-4714-A4F7-AFA9979F5B5B}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -71,7 +71,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\OpenGL\Includes;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\OpenGL\Libs;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\OpenGL\Lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>C:\OpenGL\Includes;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\OpenGL\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -81,7 +85,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -92,7 +96,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glfw3.lib;glew32s.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -124,11 +128,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui.cpp" />
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_demo.cpp" />
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_draw.cpp" />
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_widgets.cpp" />
-    <ClCompile Include="..\..\..\..\大三下\ComputerGraphics\作业\Homework5\Project1\Project1\Triangle.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\OpenGL\imGui\imgui.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\OpenGL\imGui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\OpenGL\imGui\imgui_draw.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\OpenGL\imGui\imgui_widgets.cpp" />
     <ClCompile Include="Area.cpp" />
     <ClCompile Include="BaseModel.cpp" />
     <ClCompile Include="CrossSectionPlane.cpp" />
@@ -143,12 +146,12 @@
     <ClCompile Include="Toolbar.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imconfig.h" />
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui.h" />
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imgui_internal.h" />
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imstb_rectpack.h" />
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imstb_textedit.h" />
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\OpenGL\imGui\imstb_truetype.h" />
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imconfig.h" />
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imgui.h" />
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imgui_internal.h" />
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imstb_rectpack.h" />
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imstb_textedit.h" />
+    <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imstb_truetype.h" />
     <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\作业\Homework5\Project1\Project1\Triangle.h" />
     <ClInclude Include="Area.h" />
     <ClInclude Include="BaseModel.h" />
