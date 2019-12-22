@@ -81,7 +81,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SOIL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -140,6 +140,8 @@
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Plane.cpp" />
+    <ClCompile Include="Ruler.cpp" />
+    <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="Toolbar.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -158,6 +160,7 @@
     <ClInclude Include="imgui_impl_opengl3.h" />
     <ClInclude Include="Line.h" />
     <ClInclude Include="Plane.h" />
+    <ClInclude Include="Ruler.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Toolbar.h" />
   </ItemGroup>
@@ -171,6 +174,8 @@
     <None Include="phongShader.vs" />
     <None Include="shadowMappingDepth.vs" />
     <None Include="shadowMappingDepth.frag" />
+    <None Include="textureShader.frag" />
+    <None Include="textureShader.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

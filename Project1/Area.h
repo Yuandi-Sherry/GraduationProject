@@ -17,6 +17,7 @@
 #include "Light.h"
 #include "Plane.h"
 #include "CrossSectionPlane.h"
+#include "Ruler.h"
 
 class Area
 {
@@ -52,7 +53,7 @@ public:
 	glm::vec3 transCutFaceVertices[3]; // current operating line vertices
 	
 	// ruler
-
+	void drawRuler(Shader & shader);
 
 
 	// cut 
@@ -100,6 +101,8 @@ private:
 	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 	unsigned int depthMapFBO;
 	unsigned int depthMap;
+
+	Ruler ruler;
 };
 
 

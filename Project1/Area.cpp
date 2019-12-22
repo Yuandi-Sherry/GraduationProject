@@ -25,7 +25,8 @@ void Area::init() {
 	camera.setPosition(cameraPos);
 	cutMode = 1;
 	csPlane.initVertexObject();
-
+	// ruler=
+	ruler.initVertexObject();
 
 	glGenFramebuffers(1, &depthMapFBO);
 	// create depth texture
@@ -229,6 +230,12 @@ void Area::drawLine(Shader & shader) {
 
 		rulerLines[i].draw();
 	}
+}
+
+void Area::drawRuler(Shader & shader) {
+	shader.use();
+	ruler.generateTexture();
+	ruler.draw(shader);
 }
 
 void Area::setRulerVertex(const glm::vec3 & vertexPosition) {

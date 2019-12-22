@@ -106,10 +106,11 @@ int main()
 	Shader ourShader("phongShader.vs", "phongShader.frag");
 	Shader lightShader("camera.vs", "camera.frag");
 	Shader shadowShader("shadowMappingDepth.vs", "shadowMappingDepth.frag");
+	Shader textureShader("textureShader.vs", "textureShader.frag");
 	// load model
-	BaseModel vessel("vessel.stl", 1, TRIANGLE);
-	BaseModel tumor("tumor.stl", 2, TRIANGLE);
-	BaseModel bones("bones.stl", 3, TRIANGLE);
+	BaseModel vessel("vessel_normal.stl", 1, TRIANGLE);
+	BaseModel tumor("tumor_normal.stl", 2, TRIANGLE);
+	BaseModel bones("bones_normal.stl", 3, TRIANGLE);
 	vessel.initVertexObject();
 	tumor.initVertexObject();
 	bones.initVertexObject();
@@ -215,15 +216,15 @@ int main()
 			vesselArea.tackleCrossIntersection(ourShader, shadowShader, models);
 			tumorArea.tackleCrossIntersection(ourShader, shadowShader,models );
 			bonesArea.tackleCrossIntersection(ourShader, shadowShader, models);
-			mainArea.drawLight(lightShader, light);
 		}
 		else {
 			// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			mainArea.draw(ourShader, shadowShader, models);
+			mainArea.drawRuler(textureShader);
 			vesselArea.draw(ourShader, shadowShader, models);
 			tumorArea.draw(ourShader, shadowShader, models);
 			bonesArea.draw(ourShader, shadowShader, models);
-			mainArea.drawLight(lightShader, light);
+
 		}
 		
 		// display GUI

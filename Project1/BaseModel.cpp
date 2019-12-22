@@ -10,7 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define FIRST 2
+#define FIRST 0
 
 BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 {

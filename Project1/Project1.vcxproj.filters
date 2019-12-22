@@ -69,6 +69,12 @@
     <ClCompile Include="CrossSectionPlane.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="stb_image.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Ruler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">
@@ -122,6 +128,9 @@
     <ClInclude Include="CrossSectionPlane.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Ruler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="default.vs">
@@ -149,6 +158,12 @@
       <Filter>资源文件</Filter>
     </None>
     <None Include="shadowMappingDepth.frag">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="textureShader.vs">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="textureShader.frag">
       <Filter>资源文件</Filter>
     </None>
   </ItemGroup>
