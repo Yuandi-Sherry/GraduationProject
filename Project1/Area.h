@@ -17,7 +17,8 @@
 #include "Light.h"
 #include "Plane.h"
 #include "CrossSectionPlane.h"
-
+#include "Ruler.h"
+#include "MyCylinder.h"
 class Area
 {
 public:
@@ -52,8 +53,8 @@ public:
 	glm::vec3 transCutFaceVertices[3]; // current operating line vertices
 	
 	// ruler
-
-
+	void drawRuler(Shader & shader);
+	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models);
 
 	// cut 
 	// bool confirmedCut = false;//
@@ -77,9 +78,15 @@ public:
 	}
 	void drawShadow(Shader & shader, std::vector<BaseModel> & models);
 	void renderDepthBuffer(Shader & shadowShaer, std::vector<BaseModel> & models);
+	int getRulerMode() {
+		return rulerMode;
+	}
+
+	void setRulerMovement(Camera_Movement direction, float deltaTime);
+	void drawZAxis(Shader& cylinderShader, Shader& shadowShader, std::vector<BaseModel>& models);
 private:
 
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 200.0f);
+	glm::vec3 cameraPos = glm::vec3(0.0f, 20.0f, 200.0f);
 	std::vector<GLint> modelsID;// the index of model in the model array in main function 
 	Camera camera;
 	GLfloat viewportPara[4];// 4 parameters of viewport: x, y, w, h
@@ -100,6 +107,12 @@ private:
 	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 	unsigned int depthMapFBO;
 	unsigned int depthMap;
+
+	Ruler ruler;
+	int rulerMode = 1;
+
+	GLfloat rulerScale = 4;
+	MyCylinder zAxis;
 };
 
 

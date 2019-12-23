@@ -4,6 +4,10 @@
 #include <vector>
 #include <iostream>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 
 enum PrimitiveType {
 	TRIANGLE,
@@ -13,8 +17,8 @@ extern const GLuint SHADOW_WIDTH, SHADOW_HEIGHT;
 class BaseModel
 {
 public:
-	BaseModel(const char *cfilename, int colorID, PrimitiveType type);
-	BaseModel(const std::vector<GLfloat> &, int colorID, PrimitiveType type);
+	BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type);
+	BaseModel(const std::vector<GLfloat> &, glm::vec3 color, PrimitiveType type);
 	BaseModel(PrimitiveType type) {
 		this->type = type;
 	}
@@ -25,8 +29,8 @@ public:
 	void initVertexObject();
 
 	void draw();
-	GLint getcolorID() {
-		return colorID;
+	glm::vec3 getColor() {
+		return color;
 	}
 
 	void initDepthBuffer();
@@ -34,7 +38,7 @@ public:
 protected:
 	std::vector<GLfloat> vertices;
 	GLuint VAO, VBO;
-	GLint colorID;
+	glm::vec3 color;
 	PrimitiveType type;
 };
 

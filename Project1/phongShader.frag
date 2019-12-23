@@ -26,9 +26,7 @@ uniform float ambientStrength;
 uniform float diffuseStrength;
 uniform float specularStrength;
 
-uniform vec3 color1;
-uniform vec3 color2;
-uniform vec3 color3;
+uniform vec3 color;
 
 float ShadowCalculation(vec4 fragPosLightSpace, float bias)
 {
@@ -89,15 +87,6 @@ void main()
 		FragColor = vec4(1.0f, 1.0f, 1.0f, 0.3f);
 		return;
 	}
-	vec3 color;
-	if(type == 1)
-		color = color1;
-	else if(type == 2)
-		color = color2;
-	else if(type == 3)
-		color = color3;
-	else
-		color = vec3(1.0f, 1.0f, 1.0f);
 	// no cut 
 	if(cut == 0) {
 		FragColor = vec4( getLightingColor(color) * color, 1.0f);

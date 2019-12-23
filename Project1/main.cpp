@@ -17,7 +17,8 @@
 #include "Light.h"
 #include "Toolbar.h"
 #include "Area.h"
-
+#include "Ruler.h"
+#include "MyCylinder.h"
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -33,7 +34,6 @@ const unsigned int SCR_HEIGHT = 1200;
 
 const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 // camera
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 50.0f);
 GLfloat Near = 0.1f;
 // mouse parameters
 	// current mouse position
@@ -106,10 +106,12 @@ int main()
 	Shader ourShader("phongShader.vs", "phongShader.frag");
 	Shader lightShader("camera.vs", "camera.frag");
 	Shader shadowShader("shadowMappingDepth.vs", "shadowMappingDepth.frag");
+	Shader textureShader("textureShader.vs", "textureShader.frag");
+	Shader cylinderShader("positionShader.vs", "positionShader.frag");
 	// load model
-	BaseModel vessel("vessel.stl", 1, TRIANGLE);
-	BaseModel tumor("tumor.stl", 2, TRIANGLE);
-	BaseModel bones("bones.stl", 3, TRIANGLE);
+	BaseModel vessel("vessel_normal.stl", glm::vec3(0.6f, 0.0f, 0.0f), TRIANGLE);
+	BaseModel tumor("tumor_normal.stl", glm::vec3(0.5f, 0.5f, 0.6f), TRIANGLE);
+	BaseModel bones("bones_normal.stl", glm::vec3(0.7f, 0.7f, 0.5f), TRIANGLE);
 	vessel.initVertexObject();
 	tumor.initVertexObject();
 	bones.initVertexObject();
@@ -151,7 +153,6 @@ int main()
 	ourShader.use();
 	ourShader.setInt("depthMap", 0);
 	float near_plane = 1.0f, far_plane = 300.0f, x = 150.0f;
-
 	// game loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -215,16 +216,18 @@ int main()
 			vesselArea.tackleCrossIntersection(ourShader, shadowShader, models);
 			tumorArea.tackleCrossIntersection(ourShader, shadowShader,models );
 			bonesArea.tackleCrossIntersection(ourShader, shadowShader, models);
-			mainArea.drawLight(lightShader, light);
 		}
 		else {
-			// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			mainArea.draw(ourShader, shadowShader, models);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			
 			vesselArea.draw(ourShader, shadowShader, models);
 			tumorArea.draw(ourShader, shadowShader, models);
 			bonesArea.draw(ourShader, shadowShader, models);
-			mainArea.drawLight(lightShader, light);
+
 		}
+
+		mainArea.drawZAxis(ourShader, shadowShader, models);
 		
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
@@ -295,7 +298,21 @@ void processInput(GLFWwindow *window)
 		currentArea->setCutMode(1);
 	}
 
-	
+	if (currentArea->getRulerMode() == 2) {
+		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) { // ruler move backwards
+			std::cout << "key _up" << std::endl;
+			currentArea->setRulerMovement(BACKWARD, deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) { // ruler move forwards
+			currentArea->setRulerMovement(FORWARD, deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) { // ruler move backwards
+			currentArea->setRulerMovement(LEFT, deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) { // ruler move backwards
+			currentArea->setRulerMovement(RIGHT, deltaTime);
+		}
+	}
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

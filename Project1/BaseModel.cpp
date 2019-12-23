@@ -10,11 +10,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define FIRST 2
+#define FIRST 0
 
-BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
+BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 {
-	this->colorID = colorID;
+	this->color = color;
 	this->type = type;
 	if (FIRST == 1) {
 		std::ifstream in(cfilename, std::ifstream::in | std::ifstream::binary);
@@ -252,7 +252,7 @@ BaseModel::BaseModel(const char *cfilename, int colorID, PrimitiveType type)
 	
 }
 
-BaseModel::BaseModel(const std::vector<GLfloat> &vertices, int colorID, PrimitiveType type) {
+BaseModel::BaseModel(const std::vector<GLfloat> &vertices, glm::vec3 color, PrimitiveType type) {
 	this->vertices.assign(vertices.begin(), vertices.end());
 	this->type = type;
 }

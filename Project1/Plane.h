@@ -4,7 +4,7 @@
 class Plane : public BaseModel
 {
 public:
-	Plane(const std::vector<GLfloat> &vertices, int colorID, PrimitiveType type);
+	Plane(const std::vector<GLfloat> &vertices, glm::vec3 colorID, PrimitiveType type);
 	~Plane();
 	void initVertexObject();
 private:

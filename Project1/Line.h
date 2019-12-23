@@ -4,7 +4,7 @@
 class Line : public BaseModel
 {
 public:
-	Line(const std::vector<GLfloat> &vertices, int colorID, PrimitiveType type);
+	Line(const std::vector<GLfloat> &vertices, glm::vec3 colorID, PrimitiveType type);
 	~Line();
 	GLfloat getDistance();
 	void initVertexObject();

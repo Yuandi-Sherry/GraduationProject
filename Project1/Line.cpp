@@ -1,5 +1,5 @@
 #include "Line.h"
-Line::Line(const std::vector<GLfloat> &vertices, int colorID, PrimitiveType type) : BaseModel(vertices, colorID, type)
+Line::Line(const std::vector<GLfloat> &vertices, glm::vec3 color, PrimitiveType type) : BaseModel(vertices, color, type)
 {
 }
 

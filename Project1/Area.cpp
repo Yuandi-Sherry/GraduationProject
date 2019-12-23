@@ -5,10 +5,12 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <string>
+#include "MyCylinder.h"
+GLfloat zR = 1, zG = 1, zB = 1;
 Area::Area()
 {
 	modelsID.clear();
-	transformMat = glm::mat4(1.0f);
+	transformMat = glm::rotate( glm::mat4(1.0f), glm::radians(-90.0f),glm::vec3(1.0f, 0.0f, 0.0f));
 	testPlane = NULL;
 }
 
@@ -25,8 +27,10 @@ void Area::init() {
 	camera.setPosition(cameraPos);
 	cutMode = 1;
 	csPlane.initVertexObject();
-
-
+	zAxis.generateVertices();
+	zAxis.initVertexObject();
+	// ruler=
+	ruler.initVertexObject();
 	glGenFramebuffers(1, &depthMapFBO);
 	// create depth texture
 
@@ -66,9 +70,22 @@ void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::
 		camera.setSize(viewportPara[2] / 2, viewportPara[3]);
 		drawCutFace(shader, shadowShader, models);
 	}
-
-		
 }
+
+void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models) {
+	// rulerMode: 1 - not ruler, 2 - ruler
+
+	if (rulerMode == 1) { // selecting
+		camera.setSize(viewportPara[2], viewportPara[3]);
+		draw(shader, shadowShader, models);
+	}
+	else if (rulerMode == 2) { // confirming
+		draw(shader, shadowShader, models);
+		drawRuler(textureShader);
+
+	}
+}
+
 void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
 	viewportPara[0] = left;
 	viewportPara[1] = bottom;
@@ -101,13 +118,38 @@ void Area::drawShadow(Shader & shadowShader, std::vector<BaseModel> & models) {
 	renderDepthBuffer(shadowShader, models);
 }
 
+void Area::drawZAxis(Shader& cylinderShader, Shader& shadowShader, std::vector<BaseModel>& models) {
+	shadowShader.use();
+	shadowShader.setInt("cut", 0);
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+	shadowShader.setMat4("model", transformMat * model);
+	for (int i = 0; i < modelsID.size(); i++) {
+		models[modelsID[i]].draw();
+	}
+	zAxis.draw();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+	cylinderShader.use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	cylinderShader.setVec3("color", glm::vec3(zR, zG, zB));
+	cylinderShader.setMat4("projection", camera.getProjection());
+	cylinderShader.setMat4("view", camera.GetViewMatrix());
+	cylinderShader.setMat4("model", glm::mat4(1.0f));
+	cylinderShader.setVec3("viewPos", camera.Position);
+	cylinderShader.setVec3("lightPos", camera.Position);
+	zAxis.draw();
+
+}
 void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
 	shadowShader.use();
 	shadowShader.setInt("cut", 0);
 	renderDepthBuffer(shadowShader, models);
-
 	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	
 	shader.use();
@@ -127,7 +169,7 @@ void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> &
 	shader.setInt("withLight", 1);
 	shader.setInt("isPlane", 0);
 	for (int i = 0; i < modelsID.size(); i++) {
-		shader.setInt("type", models[modelsID[i]].getcolorID());
+		shader.setVec3("color", models[modelsID[i]].getColor());
 		models[modelsID[i]].draw();
 	}
 }
@@ -152,7 +194,7 @@ void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseM
 	shader.setInt("cut", 1);
 	shader.setMat4("model", transformForCut[0] * model);
 	for (int i = 0; i < modelsID.size(); i++) {
-		shader.setInt("type", models[modelsID[i]].getcolorID());
+		shader.setVec3("color", models[modelsID[i]].getColor());
 		models[modelsID[i]].draw();
 	}
 	shadowShader.use();
@@ -167,7 +209,7 @@ void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseM
 	shader.setInt("cut", 2);
 	shader.setMat4("model", transformForCut[1] * model);
 	for (int i = 0; i < modelsID.size(); i++) {
-		shader.setInt("type", models[modelsID[i]].getcolorID());
+		shader.setVec3("color", models[modelsID[i]].getColor());
 		models[modelsID[i]].draw();
 	}
 }
@@ -231,6 +273,18 @@ void Area::drawLine(Shader & shader) {
 	}
 }
 
+void Area::drawRuler(Shader & shader) {
+	std::cout << "drawRuler " << std::endl;
+	shader.use();
+	shader.setMat4("projection", camera.getProjection());
+	glm::mat4 view = camera.GetViewMatrix();
+	shader.setMat4("view", view);
+	glm::mat4 model = glm::mat4(1.0f);
+	shader.setMat4("model", glm::scale(glm::translate(model, ruler.getPosition()), glm::vec3(rulerScale, rulerScale, rulerScale)));
+	ruler.generateTexture();
+	ruler.draw(shader);
+}
+
 void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 	glm::vec3 localPos = glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
 	tmpVertices[currentRulerIndex] = localPos;
@@ -247,7 +301,7 @@ void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 			tmpVertices[1].y,
 			tmpVertices[1].z
 		};
-		Line newLine(tmp, 4, LINE);
+		Line newLine(tmp, glm::vec3(1,1,1), LINE);
 		newLine.initVertexObject();
 		rulerLines.push_back(newLine);
 		currentRulerIndex = 0;
@@ -335,6 +389,8 @@ void Area::displayGUI() {
 		std::string str = "line" + std::to_string(i+1) + " : " + std::to_string(rulerLines[i].getDistance());
 		ImGui::TextDisabled(str.c_str());
 	}
+	ImGui::RadioButton("normal", &rulerMode, 1);
+	ImGui::RadioButton("Ruler", &rulerMode, 2);
 	if (cutMode == 1) {
 		ImGui::Text("selecting");
 	}
@@ -350,4 +406,14 @@ void Area::displayGUI() {
 		ImGui::Text("confirmed");
 		/*}*/
 	}
+	// debug
+
+	ImGui::SliderFloat("rulerSize", &rulerScale, 0, 100);
+	ImGui::SliderFloat("z color r", &zR, 0, 1);
+	ImGui::SliderFloat("z color g", &zG, 0, 1);
+	ImGui::SliderFloat("z color b", &zB, 0, 1);
+}
+
+void Area::setRulerMovement(Camera_Movement direction, float deltaTime) {
+	ruler.move(direction, deltaTime);
 }

@@ -143,6 +143,8 @@
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Plane.cpp" />
+    <ClCompile Include="Ruler.cpp" />
+    <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="Toolbar.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -157,23 +159,30 @@
     <ClInclude Include="BaseModel.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CrossSectionPlane.h" />
+    <ClInclude Include="MyCylinder.h" />
     <ClInclude Include="imgui_impl_glfw.h" />
     <ClInclude Include="imgui_impl_opengl3.h" />
     <ClInclude Include="Line.h" />
     <ClInclude Include="Plane.h" />
+    <ClInclude Include="Ruler.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Toolbar.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="camera.frag" />
     <None Include="camera.vs" />
+    <None Include="MyCylinder.cpp" />
     <None Include="default.frag" />
     <None Include="default.vs" />
     <None Include="imgui.ini" />
     <None Include="phongShader.frag" />
     <None Include="phongShader.vs" />
+    <None Include="positionShader.frag" />
+    <None Include="positionShader.vs" />
     <None Include="shadowMappingDepth.vs" />
     <None Include="shadowMappingDepth.frag" />
+    <None Include="textureShader.frag" />
+    <None Include="textureShader.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
