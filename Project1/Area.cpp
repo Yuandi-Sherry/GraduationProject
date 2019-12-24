@@ -74,16 +74,19 @@ void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::
 
 void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models) {
 	// rulerMode: 1 - not ruler, 2 - ruler
-
-	if (rulerMode == 1) { // selecting
+	if (modeSelection == 1) { // selecting
 		camera.setSize(viewportPara[2], viewportPara[3]);
 		draw(shader, shadowShader, models);
 	}
-	else if (rulerMode == 2) { // confirming
+	else if (modeSelection == 2) { // confirming
 		draw(shader, shadowShader, models);
 		drawRuler(textureShader);
-
 	}
+}
+
+void Area::tackleDistance(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models) {
+	draw(shader, shadowShader, models);
+	drawLine(shader);
 }
 
 void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
@@ -130,16 +133,20 @@ void Area::drawZAxis(Shader& cylinderShader, Shader& shadowShader, std::vector<B
 	for (int i = 0; i < modelsID.size(); i++) {
 		models[modelsID[i]].draw();
 	}
+	shadowShader.setMat4("model", glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1, 0, 0)));
 	zAxis.draw();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
+
 	cylinderShader.use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 	cylinderShader.setVec3("color", glm::vec3(zR, zG, zB));
+	glm::mat4 ortho = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, 0.1f, 1000.0f); 
 	cylinderShader.setMat4("projection", camera.getProjection());
 	cylinderShader.setMat4("view", camera.GetViewMatrix());
-	cylinderShader.setMat4("model", glm::mat4(1.0f));
+	cylinderShader.setMat4("model", glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1,0,0)));
+	//cylinderShader.setMat4("model", glm::mat4(1.0f));
 	cylinderShader.setVec3("viewPos", camera.Position);
 	cylinderShader.setVec3("lightPos", camera.Position);
 	zAxis.draw();
@@ -160,7 +167,10 @@ void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> &
 	shader.setVec3("lightPos", camera.Position);
 	shader.setInt("cut", 0);
 	shader.setVec4("plane", planeCoeff);
+	// glm::mat4 ortho = glm::ortho(orthoLeftRight[0], orthoLeftRight[1], orthoBottomTop[0], orthoBottomTop[1], orthoNearFar[0], orthoNearFar[1]);
+	glm::mat4 ortho = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, 0.1f, 1000.0f);
 	shader.setMat4("projection", camera.getProjection());
+	//shader.setMat4("projection", camera.getProjection());
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
@@ -274,8 +284,9 @@ void Area::drawLine(Shader & shader) {
 }
 
 void Area::drawRuler(Shader & shader) {
-	std::cout << "drawRuler " << std::endl;
 	shader.use();
+	shader.setVec3("viewPos", camera.Position);
+	shader.setVec3("lightPos", camera.Position);
 	shader.setMat4("projection", camera.getProjection());
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
@@ -306,8 +317,6 @@ void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 		rulerLines.push_back(newLine);
 		currentRulerIndex = 0;
 	}
-
-	// std::cout << "current size of lines"
 }
 
 void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
@@ -389,8 +398,10 @@ void Area::displayGUI() {
 		std::string str = "line" + std::to_string(i+1) + " : " + std::to_string(rulerLines[i].getDistance());
 		ImGui::TextDisabled(str.c_str());
 	}
-	ImGui::RadioButton("normal", &rulerMode, 1);
-	ImGui::RadioButton("Ruler", &rulerMode, 2);
+	ImGui::RadioButton("normal", &modeSelection, 1);
+	ImGui::RadioButton("Ruler", &modeSelection, 2);
+	ImGui::RadioButton("Distance", &modeSelection, 3);
+
 	if (cutMode == 1) {
 		ImGui::Text("selecting");
 	}
@@ -412,6 +423,10 @@ void Area::displayGUI() {
 	ImGui::SliderFloat("z color r", &zR, 0, 1);
 	ImGui::SliderFloat("z color g", &zG, 0, 1);
 	ImGui::SliderFloat("z color b", &zB, 0, 1);
+
+	ImGui::SliderFloat2("orthoLeftRight", orthoLeftRight, -500, 500);
+	ImGui::SliderFloat2("orthoBottomTop", orthoBottomTop, -500, 500);
+	ImGui::SliderFloat2("orthoNearFar", orthoNearFar, -500, 500);
 }
 
 void Area::setRulerMovement(Camera_Movement direction, float deltaTime) {

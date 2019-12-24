@@ -150,8 +150,16 @@ int main()
 	// --------------------
 	shadowShader.use();
 	shadowShader.setInt("shadowMap", 0);
+
 	ourShader.use();
 	ourShader.setInt("depthMap", 0);
+	ourShader.setFloat("ambientStrength", ambientPara);
+	ourShader.setFloat("diffuseStrength", diffusePara);
+	ourShader.setFloat("specularStrength", specularPara);
+	textureShader.use();
+	textureShader.setFloat("ambientStrength", ambientPara);
+	textureShader.setFloat("diffuseStrength", diffusePara);
+	textureShader.setFloat("specularStrength", specularPara);
 	float near_plane = 1.0f, far_plane = 300.0f, x = 150.0f;
 	// game loop
 	while (!glfwWindowShouldClose(window))
@@ -192,12 +200,10 @@ int main()
 		ourShader.setVec3("lightPos", light.Position);
 		ourShader.setInt("withLight", 1);
 		ourShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-		ourShader.setFloat("ambientStrength", ambientPara);
-		ourShader.setFloat("diffuseStrength", diffusePara);
-		ourShader.setFloat("specularStrength", specularPara);
+		
 
 		// debugging for color
-		ourShader.setVec3("color1", glm::vec3( color1[0], color1[1], color1[2]));
+		ourShader.setVec3("color1", glm::vec3(color1[0], color1[1], color1[2]));
 		ourShader.setVec3("color2", glm::vec3(color2[0], color2[1], color2[2]));
 		ourShader.setVec3("color3", glm::vec3(color3[0], color3[1], color3[2]));
 		// debugging for color
@@ -205,11 +211,11 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		if (toolbar.ruler) {
-			mainArea.drawLine(ourShader);
-			vesselArea.drawLine(ourShader);
-			tumorArea.drawLine(ourShader);
-			bonesArea.drawLine(ourShader);
+		if (currentArea->getRulerMode() == 3) {
+			mainArea.tackleDistance(ourShader, shadowShader, models);
+			vesselArea.tackleDistance(ourShader, shadowShader, models);
+			tumorArea.tackleDistance(ourShader, shadowShader, models);
+			bonesArea.tackleDistance(ourShader, shadowShader, models);
 		}
 		else if (toolbar.cutface) {
 			mainArea.tackleCrossIntersection(ourShader, shadowShader,  models);
@@ -220,7 +226,6 @@ int main()
 		else {
 			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
-			
 			vesselArea.draw(ourShader, shadowShader, models);
 			tumorArea.draw(ourShader, shadowShader, models);
 			bonesArea.draw(ourShader, shadowShader, models);
@@ -300,7 +305,6 @@ void processInput(GLFWwindow *window)
 
 	if (currentArea->getRulerMode() == 2) {
 		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) { // ruler move backwards
-			std::cout << "key _up" << std::endl;
 			currentArea->setRulerMovement(BACKWARD, deltaTime);
 		}
 		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) { // ruler move forwards
@@ -398,7 +402,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			rbutton_down = false;
 	}
 	// mouse click, ruler mode
-	if (toolbar.ruler) {
+	if (currentArea->getRulerMode() ==3) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (GLFW_PRESS == action) {
 				currentArea->setRulerVertex(getObjCoor(lastX, lastY));

@@ -147,6 +147,11 @@ public:
 		return projection;
 	}
 	
+
+	glm::mat4 getOrthology() {
+		ortho = glm::ortho(-800.0f, 800.0f, -600.0f, 600.0f,-100.0f, 1000.0f);
+		return ortho;
+	}
 	glm::vec3 getN() {
 		return Front;
 	}
@@ -160,6 +165,7 @@ public:
 	}
 private:
 	glm::mat4 projection;
+	glm::mat4 ortho;
 	// Calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors()
 	{

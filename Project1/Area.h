@@ -44,7 +44,7 @@ public:
 	void init();
 	void drawLight(Shader & shader, Light& light);
 	void setRulerVertex(const glm::vec3 & vertexPosition);
-	void drawLine(Shader & shader);
+	
 	void displayGUI();
 	void setCutFaceVertex(const glm::vec3 & vertexPosition);
 	void calculatePlane();
@@ -79,21 +79,24 @@ public:
 	void drawShadow(Shader & shader, std::vector<BaseModel> & models);
 	void renderDepthBuffer(Shader & shadowShaer, std::vector<BaseModel> & models);
 	int getRulerMode() {
-		return rulerMode;
+		return modeSelection;
 	}
 
 	void setRulerMovement(Camera_Movement direction, float deltaTime);
 	void drawZAxis(Shader& cylinderShader, Shader& shadowShader, std::vector<BaseModel>& models);
+
+
+	// measure distance
+	void drawLine(Shader& shader);
+	void tackleDistance(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
 private:
 
-	glm::vec3 cameraPos = glm::vec3(0.0f, 20.0f, 200.0f);
+	glm::vec3 cameraPos = glm::vec3(0.0f, 80.0f, 400.0f);
 	std::vector<GLint> modelsID;// the index of model in the model array in main function 
 	Camera camera;
 	GLfloat viewportPara[4];// 4 parameters of viewport: x, y, w, h
 	glm::mat4x4 transformMat; // rotation mat of model
-	glm::vec3 tmpVertices[2]; // current operating line vertices
-	int currentRulerIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
-	std::vector<Line> rulerLines;
+	
 	
 	
 	int currentCutFaceIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
@@ -109,10 +112,20 @@ private:
 	unsigned int depthMap;
 
 	Ruler ruler;
-	int rulerMode = 1;
+	int modeSelection = 1;
 
 	GLfloat rulerScale = 4;
 	MyCylinder zAxis;
+
+	// debug
+	GLfloat orthoLeftRight[2] = { 0.0f, 800.0f };
+	GLfloat orthoBottomTop[2] = { 600.0f, 0.0f };
+	GLfloat orthoNearFar[2] = { -1.0f, 1.0f };
+
+	// measure distance
+	glm::vec3 tmpVertices[2]; // current operating line vertices
+	int currentRulerIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
+	std::vector<Line> rulerLines;
 };
 
 
