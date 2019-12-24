@@ -138,10 +138,9 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="imgui_impl_glfw.cpp" />
     <ClCompile Include="imgui_impl_opengl3.cpp" />
-    <ClCompile Include="Light.cpp" />
-    <ClCompile Include="Light.h" />
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MyCube.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Ruler.cpp" />
     <ClCompile Include="stb_image.cpp" />
@@ -166,6 +165,7 @@
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Ruler.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="MyCube.h" />
     <ClInclude Include="Toolbar.h" />
   </ItemGroup>
   <ItemGroup>

@@ -11,14 +11,13 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="imgui_impl_glfw.cpp" />
     <ClCompile Include="imgui_impl_opengl3.cpp" />
-    <ClCompile Include="Light.cpp" />
-    <ClCompile Include="Light.h" />
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Ruler.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="Toolbar.cpp" />
+    <ClCompile Include="MyCube.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imconfig.h" />
@@ -40,6 +39,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Toolbar.h" />
     <ClInclude Include="MyCylinder.h" />
+    <ClInclude Include="MyCube.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="camera.frag" />

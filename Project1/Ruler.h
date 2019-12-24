@@ -19,6 +19,13 @@ public:
 	void draw(Shader & shader);
     void move(Camera_Movement direction, float deltaTime);
     glm::vec3 getPosition();
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 ends[2] = {
+        glm::vec3(-100, 0, 0), 
+        glm::vec3(100, 0, 0)
+    };
+    GLfloat rotateAngle = 0;
+    GLfloat scaleSize = 1;
 private:
 	std::vector<GLfloat> vertices = {
         // Back face
@@ -67,7 +74,7 @@ private:
 	unsigned int VBO, VAO;
 	unsigned int texture;
 
-    glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+   
     float rulerSpeed = 100.0f;
 };
 

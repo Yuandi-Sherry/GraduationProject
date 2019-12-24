@@ -6,7 +6,11 @@
 #include "imgui_impl_opengl3.h"
 #include <string>
 #include "MyCylinder.h"
+
+#define RULERFACE 200
 GLfloat zR = 1, zG = 1, zB = 1;
+
+float near_plane = 1.0f, far_plane = 1000.0f, x = 150.0f;
 Area::Area()
 {
 	modelsID.clear();
@@ -31,6 +35,12 @@ void Area::init() {
 	zAxis.initVertexObject();
 	// ruler=
 	ruler.initVertexObject();
+	rulerEnd.initVertexObject();
+	modeSelection = 2;
+
+	lightProjection = glm::ortho(-x, x, -x, x, near_plane, far_plane);
+	lightView = glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+	lightSpaceMatrix = lightProjection * lightView;
 	glGenFramebuffers(1, &depthMapFBO);
 	// create depth texture
 
@@ -78,16 +88,13 @@ void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShad
 		camera.setSize(viewportPara[2], viewportPara[3]);
 		draw(shader, shadowShader, models);
 	}
-	else if (modeSelection == 2) { // confirming
+	else if (modeSelection == 2) { // confirming*/
 		draw(shader, shadowShader, models);
-		drawRuler(textureShader);
+		drawLine(textureShader);
+		// drawLine(textureShader);
 	}
 }
 
-void Area::tackleDistance(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models) {
-	draw(shader, shadowShader, models);
-	drawLine(shader);
-}
 
 void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
 	viewportPara[0] = left;
@@ -97,8 +104,15 @@ void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat heig
 	camera.setSize(width, height);
 }
 
+void Area::updateLightSpaceMatrix() {
+	lightProjection = glm::ortho(-x, x, -x, x, near_plane, far_plane);
+	//lightProjection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
+	lightView = glm::lookAt(camera.Position, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+	lightSpaceMatrix = lightProjection * lightView;
+}
 void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & models) {
 	shadowShader.use();
+	shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -158,11 +172,10 @@ void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> &
 	renderDepthBuffer(shadowShader, models);
 	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 	
-	
 	shader.use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
-	
+	shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 	shader.setVec3("viewPos", camera.Position);
 	shader.setVec3("lightPos", camera.Position);
 	shader.setInt("cut", 0);
@@ -170,7 +183,7 @@ void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> &
 	// glm::mat4 ortho = glm::ortho(orthoLeftRight[0], orthoLeftRight[1], orthoBottomTop[0], orthoBottomTop[1], orthoNearFar[0], orthoNearFar[1]);
 	glm::mat4 ortho = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, 0.1f, 1000.0f);
 	shader.setMat4("projection", camera.getProjection());
-	//shader.setMat4("projection", camera.getProjection());
+	//shader.setMat4("projection", ortho);
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
@@ -182,6 +195,15 @@ void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> &
 		shader.setVec3("color", models[modelsID[i]].getColor());
 		models[modelsID[i]].draw();
 	}
+
+}
+
+void Area::drawCube(Shader& shader) {
+	shader.use();
+	shader.setMat4("projection", camera.getProjection());
+	shader.setMat4("view", camera.GetViewMatrix());
+	shader.setMat4("model", glm::mat4(1.0f));
+	rulerEnd.draw();
 }
 
 void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
@@ -207,6 +229,8 @@ void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseM
 		shader.setVec3("color", models[modelsID[i]].getColor());
 		models[modelsID[i]].draw();
 	}
+
+
 	shadowShader.use();
 
 	shadowShader.setInt("cut", 2);
@@ -243,7 +267,7 @@ void Area::drawSelectedFace(Shader & shader) {
 	csPlane.draw();
 }
 
-void Area::drawLight(Shader & shader, Light& light) {
+/*void Area::drawLight(Shader & shader) {
 	shader.use();
 	GLint viewPosLoc = glGetUniformLocation(shader.ID, "viewPos");
 	glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
@@ -258,29 +282,44 @@ void Area::drawLight(Shader & shader, Light& light) {
 	//shader.setMat4("model", model);
 	if (cutMode == 3){
 		glViewport(viewportPara[0], viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
-		light.draw();
 		glViewport(viewportPara[0] + viewportPara[2] / 2, viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
 	}
 	else {
 		glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 	}
-	light.draw();
-	
-	
-}
+}*/
 
 void Area::drawLine(Shader & shader) {
+	
 	shader.use();
-	// in phongShader do not use lighting
-	glUniform1i(glGetUniformLocation(shader.ID, "withLight"), 0);
+	shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+	shader.setInt("cut", 0);
+	shader.setVec4("plane", planeCoeff);
+	shader.setVec3("viewPos", camera.Position);
+	shader.setVec3("lightPos", camera.Position);
+	shader.setMat4("projection", camera.getProjection());
+	glm::mat4 view = camera.GetViewMatrix();
+	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
-	//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-	shader.setMat4("model", transformMat * model);
-	shader.setInt("type", 4);
-	for (int i = 0; i < rulerLines.size(); i++) {
+	shader.setInt("withLight", 1);
+	shader.setInt("isPlane", 0);
 
-		rulerLines[i].draw();
-	}
+	// draw ends
+	shader.setVec3("color", glm::vec3(1,1,1));
+	model = glm::translate(glm::mat4(1.0f), ruler.ends[0]);
+	shader.setMat4("model", model);
+	rulerEnd.draw();
+	model = glm::translate(glm::mat4(1.0f), ruler.ends[1]);
+	shader.setMat4("model", model);
+	rulerEnd.draw();
+	// draw ruler
+	model = glm::scale(model, glm::vec3(ruler.scaleSize, ruler.scaleSize, ruler.scaleSize));
+	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0, 0, 1));
+	model = glm::translate(model, ruler.position);
+	shader.setMat4("model", model);
+	ruler.generateTexture();
+	ruler.draw(shader);
+	
 }
 
 void Area::drawRuler(Shader & shader) {
@@ -297,26 +336,36 @@ void Area::drawRuler(Shader & shader) {
 }
 
 void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
-	glm::vec3 localPos = glm::inverse(transformMat) * glm::vec4(vertexPosition, 1.0f);
+	glm::vec3 localPos = /*glm::inverse(transformMat) **/ glm::vec4(vertexPosition, 1.0f);
 	tmpVertices[currentRulerIndex] = localPos;
 	if (currentRulerIndex == 0) {
+		ruler.ends[currentRulerIndex].x = localPos.x;
+		ruler.ends[currentRulerIndex].y = localPos.y;
+		ruler.ends[currentRulerIndex].z = localPos.z;
 		currentRulerIndex = 1;
 	}
-	else if (currentRulerIndex == 1) {
-		// add to rulerLines vector
-		std::vector<GLfloat> tmp = {
-			tmpVertices[0].x,
-			tmpVertices[0].y,
-			tmpVertices[0].z,
-			tmpVertices[1].x,
-			tmpVertices[1].y,
-			tmpVertices[1].z
-		};
-		Line newLine(tmp, glm::vec3(1,1,1), LINE);
-		newLine.initVertexObject();
-		rulerLines.push_back(newLine);
+	else {
+		ruler.ends[currentRulerIndex].x = localPos.x;
+		ruler.ends[currentRulerIndex].y = localPos.y;
+		ruler.ends[currentRulerIndex].z = localPos.z;
 		currentRulerIndex = 0;
+		// update ruler properties
+		GLfloat oriLen = glm::distance(ruler.ends[0], ruler.ends[1]);
+		ruler.ends[0].z = RULERFACE;
+		ruler.ends[1].z = RULERFACE;
+		GLfloat projLen = glm::distance(ruler.ends[0], ruler.ends[1]);
+		ruler.scaleSize = oriLen / projLen;
+		ruler.position = glm::vec3((ruler.ends[0].x + ruler.ends[1].x) / 2, (ruler.ends[0].y + ruler.ends[1].y) / 2, RULERFACE);
+		ruler.rotateAngle = atan(abs(ruler.ends[0].y - ruler.ends[1].y)/ abs(ruler.ends[0].x - ruler.ends[1].x));
+
+		for (int i = 0; i <= 1; i++) {
+			std::cout << " i " << i << " " << ruler.ends[i].x << " " << ruler.ends[i].y << " " << ruler.ends[i].z << std::endl;
+		}
+		std::cout << "scale size " << ruler.scaleSize << std::endl;
+		std::cout << "position " << ruler.position.x << " " << ruler.position.y << " " << ruler.position.z << " " << std::endl;
 	}
+	
+	
 }
 
 void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
@@ -400,8 +449,7 @@ void Area::displayGUI() {
 	}
 	ImGui::RadioButton("normal", &modeSelection, 1);
 	ImGui::RadioButton("Ruler", &modeSelection, 2);
-	ImGui::RadioButton("Distance", &modeSelection, 3);
-
+	//std::cout << "modeSelection " << modeSelection << std::endl;
 	if (cutMode == 1) {
 		ImGui::Text("selecting");
 	}

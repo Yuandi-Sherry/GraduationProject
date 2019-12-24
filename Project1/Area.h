@@ -19,6 +19,17 @@
 #include "CrossSectionPlane.h"
 #include "Ruler.h"
 #include "MyCylinder.h"
+#include "Light.h"
+#include "MyCube.h"
+struct RulerPosition {
+	GLfloat x1;
+	GLfloat y1;
+	GLfloat z1;
+	GLfloat x2;
+	GLfloat y2;
+	GLfloat z2;
+	GLfloat scaleSize;
+};
 class Area
 {
 public:
@@ -42,7 +53,7 @@ public:
 	}
 	glm::vec4 getViewport();
 	void init();
-	void drawLight(Shader & shader, Light& light);
+	//void drawLight(Shader & shader, Light& light);
 	void setRulerVertex(const glm::vec3 & vertexPosition);
 	
 	void displayGUI();
@@ -78,7 +89,7 @@ public:
 	}
 	void drawShadow(Shader & shader, std::vector<BaseModel> & models);
 	void renderDepthBuffer(Shader & shadowShaer, std::vector<BaseModel> & models);
-	int getRulerMode() {
+	int getMode() {
 		return modeSelection;
 	}
 
@@ -88,10 +99,13 @@ public:
 
 	// measure distance
 	void drawLine(Shader& shader);
-	void tackleDistance(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
+	void drawCube(Shader& shader);
+	// void tackleDistance(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
+
+	void updateLightSpaceMatrix();
 private:
 
-	glm::vec3 cameraPos = glm::vec3(0.0f, 80.0f, 400.0f);
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 400.0f);
 	std::vector<GLint> modelsID;// the index of model in the model array in main function 
 	Camera camera;
 	GLfloat viewportPara[4];// 4 parameters of viewport: x, y, w, h
@@ -112,7 +126,7 @@ private:
 	unsigned int depthMap;
 
 	Ruler ruler;
-	int modeSelection = 1;
+	int modeSelection;
 
 	GLfloat rulerScale = 4;
 	MyCylinder zAxis;
@@ -126,6 +140,11 @@ private:
 	glm::vec3 tmpVertices[2]; // current operating line vertices
 	int currentRulerIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
 	std::vector<Line> rulerLines;
+	MyCube rulerEnd;
+	glm::mat4 lightSpaceMatrix;
+	glm::mat4 lightProjection;
+	glm::mat4 lightView;
+
 };
 
 

@@ -14,7 +14,6 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "BaseModel.h"
-#include "Light.h"
 #include "Toolbar.h"
 #include "Area.h"
 #include "Ruler.h"
@@ -46,12 +45,11 @@ bool rbutton_down = false;
 bool lbutton_down = false;
 float xoffset = 0, yoffset = 0;
 // light
-Light light;
+// Light light;
 GLfloat ambientPara = 0.4f , diffusePara = 1.0f, specularPara = 0.5f;
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
-
 
 GLfloat color1[3] = { 0.6f, 0.0f, 0.0f }, color2[3] = {0.5f, 0.5f, 0.6f}, color3[3] = {0.7f, 0.7f, 0.5f};
 // select area
@@ -104,7 +102,7 @@ int main()
 	
 	// build and compile the shader
 	Shader ourShader("phongShader.vs", "phongShader.frag");
-	Shader lightShader("camera.vs", "camera.frag");
+	Shader pointSader("camera.vs", "camera.frag");
 	Shader shadowShader("shadowMappingDepth.vs", "shadowMappingDepth.frag");
 	Shader textureShader("textureShader.vs", "textureShader.frag");
 	Shader cylinderShader("positionShader.vs", "positionShader.frag");
@@ -115,7 +113,6 @@ int main()
 	vessel.initVertexObject();
 	tumor.initVertexObject();
 	bones.initVertexObject();
-	light.initVertexObject();
 	std::vector<BaseModel> models;
 	models.push_back(vessel);
 	models.push_back(tumor);
@@ -160,7 +157,6 @@ int main()
 	textureShader.setFloat("ambientStrength", ambientPara);
 	textureShader.setFloat("diffuseStrength", diffusePara);
 	textureShader.setFloat("specularStrength", specularPara);
-	float near_plane = 1.0f, far_plane = 300.0f, x = 150.0f;
 	// game loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -184,38 +180,20 @@ int main()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		glm::mat4 lightProjection, lightView;
-		glm::mat4 lightSpaceMatrix;
-
-		lightProjection = glm::ortho(-x, x, -x, x, near_plane, far_plane);
-		//lightProjection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
-		lightView = glm::lookAt(light.Position, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-		lightSpaceMatrix = lightProjection * lightView;
-	
-		shadowShader.use();
-		shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-
 		ourShader.use();
 		ourShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		ourShader.setVec3("lightPos", light.Position);
+		//ourShader.setVec3("lightPos", light.Position);
 		ourShader.setInt("withLight", 1);
-		ourShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-		
-
-		// debugging for color
-		ourShader.setVec3("color1", glm::vec3(color1[0], color1[1], color1[2]));
-		ourShader.setVec3("color2", glm::vec3(color2[0], color2[1], color2[2]));
-		ourShader.setVec3("color3", glm::vec3(color3[0], color3[1], color3[2]));
-		// debugging for color
+		//ourShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		if (currentArea->getRulerMode() == 3) {
-			mainArea.tackleDistance(ourShader, shadowShader, models);
-			vesselArea.tackleDistance(ourShader, shadowShader, models);
-			tumorArea.tackleDistance(ourShader, shadowShader, models);
-			bonesArea.tackleDistance(ourShader, shadowShader, models);
+		if (currentArea->getMode() == 2) {
+			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			vesselArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			tumorArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			bonesArea.tackleRuler(ourShader, shadowShader, textureShader, models);
 		}
 		else if (toolbar.cutface) {
 			mainArea.tackleCrossIntersection(ourShader, shadowShader,  models);
@@ -226,13 +204,14 @@ int main()
 		else {
 			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			//mainArea.drawCube(pointSader);
 			vesselArea.draw(ourShader, shadowShader, models);
 			tumorArea.draw(ourShader, shadowShader, models);
 			bonesArea.draw(ourShader, shadowShader, models);
 
 		}
 
-		mainArea.drawZAxis(ourShader, shadowShader, models);
+		//mainArea.drawZAxis(ourShader, shadowShader, models);
 		
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
@@ -241,12 +220,9 @@ int main()
 		ImGui::Begin("Options", NULL, ImGuiWindowFlags_MenuBar);
 		ImGui::Checkbox("RULER", &toolbar.ruler);
 		ImGui::Checkbox("CROSS SECTION", &toolbar.cutface);
-		ImGui::SliderFloat("lightx", &light.Position.x, -100, 100);
-		ImGui::SliderFloat("lighty", &light.Position.y, -100, 100);
-		ImGui::SliderFloat("lightz", &light.Position.z, -100, 100);
-		ImGui::SliderFloat("near_plane", &near_plane, -1000, 1000);
-		ImGui::SliderFloat("far_plane", &far_plane, 0, 1000);
-		ImGui::SliderFloat("x", &x, 0, 1000);
+		//ImGui::SliderFloat("near_plane", &near_plane, -1000, 1000);
+		//ImGui::SliderFloat("far_plane", &far_plane, 0, 1000);
+		//ImGui::SliderFloat("x", &x, 0, 1000);
 
 		ImGui::SliderFloat("ambientStrength", &ambientPara, 0, 10);
 		ImGui::SliderFloat("diffuseStrength", &diffusePara, 0, 10);
@@ -284,7 +260,7 @@ void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-
+	// move camera
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		(*currentArea->getCamera()).ProcessKeyboard(FORWARD, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -293,7 +269,8 @@ void processInput(GLFWwindow *window)
 		(*currentArea->getCamera()).ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		(*currentArea->getCamera()).ProcessKeyboard(RIGHT, deltaTime);
-
+	
+	currentArea->updateLightSpaceMatrix();
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
 		(*currentArea->getCamera()).alterMouse();
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && currentArea->getCutMode() == 2) {
@@ -302,29 +279,12 @@ void processInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && currentArea->getCutMode() == 3) {
 		currentArea->setCutMode(1);
 	}
-
-	if (currentArea->getRulerMode() == 2) {
-		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) { // ruler move backwards
-			currentArea->setRulerMovement(BACKWARD, deltaTime);
-		}
-		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) { // ruler move forwards
-			currentArea->setRulerMovement(FORWARD, deltaTime);
-		}
-		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) { // ruler move backwards
-			currentArea->setRulerMovement(LEFT, deltaTime);
-		}
-		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) { // ruler move backwards
-			currentArea->setRulerMovement(RIGHT, deltaTime);
-		}
-	}
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-	// make sure the viewport matches the new window dimensions; note that width and 
-	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
 }
 
@@ -402,9 +362,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			rbutton_down = false;
 	}
 	// mouse click, ruler mode
-	if (currentArea->getRulerMode() ==3) {
+	if (currentArea->getMode() ==2) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (GLFW_PRESS == action) {
+				
 				currentArea->setRulerVertex(getObjCoor(lastX, lastY));
 			}
 		}

@@ -33,7 +33,6 @@ public:
 	void draw() {
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, vertices.size() * 3);
-
 		glBindVertexArray(0);
 	}
 	void generateVertices() {
@@ -150,16 +149,7 @@ public:
 		return vertices;
 	}
 private:
-	std::vector<GLfloat> vertices;/* = {
-		// Back face
-	   -30.0f, -0.5f, -0.5f,
-	   30.0f, 0.5f, -0.5f,
-	   30.0f, -0.5f, -0.5f,
-	   30.0f, 0.5f, -0.5f,
-	   -30.0f, -0.5f, -0.5f,
-	   -30.0f, 0.5f, -0.5f
-	   
-	};*/
+	std::vector<GLfloat> vertices;
 	int sidecount; // to approach a circle
 	int radius;
 	float length;
