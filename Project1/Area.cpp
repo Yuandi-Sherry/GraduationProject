@@ -7,9 +7,7 @@
 #include <string>
 #include "MyCylinder.h"
 
-#define RULERFACE 100
 GLfloat zR = 1, zG = 1, zB = 1;
-
 float near_plane = 1.0f, far_plane = 1000.0f, x = 150.0f;
 Area::Area()
 {
@@ -157,7 +155,7 @@ void Area::drawZAxis(Shader& cylinderShader, Shader& shadowShader, std::vector<B
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 	cylinderShader.setVec3("color", glm::vec3(zR, zG, zB));
 	glm::mat4 ortho = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, 0.1f, 1000.0f); 
-	cylinderShader.setMat4("projection", camera.getProjection());
+	cylinderShader.setMat4("projection", camera.getOrthology());
 	cylinderShader.setMat4("view", camera.GetViewMatrix());
 	cylinderShader.setMat4("model", glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1,0,0)));
 	//cylinderShader.setMat4("model", glm::mat4(1.0f));
@@ -182,8 +180,8 @@ void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> &
 	shader.setVec4("plane", planeCoeff);
 	// glm::mat4 ortho = glm::ortho(orthoLeftRight[0], orthoLeftRight[1], orthoBottomTop[0], orthoBottomTop[1], orthoNearFar[0], orthoNearFar[1]);
 	glm::mat4 ortho = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, 0.1f, 1000.0f);
-	shader.setMat4("projection", camera.getProjection());
-	//shader.setMat4("projection", ortho);
+	//shader.setMat4("projection", camera.getOrthology());
+	shader.setMat4("projection", camera.getOrthology());
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
@@ -200,7 +198,7 @@ void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> &
 
 void Area::drawCube(Shader& shader) {
 	shader.use();
-	shader.setMat4("projection", camera.getProjection());
+	shader.setMat4("projection", camera.getOrthology());
 	shader.setMat4("view", camera.GetViewMatrix());
 	shader.setMat4("model", glm::mat4(1.0f));
 	rulerEnd.draw();
@@ -217,7 +215,7 @@ void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseM
 	shader.setInt("withLight", 1);
 	shader.setInt("isPlane", 0);
 	shader.setVec4("plane", planeCoeff);
-	shader.setMat4("projection", camera.getProjection());
+	shader.setMat4("projection", camera.getOrthology());
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
@@ -254,7 +252,7 @@ void Area::drawSelectedFace(Shader & shader) {
 	shader.setInt("cut", 2);
 	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 	shader.setVec4("plane", planeCoeff);
-	shader.setMat4("projection", camera.getProjection());
+	shader.setMat4("projection", camera.getOrthology());
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
@@ -267,101 +265,58 @@ void Area::drawSelectedFace(Shader & shader) {
 	csPlane.draw();
 }
 
-/*void Area::drawLight(Shader & shader) {
-	shader.use();
-	GLint viewPosLoc = glGetUniformLocation(shader.ID, "viewPos");
-	glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
-	shader.setMat4("projection", camera.getProjection());
-	// camera/view transformation
-	shader.setMat4("view", camera.GetViewMatrix());
-	glm::mat4 model = glm::mat4(1.0f);
-	//model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-	model = glm::translate(model, light.Position);
-	//model = glm::translate(model, glm::vec3(4.38f, 201.899f, -148.987f));
-	shader.setMat4("model", model);
-	//shader.setMat4("model", model);
-	if (cutMode == 3){
-		glViewport(viewportPara[0], viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
-		glViewport(viewportPara[0] + viewportPara[2] / 2, viewportPara[1], viewportPara[2] / 2, viewportPara[3]);
-	}
-	else {
-		glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
-	}
-}*/
-
 void Area::drawLine(Shader & textureShader, Shader& pointShader) {
 	// set parameters - texture shader
 	textureShader.use();
 	textureShader.setVec3("viewPos", camera.Position);
 	textureShader.setVec3("lightPos", camera.Position);
-	textureShader.setMat4("projection", camera.getProjection());
+	textureShader.setMat4("projection", camera.getOrthology());
 	textureShader.setMat4("view", camera.GetViewMatrix());
 	glm::mat4 model = glm::mat4(1.0f);
 	// draw ruler
-	model = glm::scale(model, glm::vec3(ruler.scaleSize, ruler.scaleSize, ruler.scaleSize));
-	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0,0, 1));
+	//
 	model = glm::translate(model, ruler.position);
+	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0,0, 1));
+	model = glm::scale(model, glm::vec3(ruler.scaleSize, ruler.scaleSize, 1));
+	
 	textureShader.setMat4("model", model);
 	ruler.generateTexture();
 	ruler.draw(textureShader);
 	// draw ends
 	pointShader.use();
-	pointShader.setMat4("projection", camera.getProjection());
+	pointShader.setMat4("projection", camera.getOrthology());
 	pointShader.setMat4("view", camera.GetViewMatrix());
-	model = glm::translate(glm::mat4(1.0f), ruler.ends[0]);
+	model = glm::scale( glm::translate(glm::mat4(1.0f), ruler.ends[0]), glm::vec3(3,3,3));
 	pointShader.setMat4("model", model);
 	rulerEnd.draw();
-	model = glm::translate(glm::mat4(1.0f), ruler.ends[1]);
+	model = glm::scale(glm::translate(glm::mat4(1.0f), ruler.ends[1]), glm::vec3(3, 3, 3));
 	pointShader.setMat4("model", model);
 	rulerEnd.draw();
-	model = glm::translate(glm::mat4(1.0f), (ruler.ends[1] + ruler.ends[0])/2.0f);
-	pointShader.setMat4("model", model);
-	rulerEnd.draw();
-}
-
-void Area::drawRuler(Shader & shader) {
-	// set parameters
-	shader.use();
-	shader.setVec3("viewPos", camera.Position);
-	shader.setVec3("lightPos", camera.Position);
-	shader.setMat4("projection", camera.getProjection());
-	glm::mat4 view = camera.GetViewMatrix();
-	shader.setMat4("view", view);
-	glm::mat4 model = glm::mat4(1.0f);
-	shader.setMat4("model", glm::scale(glm::translate(model, ruler.getPosition()), glm::vec3(rulerScale, 1, 1)));
-	ruler.generateTexture();
-	ruler.draw(shader);
 }
 
 void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 	glm::vec3 localPos = /*glm::inverse(transformMat) **/ glm::vec4(vertexPosition, 1.0f);
 	tmpVertices[currentRulerIndex] = localPos;
 	if (currentRulerIndex == 0) {
-		ruler.ends[currentRulerIndex].x = localPos.x;
-		ruler.ends[currentRulerIndex].y = localPos.y;
-		ruler.ends[currentRulerIndex].z = localPos.z;
+		ruler.ends[currentRulerIndex] = localPos;
 		currentRulerIndex = 1;
 	}
 	else {
-		ruler.ends[currentRulerIndex].x = localPos.x;
-		ruler.ends[currentRulerIndex].y = localPos.y;
-		ruler.ends[currentRulerIndex].z = localPos.z;
+		ruler.ends[currentRulerIndex] = localPos;
 		currentRulerIndex = 0;
 		// update ruler properties
 		GLfloat oriLen = glm::distance(ruler.ends[0], ruler.ends[1]);
-		ruler.ends[0].z = RULERFACE;
-		ruler.ends[1].z = RULERFACE;
+		ruler.position = (ruler.ends[0] + ruler.ends[1]) / 2.0f;
+		ruler.ends[0].z = ruler.CUTFACE;
+		ruler.ends[1].z = ruler.CUTFACE;
+		//ruler.ends[0].z = RULERFACE + 5;
+		//ruler.ends[1].z = RULERFACE + 5;
 		GLfloat projLen = glm::distance(ruler.ends[0], ruler.ends[1]);
 		ruler.scaleSize = oriLen / projLen;
-		ruler.position = glm::vec3((ruler.ends[0].x + ruler.ends[1].x) / 2, (ruler.ends[0].y + ruler.ends[1].y) / 2, RULERFACE);
+		ruler.position.z = ruler.CUTFACE;
+		std::cout << "scaleSize " << ruler.scaleSize << " " << std::endl;
 		ruler.rotateAngle = atan((ruler.ends[0].y - ruler.ends[1].y)/ (ruler.ends[0].x - ruler.ends[1].x));
-
-		for (int i = 0; i <= 1; i++) {
-			std::cout << " i " << i << " " << ruler.ends[i].x << " " << ruler.ends[i].y << " " << ruler.ends[i].z << std::endl;
-		}
-		std::cout << "scale size " << ruler.scaleSize << std::endl;
-		std::cout << "position " << ruler.position.x << " " << ruler.position.y << " " << ruler.position.z << " " << std::endl;
-		std::cout << "rotate " << ruler.rotateAngle * 180 / 3.14 << std::endl;
+		
 	}
 	
 	
@@ -405,39 +360,7 @@ void Area::calculatePlane() {
 		transCutFaceVertices[2].x, transCutFaceVertices[2].y, transCutFaceVertices[2].z
 	};
 	planeCoeff = glm::normalize(planeCoeff);
-	csPlane.setCoeff(planeCoeff);
-
-	// editModel
-	/*editedModel.clear();
-	std::vector<GLfloat> upperPart;
-	std::vector<GLfloat> lowerPart;
-	// for each model set initially
-	for (int i = 0; i < modelsID.size(); i++) {
-		std::vector<GLfloat> * tmp = (*models)[i].getVertices();
-		std::cout << "tmp->size()" << tmp->size() << std::endl;
-		for (int j = 0; j < tmp->size(); j += 18) {
-			if ((*tmp)[j] * planeCoeff.x + (*tmp)[j + 1] * planeCoeff.y + (*tmp)[j + 2] * planeCoeff.z + planeCoeff.w > 0) {
-				for (int k = 0; k < 18; k++) {
-					upperPart.push_back((*tmp)[j+k]);
-				}
-			}
-			else {
-				for (int k = 0; k < 18; k++) {
-					lowerPart.push_back((*tmp)[j + k]);
-				}
-			}
-		}
-		BaseModel upperModel(upperPart, (*models)[i].getcolorID(), TRIANGLE);
-		BaseModel lowerModel(lowerPart, (*models)[i].getcolorID(), TRIANGLE);
-		editedModel.push_back(upperModel);
-		editedModel.push_back(lowerModel);
-		upperPart.clear();
-		lowerPart.clear();
-	}
-	for (int i = 0; i < editedModel.size(); i++) {
-		editedModel[i].initVertexObject();
-	}*/
-	
+	csPlane.setCoeff(planeCoeff);	
 }
 
 void Area::displayGUI() {

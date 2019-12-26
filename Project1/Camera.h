@@ -93,14 +93,24 @@ public:
 	void ProcessKeyboard(Camera_Movement direction, float deltaTime)
 	{
 		float velocity = MovementSpeed * deltaTime;
-		if (direction == FORWARD)
+		if (direction == FORWARD) {
 			Position += Front * velocity;
-		if (direction == BACKWARD)
+			orthoWidth -= velocity;
+		}
+			
+		if (direction == BACKWARD) {
 			Position -= Front * velocity;
-		if (direction == LEFT)
+			orthoWidth += velocity;
+		}
+			
+		if (direction == LEFT) {
 			Position -= Right * velocity;
-		if (direction == RIGHT)
+		}
+			
+		if (direction == RIGHT) {
 			Position += Right * velocity;
+		}
+			
 	}
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -142,14 +152,14 @@ public:
 		Position = transformMat * glm::vec4(Position, 0.0f);
 	}
 
-	glm::mat4 getProjection() {
+	glm::mat4 getPerspective() {
 		projection = glm::perspective(glm::radians(Zoom), width / height, Near, 1000.0f);
 		return projection;
 	}
 	
 
 	glm::mat4 getOrthology() {
-		ortho = glm::ortho(-800.0f, 800.0f, -600.0f, 600.0f,-100.0f, 1000.0f);
+		ortho = glm::ortho(-orthoWidth / 2, orthoWidth / 2, -orthoWidth / 2 * height/width, orthoWidth / 2 * height / width, Near, 1000.0f);
 		return ortho;
 	}
 	glm::vec3 getN() {
@@ -166,6 +176,7 @@ public:
 private:
 	glm::mat4 projection;
 	glm::mat4 ortho;
+	GLfloat orthoWidth = 400.0f;
 	// Calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors()
 	{

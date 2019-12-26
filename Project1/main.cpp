@@ -410,7 +410,7 @@ void initGUI(GLFWwindow* window) {
 glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
 	GLfloat z;
 	glm::mat4 modelview = currentArea->getCamera()->GetViewMatrix();
-	glm::mat4 proj = currentArea->getCamera()->getProjection();
+	glm::mat4 proj = currentArea->getCamera()->getOrthology();
 	glm::vec4 viewport = currentArea->getViewport();
 	x = x;
 	y = SCR_HEIGHT - y;
@@ -418,14 +418,8 @@ glm::vec3 getObjCoor(GLfloat x, GLfloat y) {
 	glReadBuffer(GL_BACK);
 	glReadPixels(x,y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
 	glm::vec3 win = glm::vec3(x, y, z);
-	std::cout << "winx " << win.x << " winy " << win.y << " winz " << win.z << std::endl;
 	glm::vec3 ans = glm::unProject(win, modelview, proj, viewport);
 
-	/*glm::vec3 localPos = glm::inverse(currentArea->getTransformMat()) * glm::vec4(ans, 1.0f);
-
-	light.Position.x = localPos.x;
-	light.Position.y = localPos.y;
-	light.Position.z = localPos.z;*/
 	return ans;
 }
 

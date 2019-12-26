@@ -63,9 +63,7 @@ public:
 	glm::vec3 tmpCutFaceVertices[3]; // current operating line vertices
 	glm::vec3 transCutFaceVertices[3]; // current operating line vertices
 	
-	// ruler
-	void drawRuler(Shader & shader);
-	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, Shader& pointShader, std::vector<BaseModel>& models);
+	
 
 	// cut 
 	// bool confirmedCut = false;//
@@ -97,10 +95,10 @@ public:
 	void drawZAxis(Shader& cylinderShader, Shader& shadowShader, std::vector<BaseModel>& models);
 
 
-	// measure distance
+	// ruler
+	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, Shader& pointShader, std::vector<BaseModel>& models);
 	void drawLine(Shader& textureShader, Shader& pointShader);
 	void drawCube(Shader& shader);
-	// void tackleDistance(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
 
 	void updateLightSpaceMatrix();
 private:
