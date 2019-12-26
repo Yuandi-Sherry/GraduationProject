@@ -7,7 +7,7 @@
 #include <string>
 #include "MyCylinder.h"
 
-#define RULERFACE 200
+#define RULERFACE 100
 GLfloat zR = 1, zG = 1, zB = 1;
 
 float near_plane = 1.0f, far_plane = 1000.0f, x = 150.0f;
@@ -82,7 +82,7 @@ void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::
 	}
 }
 
-void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models) {
+void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, Shader& pointShader, std::vector<BaseModel>& models) {
 	// rulerMode: 1 - not ruler, 2 - ruler
 	if (modeSelection == 1) { // selecting
 		camera.setSize(viewportPara[2], viewportPara[3]);
@@ -90,7 +90,7 @@ void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShad
 	}
 	else if (modeSelection == 2) { // confirming*/
 		draw(shader, shadowShader, models);
-		drawLine(textureShader);
+		drawLine(textureShader, pointShader);
 		// drawLine(textureShader);
 	}
 }
@@ -289,40 +289,38 @@ void Area::drawSelectedFace(Shader & shader) {
 	}
 }*/
 
-void Area::drawLine(Shader & shader) {
-	
-	shader.use();
-	shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-	shader.setInt("cut", 0);
-	shader.setVec4("plane", planeCoeff);
-	shader.setVec3("viewPos", camera.Position);
-	shader.setVec3("lightPos", camera.Position);
-	shader.setMat4("projection", camera.getProjection());
-	glm::mat4 view = camera.GetViewMatrix();
-	shader.setMat4("view", view);
+void Area::drawLine(Shader & textureShader, Shader& pointShader) {
+	// set parameters - texture shader
+	textureShader.use();
+	textureShader.setVec3("viewPos", camera.Position);
+	textureShader.setVec3("lightPos", camera.Position);
+	textureShader.setMat4("projection", camera.getProjection());
+	textureShader.setMat4("view", camera.GetViewMatrix());
 	glm::mat4 model = glm::mat4(1.0f);
-	shader.setInt("withLight", 1);
-	shader.setInt("isPlane", 0);
-
-	// draw ends
-	shader.setVec3("color", glm::vec3(1,1,1));
-	model = glm::translate(glm::mat4(1.0f), ruler.ends[0]);
-	shader.setMat4("model", model);
-	rulerEnd.draw();
-	model = glm::translate(glm::mat4(1.0f), ruler.ends[1]);
-	shader.setMat4("model", model);
-	rulerEnd.draw();
 	// draw ruler
 	model = glm::scale(model, glm::vec3(ruler.scaleSize, ruler.scaleSize, ruler.scaleSize));
-	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0, 0, 1));
+	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0,0, 1));
 	model = glm::translate(model, ruler.position);
-	shader.setMat4("model", model);
+	textureShader.setMat4("model", model);
 	ruler.generateTexture();
-	ruler.draw(shader);
-	
+	ruler.draw(textureShader);
+	// draw ends
+	pointShader.use();
+	pointShader.setMat4("projection", camera.getProjection());
+	pointShader.setMat4("view", camera.GetViewMatrix());
+	model = glm::translate(glm::mat4(1.0f), ruler.ends[0]);
+	pointShader.setMat4("model", model);
+	rulerEnd.draw();
+	model = glm::translate(glm::mat4(1.0f), ruler.ends[1]);
+	pointShader.setMat4("model", model);
+	rulerEnd.draw();
+	model = glm::translate(glm::mat4(1.0f), (ruler.ends[1] + ruler.ends[0])/2.0f);
+	pointShader.setMat4("model", model);
+	rulerEnd.draw();
 }
 
 void Area::drawRuler(Shader & shader) {
+	// set parameters
 	shader.use();
 	shader.setVec3("viewPos", camera.Position);
 	shader.setVec3("lightPos", camera.Position);
@@ -330,7 +328,7 @@ void Area::drawRuler(Shader & shader) {
 	glm::mat4 view = camera.GetViewMatrix();
 	shader.setMat4("view", view);
 	glm::mat4 model = glm::mat4(1.0f);
-	shader.setMat4("model", glm::scale(glm::translate(model, ruler.getPosition()), glm::vec3(rulerScale, rulerScale, rulerScale)));
+	shader.setMat4("model", glm::scale(glm::translate(model, ruler.getPosition()), glm::vec3(rulerScale, 1, 1)));
 	ruler.generateTexture();
 	ruler.draw(shader);
 }
@@ -356,13 +354,14 @@ void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 		GLfloat projLen = glm::distance(ruler.ends[0], ruler.ends[1]);
 		ruler.scaleSize = oriLen / projLen;
 		ruler.position = glm::vec3((ruler.ends[0].x + ruler.ends[1].x) / 2, (ruler.ends[0].y + ruler.ends[1].y) / 2, RULERFACE);
-		ruler.rotateAngle = atan(abs(ruler.ends[0].y - ruler.ends[1].y)/ abs(ruler.ends[0].x - ruler.ends[1].x));
+		ruler.rotateAngle = atan((ruler.ends[0].y - ruler.ends[1].y)/ (ruler.ends[0].x - ruler.ends[1].x));
 
 		for (int i = 0; i <= 1; i++) {
 			std::cout << " i " << i << " " << ruler.ends[i].x << " " << ruler.ends[i].y << " " << ruler.ends[i].z << std::endl;
 		}
 		std::cout << "scale size " << ruler.scaleSize << std::endl;
 		std::cout << "position " << ruler.position.x << " " << ruler.position.y << " " << ruler.position.z << " " << std::endl;
+		std::cout << "rotate " << ruler.rotateAngle * 180 / 3.14 << std::endl;
 	}
 	
 	

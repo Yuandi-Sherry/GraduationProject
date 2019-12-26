@@ -190,10 +190,10 @@ int main()
 
 
 		if (currentArea->getMode() == 2) {
-			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
-			vesselArea.tackleRuler(ourShader, shadowShader, textureShader, models);
-			tumorArea.tackleRuler(ourShader, shadowShader, textureShader, models);
-			bonesArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			mainArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
+			vesselArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
+			tumorArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
+			bonesArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
 		}
 		else if (toolbar.cutface) {
 			mainArea.tackleCrossIntersection(ourShader, shadowShader,  models);
@@ -203,7 +203,7 @@ int main()
 		}
 		else {
 			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			mainArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
 			//mainArea.drawCube(pointSader);
 			vesselArea.draw(ourShader, shadowShader, models);
 			tumorArea.draw(ourShader, shadowShader, models);

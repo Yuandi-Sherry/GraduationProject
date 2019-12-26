@@ -65,7 +65,7 @@ public:
 	
 	// ruler
 	void drawRuler(Shader & shader);
-	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models);
+	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, Shader& pointShader, std::vector<BaseModel>& models);
 
 	// cut 
 	// bool confirmedCut = false;//
@@ -98,7 +98,7 @@ public:
 
 
 	// measure distance
-	void drawLine(Shader& shader);
+	void drawLine(Shader& textureShader, Shader& pointShader);
 	void drawCube(Shader& shader);
 	// void tackleDistance(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
 
