@@ -277,7 +277,7 @@ void Area::drawLine(Shader & textureShader, Shader& pointShader) {
 	//
 	model = glm::translate(model, ruler.position);
 	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0,0, 1));
-	model = glm::scale(model, glm::vec3(ruler.scaleSize, ruler.scaleSize, 1));
+	model = glm::scale(model, glm::vec3(ruler.scaleSize, 3, ruler.scaleSize));
 	
 	textureShader.setMat4("model", model);
 	ruler.generateTexture();
