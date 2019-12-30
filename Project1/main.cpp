@@ -59,6 +59,7 @@ Area* currentArea = &mainArea;
 // toolbar
 Toolbar toolbar;
 Character characterController;
+std::vector<BaseModel> models;
 int main()
 {
 	// initialize GLFW
@@ -119,7 +120,7 @@ int main()
 	vessel.initVertexObject();
 	tumor.initVertexObject();
 	bones.initVertexObject();
-	std::vector<BaseModel> models;
+	
 	models.push_back(vessel);
 	models.push_back(tumor);
 	models.push_back(bones);
@@ -200,19 +201,20 @@ int main()
 			tumorArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
 			bonesArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
 		}
-		else if (toolbar.cutface) {
+		else if (currentArea->getMode() == 3) {
 			mainArea.tackleCrossIntersection(ourShader, shadowShader,  models);
 			vesselArea.tackleCrossIntersection(ourShader, shadowShader, models);
 			tumorArea.tackleCrossIntersection(ourShader, shadowShader,models );
 			bonesArea.tackleCrossIntersection(ourShader, shadowShader, models);
 		}
+		else if (currentArea->getMode() == 4) {
+			mainArea.tackleNearestVessel(ourShader, shadowShader, models, models[0]);
+		}
 		else {
-			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			mainArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
-			//mainArea.drawCube(pointSader);
-			vesselArea.draw(ourShader, shadowShader, models);
-			tumorArea.draw(ourShader, shadowShader, models);
-			bonesArea.draw(ourShader, shadowShader, models);
+			mainArea.drawModels(ourShader, shadowShader, models);
+			vesselArea.drawModels(ourShader, shadowShader, models);
+			tumorArea.drawModels(ourShader, shadowShader, models);
+			bonesArea.drawModels(ourShader, shadowShader, models);
 
 		}
 
@@ -223,19 +225,6 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::Begin("Options", NULL, ImGuiWindowFlags_MenuBar);
-		ImGui::Checkbox("RULER", &toolbar.ruler);
-		ImGui::Checkbox("CROSS SECTION", &toolbar.cutface);
-		//ImGui::SliderFloat("near_plane", &near_plane, -1000, 1000);
-		//ImGui::SliderFloat("far_plane", &far_plane, 0, 1000);
-		//ImGui::SliderFloat("x", &x, 0, 1000);
-
-		ImGui::SliderFloat("ambientStrength", &ambientPara, 0, 10);
-		ImGui::SliderFloat("diffuseStrength", &diffusePara, 0, 10);
-		ImGui::SliderFloat("specularStrength", &specularPara, 0, 10);
-
-		ImGui::SliderFloat3("color1", color1, 0, 1);
-		ImGui::SliderFloat3("color2", color2, 0, 1);
-		ImGui::SliderFloat3("color3", color3, 0, 1);
 
 		currentArea->displayGUI();
 		ImGui::End();
@@ -382,7 +371,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			}
 		}
 	}
-	else {
+	else if(currentArea -> getMode() == 4){
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			if (GLFW_PRESS == action) {
+				currentArea->setLocalCoordinate(getObjCoor(lastX, lastY), models[0]);
+			}
+		}
 	}
 }
 

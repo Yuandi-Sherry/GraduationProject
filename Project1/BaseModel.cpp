@@ -164,16 +164,6 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 		}
 		in.close();
 	
-		/*(for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++) {
-			if (it->second.size() > 1) {
-				std::cout << "bingo" << std::endl;
-			}
-			/*std::cout << it->first <<": ";
-			for (int j = 0; j < it->second.size(); j++) {
-				std::cout << it->second[j] << " ";
-			}
-			std::cout << std::endl;
-		}*/
 		std::cout << "更新顶点法向量" << std::endl;
 		int k = 0;
 		for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++, k++) {
@@ -210,7 +200,10 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 		out.close();
 	}
 	else {
-		std::cout << "读取normal.std" << std::endl;
+		int index = 0;
+		
+		std::unordered_map< std::string, int> mapping; // 顶点和index
+		
 		std::ifstream in(cfilename, std::ifstream::in | std::ifstream::binary);
 		if (!in) {
 			std::cout << "fail to open file " << cfilename << std::endl;
@@ -228,26 +221,36 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 		else {
 			std::cout << "triangles " << triangles << std::endl;
 		}
-			
-		// read triangle mesh in the loop
-		// 存顶点坐标和多个数组下标的映射关系
-		//std::unordered_map< std::string, std::vector<int>> mapping;
+		
 		for (int i = 0; i < triangles; i++)
 		{
+			
 			float coorXYZ[18];
 			in.read((char*)coorXYZ, 18 * sizeof(float));
 			for (int j = 0; j < 3; j++) // 三角形三个点的x,y,z
 			{
-				vertices.push_back(coorXYZ[j * 6]);
-				vertices.push_back(coorXYZ[j * 6 + 1]);
-				vertices.push_back(coorXYZ[j * 6 + 2]);
-				vertices.push_back(coorXYZ[j * 6 + 3]);
-				vertices.push_back(coorXYZ[j * 6 + 4]);
-				vertices.push_back(coorXYZ[j * 6 + 5]);
+				std::string key = std::to_string(coorXYZ[j * 6]) + std::to_string(coorXYZ[j * 6 +1]) + std::to_string(coorXYZ[j * 6+2]);
+				// 判断是否在mapping里
+				std::unordered_map< std::string, int> ::const_iterator foundKey = mapping.find(key);
+				if (foundKey == mapping.end()) { // 如果不在
+					mapping.insert({ key, index });
+					indices.push_back(index);
+					index++;
+					vertices.push_back(coorXYZ[j * 6]);
+					vertices.push_back(coorXYZ[j * 6 + 1]);
+					vertices.push_back(coorXYZ[j * 6 + 2]);
+					vertices.push_back(coorXYZ[j * 6 + 3]);
+					vertices.push_back(coorXYZ[j * 6 + 4]);
+					vertices.push_back(coorXYZ[j * 6 + 5]);
+				}
+				else { // 如果在
+					indices.push_back(foundKey->second);
+				}
 			}
 		}
 		in.close();
 	}
+	std::cout << "vertices size" << vertices.size() / 6 << std::endl;
 	
 	
 }
@@ -268,6 +271,9 @@ void BaseModel::initVertexObject() {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), &(vertices.front()), GL_STATIC_DRAW);
 
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(float), &indices[0], GL_STATIC_DRAW);
 	// Position attribute
 	switch (type) {
 	case TRIANGLE:
@@ -275,8 +281,6 @@ void BaseModel::initVertexObject() {
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
-		//glVertexAttribPointer(1, 2, GL_FLOAT, GL_TRUE, 8* sizeof(GLfloat), (GLvoid*)0);
-		//glEnableVertexAttribArray(2);
 		break;
 	case LINE:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
@@ -294,7 +298,7 @@ void BaseModel::draw(){
 	glBindVertexArray(VAO);
 	switch (type) {
 	case TRIANGLE:
-		glDrawArrays(GL_TRIANGLES, 0, vertices.size() * 3);
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		break;
 	case LINE:
 		glDrawArrays(GL_LINE_STRIP, 0, 2);

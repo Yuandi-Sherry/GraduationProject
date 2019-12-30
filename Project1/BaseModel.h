@@ -37,7 +37,8 @@ public:
 
 protected:
 	std::vector<GLfloat> vertices;
-	GLuint VAO, VBO;
+	std::vector<int> indices;
+	GLuint VAO, VBO, EBO;
 	glm::vec3 color;
 	PrimitiveType type;
 };

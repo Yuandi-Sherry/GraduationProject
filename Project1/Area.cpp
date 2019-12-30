@@ -8,7 +8,7 @@
 #include "MyCylinder.h"
 
 GLfloat zR = 1, zG = 1, zB = 1;
-float near_plane = 0.0f, far_plane = 800.0f, left_plane = -150.0f, right_plane = 150.0f, top_plane = -150.0f, buttonplane = 150.0f;
+float light_near_plane = 0.0f, light_far_plane = 800.0f, light_left_plane = -150.0f, light_right_plane = 150.0f, light_top_plane = 150.0f, light_bottom_plane = -150.0f;
 Area::Area()
 {
 	modelsID.clear();
@@ -24,28 +24,31 @@ Area::~Area()
 }
 
 void Area::init() {
-	// init 
-	GLfloat Near = 0.1f;
 	camera.setPosition(cameraPos);
-	cutMode = 1;
-	csPlane.initVertexObject();
-	zAxis.generateVertices();
-	zAxis.initVertexObject();
-	// ruler=
+	// mode
+	modeSelection = 1;
+
+	// ruler
 	ruler.initVertexObject();
 	rulerEnd.initVertexObject();
-	modeSelection = 2;
-		
+	// cut
+	csPlane.initVertexObject();
+	cutMode = 1; // general
 
-	// load font
-	
+	// nearest vessel
+	nearestPoint.initVertexObject();
 
-	lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
+	// init 
+	lightProjection = glm::ortho(light_left_plane, light_right_plane, light_bottom_plane, light_top_plane, light_near_plane, light_far_plane);
 	lightView = glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
 	lightSpaceMatrix = lightProjection * lightView;
-	glGenFramebuffers(1, &depthMapFBO);
-	// create depth texture
+	
+	initDepthBuffer();	
+}
 
+void Area::initDepthBuffer() {
+	// create depth texture
+	glGenFramebuffers(1, &depthMapFBO);
 	glGenTextures(1, &depthMap);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
@@ -60,23 +63,19 @@ void Area::init() {
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-
 void Area::setModelsID(const std::vector<GLint>& modelsIDs, std::vector<BaseModel> & models) {
 	this->modelsID.assign(modelsIDs.begin(), modelsIDs.end());
 	this->models = &models;
 }
 
-void Area::initModels() {
-
-}
 void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
 
 	if (cutMode == 1) { // selecting
 		camera.setSize(viewportPara[2], viewportPara[3]);
-		draw(shader, shadowShader, models);
+		drawModels(shader, shadowShader, models);
 	}
 	else if (cutMode == 2) { // confirming
-		draw(shader, shadowShader, models);
+		drawModels(shader, shadowShader, models);
 		drawSelectedFace(shader);
 	}
 	else {// confirmed {
@@ -86,19 +85,38 @@ void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::
 }
 
 void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, Shader& pointShader, std::vector<BaseModel>& models) {
-	// rulerMode: 1 - not ruler, 2 - ruler
-	if (modeSelection == 1) { // selecting
-		camera.setSize(viewportPara[2], viewportPara[3]);
-		draw(shader, shadowShader, models);
-	}
-	else if (modeSelection == 2) { // confirming*/
-		draw(shader, shadowShader, models);
-		drawLine(textureShader, shader);
-		// drawLine(textureShader);
-	}
+	drawModels(shader, shadowShader, models);
+	drawRuler(textureShader, shader);
 }
 
 
+void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models, BaseModel & vessel) {
+	drawModels(shader, shadowShader, models);
+	if (glm::vec3(-10000.0f, -10000.0f, -10000.0f) != nearestPos) {
+		// draw point
+		shader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		shader.setInt("withShadow", 1);
+		shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		shader.setVec3("viewPos", camera.Position);
+		shader.setVec3("lightPos", camera.Position);
+		shader.setInt("cut", 0);
+		shader.setVec4("plane", planeCoeff);
+		shader.setMat4("projection", camera.getOrthology());
+		shader.setMat4("view", camera.GetViewMatrix());
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), nearestPos);
+		model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+		model = glm::scale(model, glm::vec3(3, 3, 3));
+		shader.setMat4("model", transformMat * model);
+		shader.setInt("withLight", 1);
+		shader.setInt("isPlane", 0);
+		shader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
+		nearestPoint.draw();
+	}
+	
+
+}
 void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
 	viewportPara[0] = left;
 	viewportPara[1] = bottom;
@@ -108,8 +126,7 @@ void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat heig
 }
 
 void Area::updateLightSpaceMatrix() {
-	lightProjection = glm::ortho(left_plane,right_plane, top_plane, buttonplane, near_plane, far_plane);
-	//lightProjection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
+	lightProjection = glm::ortho(light_left_plane,light_right_plane, light_bottom_plane, light_top_plane, light_near_plane, light_far_plane);
 	lightView = glm::lookAt(camera.Position, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
 	lightSpaceMatrix = lightProjection * lightView;
 }
@@ -131,45 +148,8 @@ void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & mod
 glm::vec4 Area::getViewport() {
 	return glm::vec4(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
 }
-void Area::drawShadow(Shader & shadowShader, std::vector<BaseModel> & models) {
-	shadowShader.use();
-	shadowShader.setInt("cut", 1);
-	shadowShader.setVec4("plane", planeCoeff);
-	renderDepthBuffer(shadowShader, models);
-}
 
-void Area::drawZAxis(Shader& cylinderShader, Shader& shadowShader, std::vector<BaseModel>& models) {
-	shadowShader.use();
-	shadowShader.setInt("cut", 0);
-	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-	shadowShader.setMat4("model", transformMat * model);
-	for (int i = 0; i < modelsID.size(); i++) {
-		models[modelsID[i]].draw();
-	}
-	shadowShader.setMat4("model", glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1, 0, 0)));
-	zAxis.draw();
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(viewportPara[0], viewportPara[1], viewportPara[2], viewportPara[3]);
-
-	cylinderShader.use();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
-	cylinderShader.setVec3("color", glm::vec3(zR, zG, zB));
-	glm::mat4 ortho = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, 0.1f, 1000.0f); 
-	cylinderShader.setMat4("projection", camera.getOrthology());
-	cylinderShader.setMat4("view", camera.GetViewMatrix());
-	cylinderShader.setMat4("model", glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1,0,0)));
-	//cylinderShader.setMat4("model", glm::mat4(1.0f));
-	cylinderShader.setVec3("viewPos", camera.Position);
-	cylinderShader.setVec3("lightPos", camera.Position);
-	zAxis.draw();
-
-}
-void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
+void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
 	shadowShader.use();
 	shadowShader.setInt("cut", 0);
 	renderDepthBuffer(shadowShader, models);
@@ -184,14 +164,9 @@ void Area::draw(Shader & shader, Shader & shadowShader, std::vector<BaseModel> &
 	shader.setVec3("lightPos", camera.Position);
 	shader.setInt("cut", 0);
 	shader.setVec4("plane", planeCoeff);
-	// glm::mat4 ortho = glm::ortho(orthoLeftRight[0], orthoLeftRight[1], orthoBottomTop[0], orthoBottomTop[1], orthoNearFar[0], orthoNearFar[1]);
-	glm::mat4 ortho = glm::ortho(-200.0f, 200.0f, -200.0f, 200.0f, 0.1f, 1000.0f);
-	//shader.setMat4("projection", camera.getOrthology());
 	shader.setMat4("projection", camera.getOrthology());
-	glm::mat4 view = camera.GetViewMatrix();
-	shader.setMat4("view", view);
-	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+	shader.setMat4("view", camera.GetViewMatrix());
+	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f));
 	shader.setMat4("model", transformMat * model);
 	shader.setInt("withLight", 1);
 	shader.setInt("isPlane", 0);
@@ -261,28 +236,25 @@ void Area::drawSelectedFace(Shader & shader) {
 	csPlane.draw();
 }
 
-void Area::drawLine(Shader & textureShader, Shader& pointShader) {
-	// set parameters - texture shader
+void Area::drawRuler(Shader & textureShader, Shader& pointShader) {
+	// ruler
 	textureShader.use();
 	textureShader.setVec3("viewPos", camera.Position);
 	textureShader.setVec3("lightPos", camera.Position);
 	textureShader.setMat4("projection", camera.getOrthology());
 	textureShader.setMat4("view", camera.GetViewMatrix());
 	glm::mat4 model = glm::mat4(1.0f);
-	// draw ruler
-	//
 	model = glm::translate(model, ruler.position);
 	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0,0, 1));
 	model = glm::scale(model, glm::vec3(ruler.scaleSize * 2, 3, 1));
-	
 	textureShader.setMat4("model", model);
 	ruler.generateTexture();
 	ruler.draw(textureShader);
-	// draw ends
+
+	// ends
 	pointShader.use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
-	//pointShader.setInt("withShadow", 0);
 	pointShader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
 	pointShader.setMat4("projection", camera.getOrthology());
 	pointShader.setMat4("view", camera.GetViewMatrix());
@@ -293,9 +265,6 @@ void Area::drawLine(Shader & textureShader, Shader& pointShader) {
 	pointShader.setInt("cut", 0);
 	pointShader.setInt("withLight", 1);
 	pointShader.setInt("isPlane", 0);
-
-
-
 	model = glm::scale( glm::translate(glm::mat4(1.0f), ruler.ends[0]), glm::vec3(3,3,3));
 	pointShader.setMat4("model", model);
 	rulerEnd.draw();
@@ -305,16 +274,17 @@ void Area::drawLine(Shader & textureShader, Shader& pointShader) {
 }
 
 void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
-	glm::vec3 localPos = /*glm::inverse(transformMat) **/ glm::vec4(vertexPosition, 1.0f);
+	glm::vec3 localPos = glm::vec4(vertexPosition, 1.0f);
 	tmpVertices[currentRulerIndex] = localPos;
-	if (currentRulerIndex == 0) {
+	if (currentRulerIndex == 0) { // first end
 		ruler.ends[currentRulerIndex] = localPos;
 		currentRulerIndex = 1;
 	}
-	else {
+	else { // second end
 		ruler.ends[currentRulerIndex] = localPos;
 		currentRulerIndex = 0;
-		// update ruler properties
+
+		// calculate ruler attributes
 		ruler.distance = glm::distance(ruler.ends[0], ruler.ends[1]);
 		ruler.position = (ruler.ends[0] + ruler.ends[1]) / 2.0f;
 		ruler.ends[0].z = ruler.CUTFACE;
@@ -322,12 +292,8 @@ void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 		GLfloat projLen = glm::distance(ruler.ends[0], ruler.ends[1]);
 		ruler.scaleSize = projLen / ruler.distance;
 		ruler.position.z = ruler.CUTFACE;
-		ruler.rotateAngle = atan((ruler.ends[0].y - ruler.ends[1].y)/ (ruler.ends[0].x - ruler.ends[1].x));
-		
-		
+		ruler.rotateAngle = atan((ruler.ends[0].y - ruler.ends[1].y)/ (ruler.ends[0].x - ruler.ends[1].x));		
 	}
-	
-	
 }
 
 void Area::setCutFaceVertex(const glm::vec3 & vertexPosition) {
@@ -372,42 +338,39 @@ void Area::calculatePlane() {
 }
 
 void Area::displayGUI() {
-	ImGui::Text("Lines information for ruler");
-	for (int i = 0; i < rulerLines.size(); i++) {
-		std::string str = "line" + std::to_string(i+1) + " : " + std::to_string(rulerLines[i].getDistance());
-		ImGui::TextDisabled(str.c_str());
-	}
-	ImGui::RadioButton("normal", &modeSelection, 1);
+	ImGui::RadioButton("General", &modeSelection, 1);
 	ImGui::RadioButton("Ruler", &modeSelection, 2);
-	//std::cout << "modeSelection " << modeSelection << std::endl;
-	if (cutMode == 1) {
-		ImGui::Text("selecting");
+	ImGui::RadioButton("Cut", &modeSelection, 3);
+	ImGui::RadioButton("Nearest Vessel", &modeSelection, 4);
+	if (modeSelection == 3) {
+		if (cutMode == 1) {
+			ImGui::Text("selecting");
+		}
+		else if (cutMode == 2) {
+			ImGui::Text("press C to confirm");
+		}
+		else {
+			ImGui::Text("confirmed");
+		}
 	}
-	else if(cutMode == 2) {
-		ImGui::Text("press C to confirm");
-		/*bool tmp2 = !ImGui::Button("Cancel");
-		if (tmp2) {
-			cutMode = 1;
-		}*/
-		//confirmedCut = !ImGui::Button("Cancel");
-	}
-	else {
-		ImGui::Text("confirmed");
-		/*}*/
-	}
-	// debug
-
-	ImGui::SliderFloat("rulerSize", &rulerScale, 0, 100);
-	ImGui::SliderFloat("z color r", &zR, 0, 1);
-	ImGui::SliderFloat("z color g", &zG, 0, 1);
-	ImGui::SliderFloat("z color b", &zB, 0, 1);
-
-	ImGui::SliderFloat2("orthoLeftRight", orthoLeftRight, -500, 500);
-	ImGui::SliderFloat2("orthoBottomTop", orthoBottomTop, -500, 500);
-	ImGui::SliderFloat2("orthoNearFar", orthoNearFar, -500, 500);
 
 }
 
-void Area::setRulerMovement(Camera_Movement direction, float deltaTime) {
-	ruler.move(direction, deltaTime);
+void Area::setLocalCoordinate(glm::vec3 worldCoor, BaseModel & vessel) {
+	NVLocalPos = glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f))) * glm::inverse(transformMat) * glm::vec4(worldCoor, 1.0f);
+	findNearest(vessel);
+}
+
+void Area::findNearest(BaseModel& vessel) {
+	GLfloat min = 10000.0f;
+	int minIndex;
+	for (int i = 0; i < vessel.getVertices()->size() / 6; i++) {
+		glm::vec3 pos = glm::vec3((*vessel.getVertices())[i*6], (*vessel.getVertices())[i*6+1], (*vessel.getVertices())[i*6+2]);
+		GLfloat dis = glm::distance(NVLocalPos, pos);
+		if (dis < min) {
+			min = dis;
+			minIndex = i;
+		}
+	}
+	nearestPos = glm::vec3((*vessel.getVertices())[minIndex * 6], (*vessel.getVertices())[minIndex * 6 + 1], (*vessel.getVertices())[minIndex * 6 + 2]);
 }
