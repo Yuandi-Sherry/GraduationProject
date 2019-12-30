@@ -85,7 +85,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -134,6 +134,7 @@
     <ClCompile Include="..\..\..\..\..\..\OpenGL\imGui\imgui_widgets.cpp" />
     <ClCompile Include="Area.cpp" />
     <ClCompile Include="BaseModel.cpp" />
+    <ClCompile Include="Character.cpp" />
     <ClCompile Include="CrossSectionPlane.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="imgui_impl_glfw.cpp" />
@@ -141,6 +142,7 @@
     <ClCompile Include="Line.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MyCube.cpp" />
+    <ClCompile Include="MySphere.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Ruler.cpp" />
     <ClCompile Include="stb_image.cpp" />
@@ -157,11 +159,13 @@
     <ClInclude Include="Area.h" />
     <ClInclude Include="BaseModel.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Character.h" />
     <ClInclude Include="CrossSectionPlane.h" />
     <ClInclude Include="MyCylinder.h" />
     <ClInclude Include="imgui_impl_glfw.h" />
     <ClInclude Include="imgui_impl_opengl3.h" />
     <ClInclude Include="Line.h" />
+    <ClInclude Include="MySphere.h" />
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Ruler.h" />
     <ClInclude Include="Shader.h" />
@@ -171,6 +175,8 @@
   <ItemGroup>
     <None Include="camera.frag" />
     <None Include="camera.vs" />
+    <None Include="characterShader.frag" />
+    <None Include="characterShader.vs" />
     <None Include="MyCylinder.cpp" />
     <None Include="default.frag" />
     <None Include="default.vs" />

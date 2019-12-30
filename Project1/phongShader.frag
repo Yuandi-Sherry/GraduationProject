@@ -27,6 +27,7 @@ uniform float diffuseStrength;
 uniform float specularStrength;
 
 uniform vec3 color;
+uniform int withShadow;
 
 float ShadowCalculation(vec4 fragPosLightSpace, float bias)
 {
@@ -73,11 +74,16 @@ vec3 getLightingColor (vec3 color) {
     vec3 specular = specularStrength * spec * lightColor;
 
     // º∆À„“ı”∞
-	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-    float shadow = ShadowCalculation(fs_in.FragPosLightSpace, bias);  
-	vec3 lighting=  (ambient + (1.0 - shadow) * (diffuse + specular));
-	//vec3 lighting=  (ambient + diffuse + specular);
-	return lighting;
+	if(withShadow) {
+		float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+		float shadow = ShadowCalculation(fs_in.FragPosLightSpace, bias);  
+		vec3 lighting=  (ambient + (1.0 - shadow) * (diffuse + specular));
+		return lighting;
+	} else {
+		vec3 lighting=  (ambient + diffuse + specular);
+		return lighting;
+	}
+	
 }
 
 

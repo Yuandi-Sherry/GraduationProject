@@ -18,6 +18,7 @@
 #include "Area.h"
 #include "Ruler.h"
 #include "MyCylinder.h"
+#include "Character.h"
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -57,6 +58,7 @@ Area mainArea, vesselArea, tumorArea, bonesArea;
 Area* currentArea = &mainArea;
 // toolbar
 Toolbar toolbar;
+Character characterController;
 int main()
 {
 	// initialize GLFW
@@ -106,6 +108,10 @@ int main()
 	Shader shadowShader("shadowMappingDepth.vs", "shadowMappingDepth.frag");
 	Shader textureShader("textureShader.vs", "textureShader.frag");
 	Shader cylinderShader("positionShader.vs", "positionShader.frag");
+	Shader characterShader("characterShader.vs", "characterShader.frag");
+
+	characterController.init();
+	characterShader.setMat4("projection", characterController.getProjection());
 	// load model
 	BaseModel vessel("vessel_normal.stl", glm::vec3(0.6f, 0.0f, 0.0f), TRIANGLE);
 	BaseModel tumor("tumor_normal.stl", glm::vec3(0.5f, 0.5f, 0.6f), TRIANGLE);
@@ -182,15 +188,14 @@ int main()
 
 		ourShader.use();
 		ourShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		//ourShader.setVec3("lightPos", light.Position);
 		ourShader.setInt("withLight", 1);
-		//ourShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 		if (currentArea->getMode() == 2) {
 			mainArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
+			characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 			vesselArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
 			tumorArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
 			bonesArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
@@ -378,11 +383,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		}
 	}
 	else {
-	/*	if (button == GLFW_MOUSE_BUTTON_LEFT) {
-			if (GLFW_PRESS == action) {
-				getObjCoor(lastX, lastY);
-			}
-		}*/
 	}
 }
 

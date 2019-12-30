@@ -3,12 +3,17 @@
 
 // system headers
 #include <vector>
+#include <map>
 
 // openGL headers
 // glm
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+// freetype
+#include <ft2build.h>
+#include FT_FREETYPE_H  
 
 // user-defined headers
 #include "Line.h"
@@ -20,7 +25,7 @@
 #include "Ruler.h"
 #include "MyCylinder.h"
 #include "Light.h"
-#include "MyCube.h"
+#include "MySphere.h"
 struct RulerPosition {
 	GLfloat x1;
 	GLfloat y1;
@@ -98,7 +103,9 @@ public:
 	// ruler
 	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, Shader& pointShader, std::vector<BaseModel>& models);
 	void drawLine(Shader& textureShader, Shader& pointShader);
-	void drawCube(Shader& shader);
+	std::string getDistance() {
+		return "Distance: " + std::to_string(ruler.distance / 15);
+	}
 
 	void updateLightSpaceMatrix();
 private:
@@ -138,11 +145,10 @@ private:
 	glm::vec3 tmpVertices[2]; // current operating line vertices
 	int currentRulerIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
 	std::vector<Line> rulerLines;
-	MyCube rulerEnd;
+	MySphere rulerEnd;
 	glm::mat4 lightSpaceMatrix;
 	glm::mat4 lightProjection;
 	glm::mat4 lightView;
-
 };
 
 

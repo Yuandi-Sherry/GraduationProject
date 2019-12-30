@@ -26,7 +26,8 @@ public:
     };
     GLfloat rotateAngle = 0;
     GLfloat scaleSize = 1;
-    GLfloat CUTFACE = 100.0f;
+    GLfloat CUTFACE = 150.0f;
+    GLfloat distance = 0.0f;
 private:
 	std::vector<GLfloat> vertices = {
         // Back face
