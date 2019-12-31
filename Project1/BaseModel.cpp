@@ -200,10 +200,8 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 		out.close();
 	}
 	else {
-		int index = 0;
-		
+		/*int index = 0;
 		std::unordered_map< std::string, int> mapping; // ¶¥µãºÍindex
-		
 		std::ifstream in(cfilename, std::ifstream::in | std::ifstream::binary);
 		if (!in) {
 			std::cout << "fail to open file " << cfilename << std::endl;
@@ -249,10 +247,87 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 			}
 		}
 		in.close();
+
+
+		// write in vertices
+		int verSize = vertices.size();
+		std::string outNameVertices(cfilename, cfilename + strlen(cfilename));
+		outNameVertices.insert(strlen(cfilename) - 4, "_vertices");
+		std::ofstream outVer(outNameVertices.c_str(), std::ofstream::out | std::ofstream::binary);
+		outVer.write((char*)&verSize, sizeof(int));
+		std::cout << "write in vertices " << vertices.size() << std::endl;
+		for (int i = 0; i < vertices.size(); i++) {
+			outVer.write((char*)&vertices[i], sizeof(GLfloat));
+		}
+		outVer.close();
+		// write in indices
+		int indSize = indices.size();
+		std::string outNameIndices(cfilename, cfilename + strlen(cfilename));
+		outNameIndices.insert(strlen(cfilename) - 4, "_indices");
+		std::ofstream outInd(outNameIndices.c_str(), std::ofstream::out | std::ofstream::binary);
+		outInd.write((char*)&indSize, sizeof(int));
+		std::cout << "write in indices " << indices.size() << std::endl;
+		for (int i = 0; i < indices.size(); i++) {
+			outInd.write((char*)&indices[i], sizeof(int));
+		}
+		outInd.close();*/
+
+		vertices.clear();
+		std::string inNameVertices(cfilename, cfilename + strlen(cfilename));
+		inNameVertices.insert(strlen(cfilename) - 4, "_vertices");
+		std::ifstream inVer(inNameVertices.c_str(), std::ifstream::in | std::ifstream::binary);
+		if (!inVer) {
+			std::cout << "fail to open file " << inNameVertices << std::endl;
+			return;
+		}
+		int verSize;
+		inVer.read((char*)&verSize, sizeof(int));
+		if (verSize == 0) {
+			std::cout << "verSize == 0 " << std::endl;
+			return;
+		}
+		else {
+			std::cout << "verSize " << verSize << std::endl;
+		}
+		float tmpFloat;
+		for (int i = 0; i < verSize; i++)
+		{
+			
+			inVer.read((char*)&tmpFloat, sizeof(GLfloat));
+			//std::cout << "tmp " << tmp << std::endl;
+			vertices.push_back(tmpFloat);
+		}
+		std::cout << "finish reading " << vertices.size() << std::endl;
+		inVer.close();
+
+		indices.clear();
+		std::string outNameIndices(cfilename, cfilename + strlen(cfilename));
+		outNameIndices.insert(strlen(cfilename) - 4, "_indices");
+		std::ifstream inInd(outNameIndices.c_str(), std::ifstream::in | std::ifstream::binary);
+		if (!inInd) {
+			std::cout << "fail to open file " << outNameIndices << std::endl;
+			return;
+		}
+		int indSize;
+		inInd.read((char*)&indSize, sizeof(int));
+		if (indSize == 0) {
+			std::cout << "indSize == 0 " << std::endl;
+			return;
+		}
+		else {
+			std::cout << "indSize " << indSize << std::endl;
+		}
+		int tmpInt;
+		for (int i = 0; i < indSize; i++)
+		{
+			
+			inInd.read((char*)&tmpInt, sizeof(int));
+			indices.push_back(tmpInt);
+		}
+		std::cout << "finish reading " << indices.size() << std::endl;
+		inInd.close();
+
 	}
-	std::cout << "vertices size" << vertices.size() / 6 << std::endl;
-	
-	
 }
 
 BaseModel::BaseModel(const std::vector<GLfloat> &vertices, glm::vec3 color, PrimitiveType type) {

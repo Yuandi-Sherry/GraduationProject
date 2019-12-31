@@ -93,7 +93,7 @@ public:
 	}
 
 	// ruler
-	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, Shader& pointShader, std::vector<BaseModel>& models);
+	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models);
 	void drawRuler(Shader& textureShader, Shader& pointShader);
 	std::string getDistance() {
 		return "Distance: " + std::to_string(ruler.distance / 15);

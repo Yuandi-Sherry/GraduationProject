@@ -195,11 +195,11 @@ int main()
 
 
 		if (currentArea->getMode() == 2) {
-			mainArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
+			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
 			characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
-			vesselArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
-			tumorArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
-			bonesArea.tackleRuler(ourShader, shadowShader, textureShader, pointSader, models);
+			vesselArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			tumorArea.tackleRuler(ourShader, shadowShader, textureShader,  models);
+			bonesArea.tackleRuler(ourShader, shadowShader, textureShader, models);
 		}
 		else if (currentArea->getMode() == 3) {
 			mainArea.tackleCrossIntersection(ourShader, shadowShader,  models);

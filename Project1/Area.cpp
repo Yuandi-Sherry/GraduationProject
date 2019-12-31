@@ -69,7 +69,7 @@ void Area::setModelsID(const std::vector<GLint>& modelsIDs, std::vector<BaseMode
 }
 
 void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
-
+	shader.use();
 	if (cutMode == 1) { // selecting
 		camera.setSize(viewportPara[2], viewportPara[3]);
 		drawModels(shader, shadowShader, models);
@@ -84,14 +84,17 @@ void Area::tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::
 	}
 }
 
-void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, Shader& pointShader, std::vector<BaseModel>& models) {
+void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models) {
+	shader.use();
 	drawModels(shader, shadowShader, models);
 	drawRuler(textureShader, shader);
 }
 
 
 void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models, BaseModel & vessel) {
+	shader.use();
 	drawModels(shader, shadowShader, models);
+
 	if (glm::vec3(-10000.0f, -10000.0f, -10000.0f) != nearestPos) {
 		// draw point
 		shader.use();
@@ -236,7 +239,7 @@ void Area::drawSelectedFace(Shader & shader) {
 	csPlane.draw();
 }
 
-void Area::drawRuler(Shader & textureShader, Shader& pointShader) {
+void Area::drawRuler(Shader & textureShader, Shader& shader) {
 	// ruler
 	textureShader.use();
 	textureShader.setVec3("viewPos", camera.Position);
@@ -252,24 +255,25 @@ void Area::drawRuler(Shader & textureShader, Shader& pointShader) {
 	ruler.draw(textureShader);
 
 	// ends
-	pointShader.use();
+	shader.use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMap);
-	pointShader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
-	pointShader.setMat4("projection", camera.getOrthology());
-	pointShader.setMat4("view", camera.GetViewMatrix());
-	pointShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+	shader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
+	shader.setMat4("projection", camera.getOrthology());
+	shader.setMat4("view", camera.GetViewMatrix());
+	shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 
-	pointShader.setVec3("viewPos", camera.Position);
-	pointShader.setVec3("lightPos", camera.Position);
-	pointShader.setInt("cut", 0);
-	pointShader.setInt("withLight", 1);
-	pointShader.setInt("isPlane", 0);
+	shader.setVec3("viewPos", camera.Position);
+	shader.setVec3("lightPos", camera.Position);
+	shader.setInt("cut", 0);
+	shader.setInt("withLight", 1);
+	shader.setInt("isPlane", 0);
 	model = glm::scale( glm::translate(glm::mat4(1.0f), ruler.ends[0]), glm::vec3(3,3,3));
-	pointShader.setMat4("model", model);
+	shader.setMat4("model", model);
 	rulerEnd.draw();
 	model = glm::scale(glm::translate(glm::mat4(1.0f), ruler.ends[1]), glm::vec3(3, 3, 3));
-	pointShader.setMat4("model", model);
+	shader.setMat4("model", model);
+
 	rulerEnd.draw();
 }
 
