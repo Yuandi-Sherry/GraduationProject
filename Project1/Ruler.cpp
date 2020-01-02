@@ -32,7 +32,7 @@ void Ruler::initVertexObject() {
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
 	// The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-	unsigned char *data = stbi_load("ruler2.jpg", &width, &height, &nrChannels, 0);
+	unsigned char *data = stbi_load("ruler.jpg", &width, &height, &nrChannels, 0);
 	//std::cout << data << std::endl;
 	//std::cout << " width " << width << " height " << height << std::endl;
 	if (data)

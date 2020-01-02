@@ -5,6 +5,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <string>
+#include <set>
 #include "MyCylinder.h"
 
 GLfloat zR = 1, zG = 1, zB = 1;
@@ -30,13 +31,12 @@ void Area::init() {
 
 	// ruler
 	ruler.initVertexObject();
-	rulerEnd.initVertexObject();
 	// cut
 	csPlane.initVertexObject();
 	cutMode = 1; // general
 
 	// nearest vessel
-	nearestPoint.initVertexObject();
+	mySphere.initVertexObject();
 
 	// init 
 	lightProjection = glm::ortho(light_left_plane, light_right_plane, light_bottom_plane, light_top_plane, light_near_plane, light_far_plane);
@@ -91,7 +91,7 @@ void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShad
 }
 
 
-void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models, BaseModel & vessel) {
+void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models) {
 	shader.use();
 	drawModels(shader, shadowShader, models);
 
@@ -115,10 +115,119 @@ void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector
 		shader.setInt("withLight", 1);
 		shader.setInt("isPlane", 0);
 		shader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
-		nearestPoint.draw();
+		mySphere.draw();
+	}
+}
+
+void Area::tackleRemoveTumor(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models) {
+	if (removeMode == 0) { // normal
+		shader.use();
+		drawModels(shader, shadowShader, models);
+	}
+	else if (removeMode == 1) { // 获取鼠标位置转换
+		drawModels(shader, shadowShader, models);
+		// draw remove point
+		shader.use();
+		
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), removePos);
+		model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+		model = glm::scale(model, glm::vec3(3, 3, 3));
+		shader.setMat4("model", transformMat * model);
+		shader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
+		mySphere.draw();
+	}
+}
+
+void Area::setRemovePos(glm::vec3 pos) {
+	
+	removePos = glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f))) * glm::inverse(transformMat) * glm::vec4(pos, 1.0f);
+	removeMode = 1;
+}
+void Area::updateCutVertices(BaseModel & tumor) {
+	// 挖去圆形
+	std::vector<GLfloat> tmpVertices(*tumor.getVertices());
+	for (int i = 0; i < tmpVertices.size() / 6; i++) {
+		glm::vec3 curVer = glm::vec3(tmpVertices[i*6], tmpVertices[i * 6+1], tmpVertices[i * 6+2]);
+		GLfloat dis = glm::distance(curVer, removePos);
+		if (dis < cutRadius) {
+			// 更新坐标 & 法向量
+			curVer = (curVer - removePos) * cutRadius / dis + removePos;
+			glm::vec3 normal = glm::normalize(removePos - curVer);
+			tmpVertices[i * 6] = curVer.x;
+			tmpVertices[i * 6 + 1] = curVer.y;
+			tmpVertices[i * 6 + 2] = curVer.z;
+			tmpVertices[i * 6 + 3] = normal.x;
+			tmpVertices[i * 6 + 4] = normal.y;
+			tmpVertices[i * 6 + 5] = normal.z;
+		} 
+	}
+	tumor.setVertices(tmpVertices);
+	// 删去点
+	/*std::vector<GLfloat> tmpVertices(*tumor.getVertices());
+	std::vector<int> tmpIndices(*tumor.getIndices());
+	std::vector<int> tobeDelete;
+	std::map<int, int> updateIndices;
+	for (int i = 0; i < tmpVertices.size() / 6; i++) {
+		glm::vec3 curVer = glm::vec3(tmpVertices[i * 6], tmpVertices[i * 6 + 1], tmpVertices[i * 6 + 2]);
+		GLfloat dis = glm::distance(curVer, removePos);
+		if (dis < cutRadius) {
+			// 记录需要删除的点的index
+			tobeDelete.push_back(i);
+		}
 	}
 	
+	int* newIndices = new int[tmpVertices.size()/6]; // 前后indices的映射关系
+	for (int i = 0; i < tmpVertices.size() / 6; i++) {
+		newIndices[i] = i;
+	}
+	for (int i = 0, j = 0; i < tmpVertices.size() / 6 && j < tobeDelete.size(); i++) {
+		if (i == tobeDelete[j]) {
+			j++;
+			// 之后的下标更新
+			newIndices[i] = -1;
+			for (int k = i + 1; k < tmpVertices.size() / 6; k++) {
+				newIndices[k] -= 1;
+			}
+		}
+	}
+	// 更新indices
+	for (int i = 0; i < tmpIndices.size()/3; ) {
+		if (newIndices[tmpIndices[i * 3]] == -1 || newIndices[tmpIndices[i * 3+1]] == -1 || newIndices[tmpIndices[i * 3+2]] == -1) {
+			// 删除
+			tmpIndices.erase(tmpIndices.begin() + i * 3 + 2);
+			tmpIndices.erase(tmpIndices.begin() + i * 3 + 1);
+			tmpIndices.erase(tmpIndices.begin() + i * 3);
+		}
+		else {
+			tmpIndices[i * 3] = newIndices[tmpIndices[i * 3]];
+			tmpIndices[i * 3 + 1] = newIndices[tmpIndices[i * 3 + 1]];
+			tmpIndices[i * 3 + 2] = newIndices[tmpIndices[i * 3 + 2]]; 
+			i++;
+		}
+		
+	}
+	delete[] newIndices;
+	// 删除对应的vertices
+	for (int i = 0; i < tobeDelete.size(); i++) {
+		int index = (tobeDelete[i] - i) * 6;
+		tmpVertices.erase(tmpVertices.begin() + index + 5);
+		tmpVertices.erase(tmpVertices.begin() + index + 4);
+		tmpVertices.erase(tmpVertices.begin() + index + 3);
+		tmpVertices.erase(tmpVertices.begin() + index + 2);
+		tmpVertices.erase(tmpVertices.begin() + index + 1);
+		tmpVertices.erase(tmpVertices.begin() + index);
+	}
 
+	
+	tumor.setVertices(tmpVertices);
+	tumor.setIndices(tmpIndices);*/
+
+}
+// 通过键盘激活
+void Area::removeTumor(BaseModel& tumor) {
+	updateCutVertices(tumor);
+	tumor.initVertexObject();
+	removeMode = 0;
 }
 void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
 	viewportPara[0] = left;
@@ -249,7 +358,7 @@ void Area::drawRuler(Shader & textureShader, Shader& shader) {
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, ruler.position);
 	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0,0, 1));
-	model = glm::scale(model, glm::vec3(ruler.scaleSize * 2, 3, 1));
+	model = glm::scale(model, glm::vec3(ruler.scaleSize * 20, ruler.scaleSize * 20, 1));
 	textureShader.setMat4("model", model);
 	ruler.generateTexture();
 	ruler.draw(textureShader);
@@ -270,11 +379,10 @@ void Area::drawRuler(Shader & textureShader, Shader& shader) {
 	shader.setInt("isPlane", 0);
 	model = glm::scale( glm::translate(glm::mat4(1.0f), ruler.ends[0]), glm::vec3(3,3,3));
 	shader.setMat4("model", model);
-	rulerEnd.draw();
+	mySphere.draw();
 	model = glm::scale(glm::translate(glm::mat4(1.0f), ruler.ends[1]), glm::vec3(3, 3, 3));
 	shader.setMat4("model", model);
-
-	rulerEnd.draw();
+	mySphere.draw();
 }
 
 void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
@@ -342,10 +450,11 @@ void Area::calculatePlane() {
 }
 
 void Area::displayGUI() {
-	ImGui::RadioButton("General", &modeSelection, 1);
-	ImGui::RadioButton("Ruler", &modeSelection, 2);
-	ImGui::RadioButton("Cut", &modeSelection, 3);
-	ImGui::RadioButton("Nearest Vessel", &modeSelection, 4);
+	ImGui::RadioButton("General", &modeSelection, GENERAL);
+	ImGui::RadioButton("Ruler", &modeSelection, RULER);
+	ImGui::RadioButton("Cut", &modeSelection, CROSS_INTERSECTION);
+	ImGui::RadioButton("Nearest Vessel", &modeSelection, NEAREST_VESSEL);
+	ImGui::RadioButton("Rmove Tumor", &modeSelection, REMOVE_TUMOR);
 	if (modeSelection == 3) {
 		if (cutMode == 1) {
 			ImGui::Text("selecting");
@@ -355,6 +464,12 @@ void Area::displayGUI() {
 		}
 		else {
 			ImGui::Text("confirmed");
+		}
+	}
+	else if (modeSelection == REMOVE_TUMOR) {
+		if (removeMode == 1) { // 调节半径
+			std::string str = "Radius: " + std::to_string(cutRadius);
+			ImGui::Text(str.c_str());
 		}
 	}
 

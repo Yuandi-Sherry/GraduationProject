@@ -14,6 +14,19 @@ public:
 	~MySphere();
 	void initVertexObject();
 	void draw();
+	std::vector<GLfloat>* getVertices() {
+		return &vertices;
+	}
+
+	void setVertices(const std::vector<GLfloat> vertices) {
+		this->vertices.assign(vertices.begin(), vertices.end());
+	}
+	std::vector<int>* getIndices() {
+		return &indices;
+	}
+	void setIndices(const std::vector<int> indices) {
+		this->indices.assign(indices.begin(), indices.end());
+	}
 private:
 	void generateVertices();
 	std::vector<GLfloat> vertices;

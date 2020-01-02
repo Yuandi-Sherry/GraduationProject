@@ -26,14 +26,9 @@
 #include "MyCylinder.h"
 #include "Light.h"
 #include "MySphere.h"
-struct RulerPosition {
-	GLfloat x1;
-	GLfloat y1;
-	GLfloat z1;
-	GLfloat x2;
-	GLfloat y2;
-	GLfloat z2;
-	GLfloat scaleSize;
+enum MODE
+{
+	GENERAL, RULER, CROSS_INTERSECTION, NEAREST_VESSEL, REMOVE_TUMOR
 };
 class Area
 {
@@ -102,7 +97,16 @@ public:
 	// nearest vessl
 	void setLocalCoordinate(glm::vec3 worldCoor, BaseModel& vessel);
 	void findNearest(BaseModel& vessel);
-	void tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models, BaseModel& vessel);
+	void tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
+
+	// remove tumor
+	void tackleRemoveTumor(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
+	void setRemovePos(glm::vec3 pos);
+	void updateCutVertices(BaseModel& tumor);
+	void removeTumor(BaseModel& tumor);
+	int getRemoveMode() {
+		return removeMode;
+	}
 
 	void updateLightSpaceMatrix();
 private:
@@ -134,7 +138,6 @@ private:
 	glm::vec3 tmpVertices[2]; // current operating line vertices
 	int currentRulerIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
 	std::vector<Line> rulerLines;
-	MySphere rulerEnd;
 	glm::mat4 lightSpaceMatrix;
 	glm::mat4 lightProjection;
 	glm::mat4 lightView;
@@ -142,7 +145,14 @@ private:
 	// nearest vessel
 	glm::vec3 NVLocalPos;
 	glm::vec3 nearestPos = glm::vec3(-10000.0f, -10000.0f, -10000.0f);
-	MySphere nearestPoint;
+
+	// remove Tumor
+	int removeMode = 0;
+	GLfloat cutRadius = 5.0f;
+	glm::vec3 removePos = glm::vec3(0.0f);
+
+	// tool element
+	MySphere mySphere;
 };
 
 

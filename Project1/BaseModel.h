@@ -26,6 +26,15 @@ public:
 	std::vector<GLfloat>* getVertices() {
 		return &vertices;
 	}
+	void setVertices(const std::vector<GLfloat> vers) {
+		this->vertices.assign(vers.begin(), vers.end());
+	}
+	std::vector<int>* getIndices() {
+		return &indices;
+	}
+	void setIndices(const std::vector<int> ind) {
+		this->indices.assign(ind.begin(), ind.end());
+	}
 	void initVertexObject();
 
 	void draw();

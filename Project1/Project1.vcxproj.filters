@@ -16,7 +16,6 @@
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Ruler.cpp" />
     <ClCompile Include="stb_image.cpp" />
-    <ClCompile Include="Toolbar.cpp" />
     <ClCompile Include="MyCube.cpp" />
     <ClCompile Include="Character.cpp" />
     <ClCompile Include="MySphere.cpp" />
@@ -39,7 +38,6 @@
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Ruler.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="Toolbar.h" />
     <ClInclude Include="MyCylinder.h" />
     <ClInclude Include="MyCube.h" />
     <ClInclude Include="Character.h" />

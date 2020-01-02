@@ -286,18 +286,12 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 			std::cout << "verSize == 0 " << std::endl;
 			return;
 		}
-		else {
-			std::cout << "verSize " << verSize << std::endl;
-		}
 		float tmpFloat;
 		for (int i = 0; i < verSize; i++)
 		{
-			
 			inVer.read((char*)&tmpFloat, sizeof(GLfloat));
-			//std::cout << "tmp " << tmp << std::endl;
 			vertices.push_back(tmpFloat);
 		}
-		std::cout << "finish reading " << vertices.size() << std::endl;
 		inVer.close();
 
 		indices.clear();
@@ -314,17 +308,12 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 			std::cout << "indSize == 0 " << std::endl;
 			return;
 		}
-		else {
-			std::cout << "indSize " << indSize << std::endl;
-		}
 		int tmpInt;
 		for (int i = 0; i < indSize; i++)
 		{
-			
 			inInd.read((char*)&tmpInt, sizeof(int));
 			indices.push_back(tmpInt);
 		}
-		std::cout << "finish reading " << indices.size() << std::endl;
 		inInd.close();
 
 	}
