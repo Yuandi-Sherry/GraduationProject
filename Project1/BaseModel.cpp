@@ -12,10 +12,9 @@
 
 #define FIRST 0
 
-BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
+BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 {
 	this->color = color;
-	this->type = type;
 	if (FIRST == 1) {
 		std::ifstream in(cfilename, std::ifstream::in | std::ifstream::binary);
 		if (!in) {
@@ -287,10 +286,36 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 			return;
 		}
 		float tmpFloat;
-		for (int i = 0; i < verSize; i++)
+		for (int i = 0; i < verSize; i+=6)
 		{
-			inVer.read((char*)&tmpFloat, sizeof(GLfloat));
-			vertices.push_back(tmpFloat);
+			for (int j = 0; j < 6; j++) {
+				inVer.read((char*)&tmpFloat, sizeof(GLfloat));
+				vertices.push_back(tmpFloat);
+				if (j == 0) {
+					if (tmpFloat < xMin) {
+						xMin = tmpFloat;
+					}
+					else if (tmpFloat > xMax) {
+						xMax = tmpFloat;
+					}
+				}
+				else if (j == 1) {
+					if (tmpFloat < yMin) {
+						yMin = tmpFloat;
+					}
+					else if (tmpFloat > yMax) {
+						yMax = tmpFloat;
+					}
+				}
+				else if (j == 2) {
+					if (tmpFloat < zMin) {
+						zMin = tmpFloat;
+					}
+					else if (tmpFloat > zMax) {
+						zMax = tmpFloat;
+					}
+				}
+			}
 		}
 		inVer.close();
 
@@ -319,9 +344,8 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type)
 	}
 }
 
-BaseModel::BaseModel(const std::vector<GLfloat> &vertices, glm::vec3 color, PrimitiveType type) {
+BaseModel::BaseModel(const std::vector<GLfloat> &vertices, glm::vec3 color) {
 	this->vertices.assign(vertices.begin(), vertices.end());
-	this->type = type;
 }
 BaseModel::~BaseModel()
 {
@@ -339,17 +363,10 @@ void BaseModel::initVertexObject() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(float), &indices[0], GL_STATIC_DRAW);
 	// Position attribute
-	switch (type) {
-	case TRIANGLE:
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(float)));
-		glEnableVertexAttribArray(1);
-		break;
-	case LINE:
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-		glEnableVertexAttribArray(0);
-	}
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 	glBindVertexArray(0); // Unbind VAO
 	
 }
@@ -360,14 +377,78 @@ void BaseModel::initDepthBuffer() {
 
 void BaseModel::draw(){
 	glBindVertexArray(VAO);
-	switch (type) {
-	case TRIANGLE:
-		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-		break;
-	case LINE:
-		glDrawArrays(GL_LINE_STRIP, 0, 2);
-		break;
-	}
-
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
+}
+
+void BaseModel::voxelization() {
+	// bounding box
+	glm::vec3 boxMin = glm::vec3(xMin, yMin, zMin);
+	glm::vec3 boxMax = glm::vec3(xMax, yMax, zMax);
+	glm::vec3 range = boxMax - boxMin;
+	glm::vec3 resolution = glm::vec3(range.x / step, range.y / step, range.z / step);
+	Camera voxelCamera(glm::vec3(((boxMin + boxMax) / 2.0f).x, ((boxMin + boxMax) / 2.0f).y, boxMax.z + 0.2f));
+	//voxelCamera.setPosition();
+	Shader voxelShader("voxelizeCount.vs", "voxelizeCount.frag");
+
+	// polygon mode
+	// 关闭深度测试和背面剔除，保证模型的全面三角形都进入片元着色器
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+
+	int length = static_cast<int>(resolution.x * resolution.y * resolution.z);
+
+
+
+	glGenBuffers(1, &m_cntBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_cntBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, length * sizeof(int), nullptr, GL_STATIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_cntBuffer);
+	voxelShader.use();
+	voxelShader.setVec3("boxMin", boxMin);
+	voxelShader.setFloat("step", step);
+	voxelShader.setVec3("resolution", resolution);
+
+	// initialize
+	int* writePtr = reinterpret_cast<int*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY));
+
+	for (int x = 0; x < length; x++) {
+		writePtr[x] = 0;
+	}
+	if (!glUnmapBuffer(GL_SHADER_STORAGE_BUFFER))
+		std::cout << "unMap error\n" << std::endl;
+
+	// draw and count
+	voxelShader.use();
+	voxelShader.setMat4("model", glm::mat4(1.0f));
+	voxelShader.setMat4("view", voxelCamera.GetViewMatrix());
+	voxelShader.setMat4("projection", glm::ortho(-range.x * 0.51, range.x * 0.51,
+		-range.y * 0.51, range.y * 0.51, 0.1, range.z * 1.2 + 0.2f));
+
+	draw();
+	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_cntBuffer);
+	int* readPtr = reinterpret_cast<int*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
+	if (readPtr != nullptr) {
+		// read
+		for (int i = 0; i < length; i++) {
+			if (*(readPtr + i) != 0) {
+				int iy = i / (resolution.x * resolution.z);
+				int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
+				int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
+				voxelPos.push_back(boxMin + glm::vec3(ix * step, iy * step, iz * step));
+			}
+		}
+		std::cout << "voxelPos.size() " << voxelPos.size() << std::endl;
+	}
+	else {
+		std::cout << "fail to read from ssbo" << std::endl;
+	}
+	glUnmapBuffer(m_cntBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glDeleteBuffers(1, &m_cntBuffer);
 }

@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <iostream>
 #include <vector>
 extern const unsigned SCR_WIDTH;
 extern const unsigned SCR_HEIGHT;
@@ -162,6 +163,7 @@ public:
 		ortho = glm::ortho(-orthoWidth / 2, orthoWidth / 2, -orthoWidth / 2 * height/width, orthoWidth / 2 * height / width, Near, 1000.0f);
 		return ortho;
 	}
+
 	glm::vec3 getN() {
 		return Front;
 	}

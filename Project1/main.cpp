@@ -111,13 +111,14 @@ int main()
 	characterController.init();
 	characterShader.setMat4("projection", characterController.getProjection());
 	// load model
-	BaseModel vessel("vessel_normal.stl", glm::vec3(0.6f, 0.0f, 0.0f), TRIANGLE);
-	BaseModel tumor("tumor_normal.stl", glm::vec3(0.5f, 0.5f, 0.6f), TRIANGLE);
-	BaseModel bones("bones_normal.stl", glm::vec3(0.7f, 0.7f, 0.5f), TRIANGLE);
+	BaseModel vessel("vessel_normal.stl", glm::vec3(0.6f, 0.0f, 0.0f));
+	BaseModel tumor("tumor_normal.stl", glm::vec3(0.5f, 0.5f, 0.6f));
+	BaseModel bones("bones_normal.stl", glm::vec3(0.7f, 0.7f, 0.5f));
 	vessel.initVertexObject();
 	tumor.initVertexObject();
 	bones.initVertexObject();
-	
+	tumor.voxelization();
+
 	models.push_back(vessel);
 	models.push_back(tumor);
 	models.push_back(bones);
@@ -204,6 +205,7 @@ int main()
 			mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
 		}
 		else {
+			//
 			mainArea.drawModels(ourShader, shadowShader, models);
 			vesselArea.drawModels(ourShader, shadowShader, models);
 			tumorArea.drawModels(ourShader, shadowShader, models);

@@ -9,6 +9,7 @@
 #include "MyCylinder.h"
 
 GLfloat zR = 1, zG = 1, zB = 1;
+extern const unsigned int SCR_WIDTH, SCR_HEIGHT;
 float light_near_plane = 0.0f, light_far_plane = 800.0f, light_left_plane = -150.0f, light_right_plane = 150.0f, light_top_plane = 150.0f, light_bottom_plane = -150.0f;
 Area::Area()
 {
@@ -26,6 +27,7 @@ Area::~Area()
 
 void Area::init() {
 	camera.setPosition(cameraPos);
+	//camera.setOrthology(-400 / 2, 400 / 2, -400 / 2 * SCR_HEIGHT / SCR_WIDTH, 400 / 2 * SCR_HEIGHT / SCR_WIDTH, Near, 1000.0f);
 	// mode
 	modeSelection = 1;
 
@@ -284,7 +286,16 @@ void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseMo
 	shader.setInt("isPlane", 0);
 	for (int i = 0; i < modelsID.size(); i++) {
 		shader.setVec3("color", models[modelsID[i]].getColor());
-		models[modelsID[i]].draw();
+		//models[modelsID[i]].draw();
+	}
+	std::vector<glm::vec3>* tmpVoxelPos = models[1].getVoxels();
+	if (tmpVoxelPos->size() != 0) {// гаЬхЫизјБъ
+		for (int j = 0; j < tmpVoxelPos->size(); j++) {
+			shader.setVec3("color", models[1].getColor());
+			model = glm::scale(transformMat * glm::translate(glm::translate(glm::mat4(1.0f), (*tmpVoxelPos)[j]), glm::vec3(-4.38f, -201.899f, 148.987f)), glm::vec3(3,3,3));
+			shader.setMat4("model", model);
+			mySphere.draw();
+		}
 	}
 }
 

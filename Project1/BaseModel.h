@@ -8,19 +8,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Camera.h"
+#include "Shader.h"
 
-enum PrimitiveType {
-	TRIANGLE,
-	LINE
-};
 extern const GLuint SHADOW_WIDTH, SHADOW_HEIGHT;
 class BaseModel
 {
 public:
-	BaseModel(const char *cfilename, glm::vec3 color, PrimitiveType type);
-	BaseModel(const std::vector<GLfloat> &, glm::vec3 color, PrimitiveType type);
-	BaseModel(PrimitiveType type) {
-		this->type = type;
+	BaseModel(const char *cfilename, glm::vec3 color);
+	BaseModel(const std::vector<GLfloat> &, glm::vec3 color);
+	BaseModel() {
 	}
 	~BaseModel();
 	std::vector<GLfloat>* getVertices() {
@@ -41,15 +38,22 @@ public:
 	glm::vec3 getColor() {
 		return color;
 	}
-
+	std::vector<glm::vec3>* getVoxels() {
+		return &voxelPos;
+	}
 	void initDepthBuffer();
+	void voxelization();
 
 protected:
 	std::vector<GLfloat> vertices;
 	std::vector<int> indices;
 	GLuint VAO, VBO, EBO;
 	glm::vec3 color;
-	PrimitiveType type;
+	// voxel
+	GLfloat xMax = -10000.0f, xMin = 10000.0f, yMax = -10000.0f, yMin = 10000.0f, zMax = -10000.0f, zMin = 10000.0f;
+	GLuint step = 6;
+	GLuint m_cntBuffer;
+	std::vector<glm::vec3> voxelPos;
 };
 
 #endif

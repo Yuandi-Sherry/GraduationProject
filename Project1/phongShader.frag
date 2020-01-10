@@ -17,7 +17,6 @@ uniform float far_plane;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
-uniform int type; // 1 -> vessel, 2 -> tummor, 3 -> bones
 uniform int isPlane; // 1 -> white, 0 -> color
 uniform vec4 plane;
 uniform int cut; // 0 -> no cut, 1 -> upper part, 2 -> lower part
@@ -74,7 +73,7 @@ vec3 getLightingColor (vec3 color) {
     vec3 specular = specularStrength * spec * lightColor;
 
     // º∆À„“ı”∞
-	if(withShadow) {
+	if(withShadow == 1) {
 		float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
 		float shadow = ShadowCalculation(fs_in.FragPosLightSpace, bias);  
 		vec3 lighting=  (ambient + (1.0 - shadow) * (diffuse + specular));

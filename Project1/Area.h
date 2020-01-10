@@ -16,7 +16,6 @@
 #include FT_FREETYPE_H  
 
 // user-defined headers
-#include "Line.h"
 #include "Camera.h"
 #include "Shader.h"
 #include "Light.h"
@@ -137,7 +136,6 @@ private:
 	// measure distance
 	glm::vec3 tmpVertices[2]; // current operating line vertices
 	int currentRulerIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
-	std::vector<Line> rulerLines;
 	glm::mat4 lightSpaceMatrix;
 	glm::mat4 lightProjection;
 	glm::mat4 lightView;

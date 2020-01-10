@@ -1,6 +1,6 @@
 #include <vector>
 #include "Plane.h"
-Plane::Plane(const std::vector<GLfloat> &vertices, glm::vec3 color, PrimitiveType type):BaseModel(vertices, color, type)
+Plane::Plane(const std::vector<GLfloat> &vertices, glm::vec3 color):BaseModel(vertices, color)
 {
 
 }
