@@ -51,7 +51,7 @@ protected:
 	glm::vec3 color;
 	// voxel
 	GLfloat xMax = -10000.0f, xMin = 10000.0f, yMax = -10000.0f, yMin = 10000.0f, zMax = -10000.0f, zMin = 10000.0f;
-	GLuint step = 6;
+	GLuint step = 4;
 	GLuint m_cntBuffer;
 	std::vector<glm::vec3> voxelPos;
 };

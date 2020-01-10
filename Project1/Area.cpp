@@ -39,7 +39,7 @@ void Area::init() {
 
 	// nearest vessel
 	mySphere.initVertexObject();
-
+	myCube.initVertexObject();
 	// init 
 	lightProjection = glm::ortho(light_left_plane, light_right_plane, light_bottom_plane, light_top_plane, light_near_plane, light_far_plane);
 	lightView = glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
@@ -294,7 +294,7 @@ void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseMo
 			shader.setVec3("color", models[1].getColor());
 			model = glm::scale(transformMat * glm::translate(glm::translate(glm::mat4(1.0f), (*tmpVoxelPos)[j]), glm::vec3(-4.38f, -201.899f, 148.987f)), glm::vec3(3,3,3));
 			shader.setMat4("model", model);
-			mySphere.draw();
+			myCube.draw();
 		}
 	}
 }

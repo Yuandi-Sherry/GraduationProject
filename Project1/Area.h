@@ -25,6 +25,7 @@
 #include "MyCylinder.h"
 #include "Light.h"
 #include "MySphere.h"
+#include "MyCube.h"
 enum MODE
 {
 	GENERAL, RULER, CROSS_INTERSECTION, NEAREST_VESSEL, REMOVE_TUMOR
@@ -151,6 +152,7 @@ private:
 
 	// tool element
 	MySphere mySphere;
+	MyCube myCube;
 };
 
 
