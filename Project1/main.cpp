@@ -90,12 +90,7 @@ int main()
 		return -1;
 	}
 
-	// configure global opengl state
-	// -----------------------------
-	glEnable(GL_MULTISAMPLE);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
 	// set viewport
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
@@ -118,6 +113,13 @@ int main()
 	tumor.initVertexObject();
 	bones.initVertexObject();
 	tumor.voxelization();
+	
+	// configure global opengl state
+	// -----------------------------
+	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	models.push_back(vessel);
 	models.push_back(tumor);

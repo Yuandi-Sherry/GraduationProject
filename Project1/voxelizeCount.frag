@@ -1,6 +1,7 @@
 #version 430 core
 
 in vec3 FragPos;
+in vec4 BoundingBox;
 
 layout (std430, binding = 0) buffer CountBuffer{
     int cnts[];
@@ -8,7 +9,10 @@ layout (std430, binding = 0) buffer CountBuffer{
 
 uniform float step;
 uniform vec3 boxMin;
+uniform vec3 boxMax;
 uniform vec3 resolution;
+
+
 
 out vec4 color;
 
@@ -19,4 +23,5 @@ void main(){
 	int index = int(y * (resolution.z * resolution.x) + z * resolution.x + x);
 	atomicAdd(cnts[index], 1);
 	color = vec4(0.0,1.0,0.0,1.0);
+
 }

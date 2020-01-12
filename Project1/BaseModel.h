@@ -43,7 +43,9 @@ public:
 	}
 	void initDepthBuffer();
 	void voxelization();
-
+	GLuint getStep() {
+		return step;
+	}
 protected:
 	std::vector<GLfloat> vertices;
 	std::vector<int> indices;
@@ -51,7 +53,7 @@ protected:
 	glm::vec3 color;
 	// voxel
 	GLfloat xMax = -10000.0f, xMin = 10000.0f, yMax = -10000.0f, yMin = 10000.0f, zMax = -10000.0f, zMin = 10000.0f;
-	GLuint step = 4;
+	const GLfloat step = 5;
 	GLuint m_cntBuffer;
 	std::vector<glm::vec3> voxelPos;
 };

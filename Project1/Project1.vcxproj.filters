@@ -60,5 +60,6 @@
     <None Include="characterShader.frag" />
     <None Include="voxelizeCount.frag" />
     <None Include="voxelizeCount.vs" />
+    <None Include="voxelizeCount.gs" />
   </ItemGroup>
 </Project>

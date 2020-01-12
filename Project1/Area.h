@@ -147,7 +147,7 @@ private:
 
 	// remove Tumor
 	int removeMode = 0;
-	GLfloat cutRadius = 5.0f;
+	GLfloat cutRadius = 10.0f;
 	glm::vec3 removePos = glm::vec3(0.0f);
 
 	// tool element

@@ -45,8 +45,8 @@ public:
 	float MouseSensitivity;
 	float Zoom;
 	// size parameters
-	float width;
-	float height;
+	float width = SCR_WIDTH;
+	float height = SCR_HEIGHT;
 
 	bool mouseLock = true;
 
@@ -82,6 +82,7 @@ public:
 	void setSize(float width, float height) {
 		this->width = width;
 		this->height = height;
+		setOrthology();
 	}
 
 	// Returns the view matrix calculated using Euler Angles and the LookAt Matrix
@@ -97,11 +98,13 @@ public:
 		if (direction == FORWARD) {
 			Position += Front * velocity;
 			orthoWidth -= velocity;
+			setOrthology();
 		}
 			
 		if (direction == BACKWARD) {
 			Position -= Front * velocity;
 			orthoWidth += velocity;
+			setOrthology();
 		}
 			
 		if (direction == LEFT) {
@@ -158,9 +161,14 @@ public:
 		return projection;
 	}
 	
+	void setOrthology(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far) {
+		ortho = glm::ortho(left, right, bottom, top, near, far);
+	}
 
+	void setOrthology() {
+		ortho = glm::ortho(-orthoWidth / 2, orthoWidth / 2, -orthoWidth / 2 * height / width, orthoWidth / 2 * height / width, Near, 1000.0f);
+	}
 	glm::mat4 getOrthology() {
-		ortho = glm::ortho(-orthoWidth / 2, orthoWidth / 2, -orthoWidth / 2 * height/width, orthoWidth / 2 * height / width, Near, 1000.0f);
 		return ortho;
 	}
 

@@ -185,6 +185,7 @@
     <None Include="shadowMappingDepth.frag" />
     <None Include="textureShader.frag" />
     <None Include="textureShader.vs" />
+    <None Include="voxelizeCount.gs" />
     <None Include="voxelizeCount.frag" />
     <None Include="voxelizeCount.vs" />
   </ItemGroup>

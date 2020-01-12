@@ -387,10 +387,23 @@ void BaseModel::voxelization() {
 	glm::vec3 boxMax = glm::vec3(xMax, yMax, zMax);
 	glm::vec3 range = boxMax - boxMin;
 	glm::vec3 resolution = glm::vec3(range.x / step, range.y / step, range.z / step);
-	Camera voxelCamera(glm::vec3(((boxMin + boxMax) / 2.0f).x, ((boxMin + boxMax) / 2.0f).y, boxMax.z + 0.2f));
-	//voxelCamera.setPosition();
-	Shader voxelShader("voxelizeCount.vs", "voxelizeCount.frag");
-
+	// camera position
+	Camera voxelCameraX(glm::vec3(boxMin.x + 0.2f, ((boxMin + boxMax) / 2.0f).y, ((boxMin + boxMax) / 2.0f).z));
+	Camera voxelCameraY(glm::vec3(((boxMin + boxMax) / 2.0f).x, boxMin.y + 0.2f, ((boxMin + boxMax) / 2.0f).z));
+	Camera voxelCameraZ(glm::vec3(((boxMin + boxMax) / 2.0f).x, ((boxMin + boxMax) / 2.0f).y, boxMax.z + 0.2f));
+	// set ortho
+	voxelCameraX.setOrthology(-range.z * 0.51, range.z * 0.51,
+		-range.y * 0.51, range.y * 0.51, 0.1, range.x * 1.2 + 0.2f);
+	voxelCameraY.setOrthology(-range.x * 0.51, range.x * 0.51,
+		-range.z * 0.51, range.z * 0.51, 0.1, range.y * 1.2 + 0.2f);
+	voxelCameraZ.setOrthology(-range.x * 0.51, range.x * 0.51,
+		-range.y * 0.51, range.y * 0.51, 0.1, range.z * 1.2 + 0.2f);
+	
+	Shader voxelShader("voxelizeCount.vs", "voxelizeCount.frag", "voxelizeCount.gs");
+	voxelShader.use();
+	voxelShader.setMat4("projection[0]", voxelCameraX.getOrthology());
+	voxelShader.setMat4("projection[1]", voxelCameraY.getOrthology());
+	voxelShader.setMat4("projection[2]", voxelCameraZ.getOrthology());
 	// polygon mode
 	// 关闭深度测试和背面剔除，保证模型的全面三角形都进入片元着色器
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -398,11 +411,8 @@ void BaseModel::voxelization() {
 	glDisable(GL_DEPTH_TEST);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-
-
+	
 	int length = static_cast<int>(resolution.x * resolution.y * resolution.z);
-
-
 
 	glGenBuffers(1, &m_cntBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_cntBuffer);
@@ -410,6 +420,7 @@ void BaseModel::voxelization() {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_cntBuffer);
 	voxelShader.use();
 	voxelShader.setVec3("boxMin", boxMin);
+	voxelShader.setVec3("boxMax", boxMax);
 	voxelShader.setFloat("step", step);
 	voxelShader.setVec3("resolution", resolution);
 
@@ -423,27 +434,55 @@ void BaseModel::voxelization() {
 		std::cout << "unMap error\n" << std::endl;
 
 	// draw and count
-	voxelShader.use();
 	voxelShader.setMat4("model", glm::mat4(1.0f));
-	voxelShader.setMat4("view", voxelCamera.GetViewMatrix());
-	voxelShader.setMat4("projection", glm::ortho(-range.x * 0.51, range.x * 0.51,
-		-range.y * 0.51, range.y * 0.51, 0.1, range.z * 1.2 + 0.2f));
+	voxelShader.setMat4("view", voxelCameraZ.GetViewMatrix());
 
 	draw();
 	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_cntBuffer);
 	int* readPtr = reinterpret_cast<int*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
+	int count = 0;
+	std::cout << length << std::endl;
 	if (readPtr != nullptr) {
 		// read
+
 		for (int i = 0; i < length; i++) {
+			// 不与网格重合
+			bool isEdge = false;
 			if (*(readPtr + i) != 0) {
+				count++;
 				int iy = i / (resolution.x * resolution.z);
 				int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
 				int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
-				voxelPos.push_back(boxMin + glm::vec3(ix * step, iy * step, iz * step));
+				
+				glm::vec3 potentialVoxel = boxMin + glm::vec3(ix * step, iy * step, iz * step);
+				voxelPos.push_back(potentialVoxel);
+				// 判断和顶点的关系，遍历三角面片
+				/*for (int j = 0; j < indices.size(); j+=3) {
+					// 三个点在vertices的index: indices[j], indices[j+1], indices[j+2]
+					// vertices的x,y,z: vertices[indices[j]*6+0], vertices[indices[j]*6+1], vertices[indices[j]*6+2]
+					// 计算三角形内心
+					GLfloat dis0_1 = glm::distance(glm::vec3(vertices[indices[j] * 6], vertices[indices[j] * 6 + 1], vertices[indices[j] * 6 + 2]), glm::vec3(vertices[(indices[j + 1]) * 6], vertices[(indices[j + 1]) * 6 + 1], vertices[(indices[j + 1]) * 6 + 2]));
+					GLfloat dis0_2 = glm::distance(glm::vec3(vertices[indices[j] * 6], vertices[indices[j] * 6 + 1], vertices[indices[j] * 6 + 2]), glm::vec3(vertices[(indices[j + 2]) * 6], vertices[(indices[j + 2]) * 6 + 1], vertices[(indices[j + 2]) * 6 + 2]));
+					GLfloat dis1_2 = glm::distance(glm::vec3(vertices[(indices[j + 1]) * 6], vertices[(indices[j + 1]) * 6 + 1], vertices[(indices[j + 1]) * 6 + 2]), glm::vec3(vertices[(indices[j + 2]) * 6], vertices[(indices[j + 2]) * 6 + 1], vertices[(indices[j + 2]) * 6 + 2]));
+					glm::vec3 innerCenter = (dis0_1 * glm::vec3(vertices[(indices[j + 2]) * 6], vertices[(indices[j + 2]) * 6 + 1], vertices[(indices[j + 2]) * 6 + 2])
+						+ dis0_2 * glm::vec3(vertices[(indices[j + 1]) * 6], vertices[(indices[j + 1]) * 6 + 1], vertices[(indices[j + 1]) * 6 + 2])
+						+ dis1_2 * glm::vec3(vertices[indices[j] * 6], vertices[indices[j] * 6 + 1], vertices[indices[j] * 6 + 2])) / (dis0_1 + dis0_2 + dis1_2);
+					// voxel坐标到内心的距离
+					GLfloat dis = glm::distance(innerCenter, potentialVoxel);
+					// 如果与网格重合，则抛弃这个voxel
+					if (dis < step) {
+						isEdge = true;
+						break;
+					}
+				}*/
+				// 不与网格重合
+				//if (!isEdge) {
+					//voxelPos.push_back(potentialVoxel);
+				//}
 			}
 		}
-		std::cout << "voxelPos.size() " << voxelPos.size() << std::endl;
+		std::cout << "voxelPos.size()" << voxelPos.size() << " count " << count <<  std::endl;
 	}
 	else {
 		std::cout << "fail to read from ssbo" << std::endl;
@@ -451,4 +490,6 @@ void BaseModel::voxelization() {
 	glUnmapBuffer(m_cntBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glDeleteBuffers(1, &m_cntBuffer);
+	// todo 移除边缘上的点，即cube和网格相交就移除 => voxelPos到网格每个三角形的距离<step/2,则移除
+	
 }

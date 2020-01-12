@@ -27,9 +27,10 @@ Area::~Area()
 
 void Area::init() {
 	camera.setPosition(cameraPos);
-	//camera.setOrthology(-400 / 2, 400 / 2, -400 / 2 * SCR_HEIGHT / SCR_WIDTH, 400 / 2 * SCR_HEIGHT / SCR_WIDTH, Near, 1000.0f);
+//	ortho = glm::ortho(-orthoWidth / 2, orthoWidth / 2, -orthoWidth / 2 * height / width, orthoWidth / 2 * height / width, Near, 1000.0f);
+	camera.setOrthology();
 	// mode
-	modeSelection = 1;
+	modeSelection = 4;
 
 	// ruler
 	ruler.initVertexObject();
@@ -133,7 +134,7 @@ void Area::tackleRemoveTumor(Shader& shader, Shader& shadowShader, std::vector<B
 		
 		glm::mat4 model = glm::translate(glm::mat4(1.0f), removePos);
 		model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
-		model = glm::scale(model, glm::vec3(3, 3, 3));
+		model = glm::scale(model, glm::vec3(cutRadius, cutRadius, cutRadius));
 		shader.setMat4("model", transformMat * model);
 		shader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
 		mySphere.draw();
@@ -146,8 +147,22 @@ void Area::setRemovePos(glm::vec3 pos) {
 	removeMode = 1;
 }
 void Area::updateCutVertices(BaseModel & tumor) {
-	// 挖去圆形
-	std::vector<GLfloat> tmpVertices(*tumor.getVertices());
+	std::vector<glm::vec3>* voxels = tumor.getVoxels();
+	// 挖去体素
+	for (int i = 0; i < voxels->size(); ) {
+		// 判断是否在球里面
+		GLfloat dis = glm::distance((*voxels)[i], removePos);
+		// remove
+		if (dis < cutRadius) {
+			// erase
+			voxels->erase(voxels->begin() + i);
+		}
+		else {
+			i++;
+		}
+	}
+	// 挖去网格
+	/*std::vector<GLfloat> tmpVertices(*tumor.getVertices());
 	for (int i = 0; i < tmpVertices.size() / 6; i++) {
 		glm::vec3 curVer = glm::vec3(tmpVertices[i*6], tmpVertices[i * 6+1], tmpVertices[i * 6+2]);
 		GLfloat dis = glm::distance(curVer, removePos);
@@ -163,9 +178,9 @@ void Area::updateCutVertices(BaseModel & tumor) {
 			tmpVertices[i * 6 + 5] = normal.z;
 		} 
 	}
-	tumor.setVertices(tmpVertices);
+	tumor.setVertices(tmpVertices);*/
 	// 删去点
-	/*std::vector<GLfloat> tmpVertices(*tumor.getVertices());
+	std::vector<GLfloat> tmpVertices(*tumor.getVertices());
 	std::vector<int> tmpIndices(*tumor.getIndices());
 	std::vector<int> tobeDelete;
 	std::map<int, int> updateIndices;
@@ -222,7 +237,7 @@ void Area::updateCutVertices(BaseModel & tumor) {
 
 	
 	tumor.setVertices(tmpVertices);
-	tumor.setIndices(tmpIndices);*/
+	tumor.setIndices(tmpIndices);
 
 }
 // 通过键盘激活
@@ -280,7 +295,17 @@ void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseMo
 	shader.setVec4("plane", planeCoeff);
 	shader.setMat4("projection", camera.getOrthology());
 	shader.setMat4("view", camera.GetViewMatrix());
-	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f));
+	std::vector<glm::vec3>* tmpVoxelPos = models[1].getVoxels();
+	glm::mat4 model(1.0f);
+	if (tmpVoxelPos->size() != 0) {// 有体素坐标
+		for (int j = 0; j < tmpVoxelPos->size(); j++) {
+			shader.setVec3("color", models[1].getColor());
+			model = glm::scale(transformMat * glm::translate(glm::translate(glm::mat4(1.0f), (*tmpVoxelPos)[j]), glm::vec3(-4.38f, -201.899f, 148.987f)), glm::vec3(models[1].getStep()/1.5, models[1].getStep()/1.5, models[1].getStep()/1.5));
+			shader.setMat4("model", model);
+			mySphere.draw();
+		}
+	}
+	model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f));
 	shader.setMat4("model", transformMat * model);
 	shader.setInt("withLight", 1);
 	shader.setInt("isPlane", 0);
@@ -288,15 +313,7 @@ void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseMo
 		shader.setVec3("color", models[modelsID[i]].getColor());
 		//models[modelsID[i]].draw();
 	}
-	std::vector<glm::vec3>* tmpVoxelPos = models[1].getVoxels();
-	if (tmpVoxelPos->size() != 0) {// 有体素坐标
-		for (int j = 0; j < tmpVoxelPos->size(); j++) {
-			shader.setVec3("color", models[1].getColor());
-			model = glm::scale(transformMat * glm::translate(glm::translate(glm::mat4(1.0f), (*tmpVoxelPos)[j]), glm::vec3(-4.38f, -201.899f, 148.987f)), glm::vec3(3,3,3));
-			shader.setMat4("model", model);
-			myCube.draw();
-		}
-	}
+	
 }
 
 void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
