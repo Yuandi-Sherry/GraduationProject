@@ -448,6 +448,9 @@ void BaseModel::voxelization() {
 
 		for (int i = 0; i < length; i++) {
 			// 不与网格重合
+			if (i % 10000 == 0) {
+				std::cout << (float)i / length * 100 << "%"<< std::endl;
+			}
 			bool isEdge = false;
 			if (*(readPtr + i) != 0) {
 				count++;
@@ -458,6 +461,7 @@ void BaseModel::voxelization() {
 				glm::vec3 potentialVoxel = boxMin + glm::vec3(ix * step, iy * step, iz * step);
 				voxelPos.push_back(potentialVoxel);
 				// 判断和顶点的关系，遍历三角面片
+				// 如果这个体素和任意一个三角面片距离近，则抛弃
 				/*for (int j = 0; j < indices.size(); j+=3) {
 					// 三个点在vertices的index: indices[j], indices[j+1], indices[j+2]
 					// vertices的x,y,z: vertices[indices[j]*6+0], vertices[indices[j]*6+1], vertices[indices[j]*6+2]
@@ -471,15 +475,16 @@ void BaseModel::voxelization() {
 					// voxel坐标到内心的距离
 					GLfloat dis = glm::distance(innerCenter, potentialVoxel);
 					// 如果与网格重合，则抛弃这个voxel
-					if (dis < step) {
+					if (dis < step/2) {
+						//voxelPos.push_back(potentialVoxel);
 						isEdge = true;
 						break;
 					}
-				}*/
+				}
 				// 不与网格重合
-				//if (!isEdge) {
-					//voxelPos.push_back(potentialVoxel);
-				//}
+				if (!isEdge) {
+					voxelPos.push_back(potentialVoxel);
+				}*/
 			}
 		}
 		std::cout << "voxelPos.size()" << voxelPos.size() << " count " << count <<  std::endl;

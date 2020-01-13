@@ -92,12 +92,19 @@ public:
 	void drawRuler(Shader& textureShader, Shader& pointShader);
 	std::string getDistance() {
 		return "Distance: " + std::to_string(ruler.distance / 15);
+		switch (modeSelection) {
+		case RULER:
+			return "Distance: " + std::to_string(ruler.distance / 13);
+		case NEAREST_VESSEL:
+			return "Distance: " + std::to_string(vesselDistance / 13);
+		}
+
 	}
 
 	// nearest vessl
 	void setLocalCoordinate(glm::vec3 worldCoor, BaseModel& vessel);
 	void findNearest(BaseModel& vessel);
-	void tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
+	void tackleNearestVessel(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models);
 
 	// remove tumor
 	void tackleRemoveTumor(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
@@ -135,19 +142,20 @@ private:
 
 	GLfloat rulerScale = 4;
 	// measure distance
-	glm::vec3 tmpVertices[2]; // current operating line vertices
+	glm::vec3 selectedEnds[2]; // current operating line vertices
 	int currentRulerIndex = 0; // -1 -> has 2 vertices, 0 -> no vertex, 1 -> one vertex
 	glm::mat4 lightSpaceMatrix;
 	glm::mat4 lightProjection;
 	glm::mat4 lightView;
+	void updateRuler(const glm::vec3& pos1, const glm::vec3& pos2);
 
 	// nearest vessel
 	glm::vec3 NVLocalPos;
 	glm::vec3 nearestPos = glm::vec3(-10000.0f, -10000.0f, -10000.0f);
-
+	GLfloat vesselDistance = 0.0f;
 	// remove Tumor
 	int removeMode = 0;
-	GLfloat cutRadius = 10.0f;
+	GLfloat cutRadius = 15.0f;
 	glm::vec3 removePos = glm::vec3(0.0f);
 
 	// tool element

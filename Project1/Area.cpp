@@ -94,13 +94,13 @@ void Area::tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShad
 }
 
 
-void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models) {
+void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models) {
 	shader.use();
 	drawModels(shader, shadowShader, models);
 
 	if (glm::vec3(-10000.0f, -10000.0f, -10000.0f) != nearestPos) {
 		// draw point
-		shader.use();
+		/*shader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		shader.setInt("withShadow", 1);
@@ -111,7 +111,7 @@ void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector
 		shader.setVec4("plane", planeCoeff);
 		shader.setMat4("projection", camera.getOrthology());
 		shader.setMat4("view", camera.GetViewMatrix());
-		glm::mat4 model = glm::translate(glm::mat4(1.0f), nearestPos);
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), selectedEnds[1]);
 		model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 		model = glm::scale(model, glm::vec3(3, 3, 3));
 		shader.setMat4("model", transformMat * model);
@@ -119,6 +119,14 @@ void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, std::vector
 		shader.setInt("isPlane", 0);
 		shader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
 		mySphere.draw();
+		model = glm::translate(glm::mat4(1.0f), selectedEnds[0]);
+		model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
+		model = glm::scale(model, glm::vec3(3, 3, 3));
+		shader.setMat4("model", transformMat * model);
+		mySphere.draw();
+		// display ruler*/
+
+		drawRuler(textureShader, shader);
 	}
 }
 
@@ -246,6 +254,7 @@ void Area::removeTumor(BaseModel& tumor) {
 	tumor.initVertexObject();
 	removeMode = 0;
 }
+
 void Area::setViewport(GLfloat left, GLfloat bottom, GLfloat width, GLfloat height) {
 	viewportPara[0] = left;
 	viewportPara[1] = bottom;
@@ -297,12 +306,15 @@ void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseMo
 	shader.setMat4("view", camera.GetViewMatrix());
 	std::vector<glm::vec3>* tmpVoxelPos = models[1].getVoxels();
 	glm::mat4 model(1.0f);
-	if (tmpVoxelPos->size() != 0) {// 有体素坐标
-		for (int j = 0; j < tmpVoxelPos->size(); j++) {
-			shader.setVec3("color", models[1].getColor());
-			model = glm::scale(transformMat * glm::translate(glm::translate(glm::mat4(1.0f), (*tmpVoxelPos)[j]), glm::vec3(-4.38f, -201.899f, 148.987f)), glm::vec3(models[1].getStep()/1.5, models[1].getStep()/1.5, models[1].getStep()/1.5));
-			shader.setMat4("model", model);
-			mySphere.draw();
+	if (modeSelection == REMOVE_TUMOR) {
+		
+		if (tmpVoxelPos->size() != 0) {// 有体素坐标
+			for (int j = 0; j < tmpVoxelPos->size(); j++) {
+				shader.setVec3("color", models[1].getColor());
+				model = glm::scale(transformMat * glm::translate(glm::translate(glm::mat4(1.0f), (*tmpVoxelPos)[j]), glm::vec3(-4.38f, -201.899f, 148.987f)), glm::vec3(models[1].getStep() / 1.2, models[1].getStep() / 1.2, models[1].getStep() / 1.2));
+				shader.setMat4("model", model);
+				mySphere.draw();
+			}
 		}
 	}
 	model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f));
@@ -311,7 +323,7 @@ void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseMo
 	shader.setInt("isPlane", 0);
 	for (int i = 0; i < modelsID.size(); i++) {
 		shader.setVec3("color", models[modelsID[i]].getColor());
-		//models[modelsID[i]].draw();
+		models[modelsID[i]].draw();
 	}
 	
 }
@@ -385,7 +397,7 @@ void Area::drawRuler(Shader & textureShader, Shader& shader) {
 	textureShader.setMat4("view", camera.GetViewMatrix());
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, ruler.position);
-	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0,0, 1));
+	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0, 0, 1));
 	model = glm::scale(model, glm::vec3(ruler.scaleSize * 20, ruler.scaleSize * 20, 1));
 	textureShader.setMat4("model", model);
 	ruler.generateTexture();
@@ -405,17 +417,43 @@ void Area::drawRuler(Shader & textureShader, Shader& shader) {
 	shader.setInt("cut", 0);
 	shader.setInt("withLight", 1);
 	shader.setInt("isPlane", 0);
-	model = glm::scale( glm::translate(glm::mat4(1.0f), ruler.ends[0]), glm::vec3(3,3,3));
+	shader.setInt("withShadow", 0);
+	if (modeSelection == NEAREST_VESSEL)
+		shader.setVec3("color", glm::vec3(1.0f, 0.4f, 0.4f));
+	model = glm::scale(glm::translate(glm::mat4(1.0f), ruler.ends[0]), glm::vec3(3, 3, 3));
 	shader.setMat4("model", model);
 	mySphere.draw();
+	shader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
 	model = glm::scale(glm::translate(glm::mat4(1.0f), ruler.ends[1]), glm::vec3(3, 3, 3));
 	shader.setMat4("model", model);
 	mySphere.draw();
 }
 
+void Area::updateRuler(const glm::vec3& pos1, const glm::vec3& pos2) { // 输入参数为世界坐标
+	// calculate ruler attributes
+	ruler.distance = glm::distance(pos1, pos2);
+	ruler.position = (pos1 + pos2) / 2.0f;
+	ruler.ends[0] = pos1;
+	ruler.ends[1] = pos2;
+	/*if (modeSelection == NEAREST_VESSEL) {
+		ruler.ends[0].z = pos1.z - 10.0f;
+		ruler.ends[1].z = pos1.z - 10.0f;
+		ruler.position.z = pos1.z - 10.0f;
+	}
+	else {*/
+	ruler.ends[0].z = ruler.CUTFACE;
+	ruler.ends[1].z = ruler.CUTFACE;
+	ruler.position.z = ruler.CUTFACE;
+	//}
+	GLfloat projLen = glm::distance(pos1, pos2);
+	ruler.scaleSize = projLen / ruler.distance;
+
+	ruler.rotateAngle = atan((pos1.y - pos2.y) / (pos1.x - pos2.x));
+}
+
 void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 	glm::vec3 localPos = glm::vec4(vertexPosition, 1.0f);
-	tmpVertices[currentRulerIndex] = localPos;
+	selectedEnds[currentRulerIndex] = localPos;
 	if (currentRulerIndex == 0) { // first end
 		ruler.ends[currentRulerIndex] = localPos;
 		currentRulerIndex = 1;
@@ -425,14 +463,7 @@ void Area::setRulerVertex(const glm::vec3 & vertexPosition) {
 		currentRulerIndex = 0;
 
 		// calculate ruler attributes
-		ruler.distance = glm::distance(ruler.ends[0], ruler.ends[1]);
-		ruler.position = (ruler.ends[0] + ruler.ends[1]) / 2.0f;
-		ruler.ends[0].z = ruler.CUTFACE;
-		ruler.ends[1].z = ruler.CUTFACE;
-		GLfloat projLen = glm::distance(ruler.ends[0], ruler.ends[1]);
-		ruler.scaleSize = projLen / ruler.distance;
-		ruler.position.z = ruler.CUTFACE;
-		ruler.rotateAngle = atan((ruler.ends[0].y - ruler.ends[1].y)/ (ruler.ends[0].x - ruler.ends[1].x));		
+		updateRuler(ruler.ends[0], ruler.ends[1]);
 	}
 }
 
@@ -483,6 +514,7 @@ void Area::displayGUI() {
 	ImGui::RadioButton("Cut", &modeSelection, CROSS_INTERSECTION);
 	ImGui::RadioButton("Nearest Vessel", &modeSelection, NEAREST_VESSEL);
 	ImGui::RadioButton("Rmove Tumor", &modeSelection, REMOVE_TUMOR);
+	std::cout << modeSelection << std::endl;
 	if (modeSelection == 3) {
 		if (cutMode == 1) {
 			ImGui::Text("selecting");
@@ -510,7 +542,7 @@ void Area::setLocalCoordinate(glm::vec3 worldCoor, BaseModel & vessel) {
 
 void Area::findNearest(BaseModel& vessel) {
 	GLfloat min = 10000.0f;
-	int minIndex;
+	int minIndex = 0;
 	for (int i = 0; i < vessel.getVertices()->size() / 6; i++) {
 		glm::vec3 pos = glm::vec3((*vessel.getVertices())[i*6], (*vessel.getVertices())[i*6+1], (*vessel.getVertices())[i*6+2]);
 		GLfloat dis = glm::distance(NVLocalPos, pos);
@@ -519,5 +551,16 @@ void Area::findNearest(BaseModel& vessel) {
 			minIndex = i;
 		}
 	}
+	vesselDistance = min;
+
 	nearestPos = glm::vec3((*vessel.getVertices())[minIndex * 6], (*vessel.getVertices())[minIndex * 6 + 1], (*vessel.getVertices())[minIndex * 6 + 2]);
+
+
+	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f));
+	model = transformMat * model;
+	updateRuler(model * glm::vec4(nearestPos, 1.0f), model * glm::vec4(NVLocalPos, 1.0f));
+	std::cout << "-------------------------" << std::endl;
+	std::cout << (model * glm::vec4(nearestPos, 1.0f)).x << " " << (model * glm::vec4(nearestPos, 1.0f)).y << " " << (model * glm::vec4(nearestPos, 1.0f)).z << std::endl;
+	std::cout << (model * glm::vec4(NVLocalPos, 1.0f)).x << " " << (model * glm::vec4(NVLocalPos, 1.0f)).y << " " << (model * glm::vec4(NVLocalPos, 1.0f)).z << std::endl;
+
 }

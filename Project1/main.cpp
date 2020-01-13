@@ -189,19 +189,19 @@ int main()
 
 		if (currentArea->getMode() == RULER) {
 			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
-			characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
-			vesselArea.tackleRuler(ourShader, shadowShader, textureShader, models);
-			tumorArea.tackleRuler(ourShader, shadowShader, textureShader,  models);
-			bonesArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			//characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+			//vesselArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			//tumorArea.tackleRuler(ourShader, shadowShader, textureShader,  models);
+			//bonesArea.tackleRuler(ourShader, shadowShader, textureShader, models);
 		}
 		else if (currentArea->getMode() == CROSS_INTERSECTION) {
 			mainArea.tackleCrossIntersection(ourShader, shadowShader,  models);
-			vesselArea.tackleCrossIntersection(ourShader, shadowShader, models);
-			tumorArea.tackleCrossIntersection(ourShader, shadowShader,models );
-			bonesArea.tackleCrossIntersection(ourShader, shadowShader, models);
+			//vesselArea.tackleCrossIntersection(ourShader, shadowShader, models);
+			//tumorArea.tackleCrossIntersection(ourShader, shadowShader,models );
+			//bonesArea.tackleCrossIntersection(ourShader, shadowShader, models);
 		}
 		else if (currentArea->getMode() == NEAREST_VESSEL) {
-			mainArea.tackleNearestVessel(ourShader, shadowShader, models);
+			mainArea.tackleNearestVessel(ourShader, shadowShader, textureShader, models);
 		}
 		else if (currentArea->getMode() == REMOVE_TUMOR) {
 			mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
@@ -209,9 +209,9 @@ int main()
 		else {
 			//
 			mainArea.drawModels(ourShader, shadowShader, models);
-			vesselArea.drawModels(ourShader, shadowShader, models);
-			tumorArea.drawModels(ourShader, shadowShader, models);
-			bonesArea.drawModels(ourShader, shadowShader, models);
+			//vesselArea.drawModels(ourShader, shadowShader, models);
+			//tumorArea.drawModels(ourShader, shadowShader, models);
+			//bonesArea.drawModels(ourShader, shadowShader, models);
 
 		}
 		
