@@ -10,8 +10,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "utils.h"
+
 #define FIRST 0
 
+int neighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel);
 BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 {
 	this->color = color;
@@ -349,6 +352,8 @@ BaseModel::BaseModel(const std::vector<GLfloat> &vertices, glm::vec3 color) {
 }
 BaseModel::~BaseModel()
 {
+	std::cout << "-----------~BaseModel-------" << std::endl;
+	//delete [] markVoxel;
 }
 void BaseModel::initVertexObject() {
 	glGenVertexArrays(1, &VAO);
@@ -371,10 +376,6 @@ void BaseModel::initVertexObject() {
 	
 }
 
-void BaseModel::initDepthBuffer() {
-	
-}
-
 void BaseModel::draw(){
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
@@ -383,10 +384,10 @@ void BaseModel::draw(){
 
 void BaseModel::voxelization() {
 	// bounding box
-	glm::vec3 boxMin = glm::vec3(xMin, yMin, zMin);
+	boxMin = glm::vec3(xMin, yMin, zMin);
 	glm::vec3 boxMax = glm::vec3(xMax, yMax, zMax);
 	glm::vec3 range = boxMax - boxMin;
-	glm::vec3 resolution = glm::vec3(range.x / step, range.y / step, range.z / step);
+	resolution = glm::vec3(range.x / step, range.y / step, range.z / step);
 	// camera position
 	Camera voxelCameraX(glm::vec3(boxMin.x + 0.2f, ((boxMin + boxMax) / 2.0f).y, ((boxMin + boxMax) / 2.0f).z));
 	Camera voxelCameraY(glm::vec3(((boxMin + boxMax) / 2.0f).x, boxMin.y + 0.2f, ((boxMin + boxMax) / 2.0f).z));
@@ -412,7 +413,17 @@ void BaseModel::voxelization() {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
+
 	int length = static_cast<int>(resolution.x * resolution.y * resolution.z);
+	std::cout << "BaseModel.cpp line411 length: " << length << std::endl;
+	if (markVoxel == NULL) {
+		std::cout << "mark voxel new buffer, length = " << length << std::endl;
+		markVoxel = new int[length];
+
+		for (int i = 0; i < length; i++) {
+			markVoxel[i] = 0;
+		}
+	}
 
 	glGenBuffers(1, &m_cntBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_cntBuffer);
@@ -436,13 +447,11 @@ void BaseModel::voxelization() {
 	// draw and count
 	voxelShader.setMat4("model", glm::mat4(1.0f));
 	voxelShader.setMat4("view", voxelCameraZ.GetViewMatrix());
-
+	std::vector<int> markIndex; // 记录GPU计算的体素为1的元素的位置
 	draw();
 	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_cntBuffer);
 	int* readPtr = reinterpret_cast<int*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
-	int count = 0;
-	std::cout << length << std::endl;
 	if (readPtr != nullptr) {
 		// read
 
@@ -453,48 +462,40 @@ void BaseModel::voxelization() {
 			}
 			bool isEdge = false;
 			if (*(readPtr + i) != 0) {
-				count++;
-				int iy = i / (resolution.x * resolution.z);
-				int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
-				int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
+				markVoxel[i] = 1;
 				
-				glm::vec3 potentialVoxel = boxMin + glm::vec3(ix * step, iy * step, iz * step);
-				voxelPos.push_back(potentialVoxel);
-				// 判断和顶点的关系，遍历三角面片
-				// 如果这个体素和任意一个三角面片距离近，则抛弃
-				/*for (int j = 0; j < indices.size(); j+=3) {
-					// 三个点在vertices的index: indices[j], indices[j+1], indices[j+2]
-					// vertices的x,y,z: vertices[indices[j]*6+0], vertices[indices[j]*6+1], vertices[indices[j]*6+2]
-					// 计算三角形内心
-					GLfloat dis0_1 = glm::distance(glm::vec3(vertices[indices[j] * 6], vertices[indices[j] * 6 + 1], vertices[indices[j] * 6 + 2]), glm::vec3(vertices[(indices[j + 1]) * 6], vertices[(indices[j + 1]) * 6 + 1], vertices[(indices[j + 1]) * 6 + 2]));
-					GLfloat dis0_2 = glm::distance(glm::vec3(vertices[indices[j] * 6], vertices[indices[j] * 6 + 1], vertices[indices[j] * 6 + 2]), glm::vec3(vertices[(indices[j + 2]) * 6], vertices[(indices[j + 2]) * 6 + 1], vertices[(indices[j + 2]) * 6 + 2]));
-					GLfloat dis1_2 = glm::distance(glm::vec3(vertices[(indices[j + 1]) * 6], vertices[(indices[j + 1]) * 6 + 1], vertices[(indices[j + 1]) * 6 + 2]), glm::vec3(vertices[(indices[j + 2]) * 6], vertices[(indices[j + 2]) * 6 + 1], vertices[(indices[j + 2]) * 6 + 2]));
-					glm::vec3 innerCenter = (dis0_1 * glm::vec3(vertices[(indices[j + 2]) * 6], vertices[(indices[j + 2]) * 6 + 1], vertices[(indices[j + 2]) * 6 + 2])
-						+ dis0_2 * glm::vec3(vertices[(indices[j + 1]) * 6], vertices[(indices[j + 1]) * 6 + 1], vertices[(indices[j + 1]) * 6 + 2])
-						+ dis1_2 * glm::vec3(vertices[indices[j] * 6], vertices[indices[j] * 6 + 1], vertices[indices[j] * 6 + 2])) / (dis0_1 + dis0_2 + dis1_2);
-					// voxel坐标到内心的距离
-					GLfloat dis = glm::distance(innerCenter, potentialVoxel);
-					// 如果与网格重合，则抛弃这个voxel
-					if (dis < step/2) {
-						//voxelPos.push_back(potentialVoxel);
-						isEdge = true;
-						break;
-					}
-				}
-				// 不与网格重合
-				if (!isEdge) {
-					voxelPos.push_back(potentialVoxel);
-				}*/
+				markIndex.push_back(i);
+				
 			}
 		}
-		std::cout << "voxelPos.size()" << voxelPos.size() << " count " << count <<  std::endl;
+		std::cout << "voxelPos.size()" << voxelPos.size() <<  std::endl;
 	}
 	else {
 		std::cout << "fail to read from ssbo" << std::endl;
 	}
+	
+	for (int i = 0; i < markIndex.size(); i++) {
+		int iy = markIndex[i] / (resolution.x * resolution.z);
+		int iz = (markIndex[i] - iy * resolution.x * resolution.z) / (resolution.x);
+		int ix = markIndex[i] - iy * resolution.x * resolution.z - iz * resolution.x;
+		glm::vec3 curPos = glm::vec3(ix, iy, iz);
+		// 判断是否26邻域 > 7
+		if (myUtils::neighbors26(curPos, resolution, markVoxel) > 3) {
+			voxelIndex.push_back(curPos);
+			voxelPos.push_back(boxMin + glm::vec3(ix * step, iy * step, iz * step));
+		}
+		else {
+			markVoxel[markIndex[i]] = 0;
+		}
+	}
+	
+
+	
 	glUnmapBuffer(m_cntBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glDeleteBuffers(1, &m_cntBuffer);
 	// todo 移除边缘上的点，即cube和网格相交就移除 => voxelPos到网格每个三角形的距离<step/2,则移除
 	
 }
+
+

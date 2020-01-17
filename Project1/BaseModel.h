@@ -38,14 +38,22 @@ public:
 	glm::vec3 getColor() {
 		return color;
 	}
-	std::vector<glm::vec3>* getVoxels() {
+	std::vector<glm::vec3>* getVoxelsPos() {
 		return &voxelPos;
+	}
+	std::vector<glm::vec3>* getVoxelsIndex() {
+		return &voxelIndex;
+	}
+	glm::vec3 getResolution() {
+		return resolution;
 	}
 	void initDepthBuffer();
 	void voxelization();
 	GLuint getStep() {
 		return step;
 	}
+	int* markVoxel; // 0->挖去的，1-> 原有的，2->挖去位置周围的
+	glm::vec3 boxMin;
 protected:
 	std::vector<GLfloat> vertices;
 	std::vector<int> indices;
@@ -53,9 +61,12 @@ protected:
 	glm::vec3 color;
 	// voxel
 	GLfloat xMax = -10000.0f, xMin = 10000.0f, yMax = -10000.0f, yMin = 10000.0f, zMax = -10000.0f, zMin = 10000.0f;
-	const GLfloat step = 2;
+	const GLfloat step = 5;
 	GLuint m_cntBuffer;
 	std::vector<glm::vec3> voxelPos;
+	std::vector<glm::vec3> voxelIndex;
+	glm::vec3 resolution;
+	
 };
 
 #endif

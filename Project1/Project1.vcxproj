@@ -145,6 +145,7 @@
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Ruler.cpp" />
     <ClCompile Include="stb_image.cpp" />
+    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imconfig.h" />
@@ -167,6 +168,7 @@
     <ClInclude Include="Ruler.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="MyCube.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="camera.frag" />

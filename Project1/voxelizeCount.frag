@@ -20,7 +20,7 @@ void main(){
 	int x = int((FragPos.x - boxMin.x)/step);
 	int y = int((FragPos.y - boxMin.y)/step);
 	int z = int((FragPos.z - boxMin.z)/step);
-	int index = int(y * (resolution.z * resolution.x) + z * resolution.x + x);
+	int index = int(round(y * (resolution.z * resolution.x) + z * resolution.x + x));
 	atomicAdd(cnts[index], 1);
 	color = vec4(0.0,1.0,0.0,1.0);
 

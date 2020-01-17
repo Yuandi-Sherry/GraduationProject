@@ -116,6 +116,7 @@ public:
 	}
 
 	void updateLightSpaceMatrix();
+	void testCoorTrans(Shader& shader);
 private:
 	void initDepthBuffer();
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 400.0f);
@@ -161,6 +162,10 @@ private:
 	// tool element
 	MySphere mySphere;
 	MyCube myCube;
+
+	// test remove
+	std::vector<glm::vec3> voxelTest;
+	std::vector<glm::vec3> vertexTest;
 };
 
 

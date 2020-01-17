@@ -187,7 +187,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		if (currentArea->getMode() == RULER) {
+		/*if (currentArea->getMode() == RULER) {
 			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
 			//characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 			//vesselArea.tackleRuler(ourShader, shadowShader, textureShader, models);
@@ -213,7 +213,9 @@ int main()
 			//tumorArea.drawModels(ourShader, shadowShader, models);
 			//bonesArea.drawModels(ourShader, shadowShader, models);
 
-		}
+		}*/
+		mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
+		mainArea.testCoorTrans(ourShader);
 		
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
@@ -239,6 +241,7 @@ int main()
 	}
 
 	// release resources
+	delete[] tumor.markVoxel;
 	glfwTerminate();
 	return 0;
 }
