@@ -216,7 +216,7 @@ int main()
 		}*/
 		mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
 		mainArea.testCoorTrans(ourShader);
-		
+		//tumor.voxelization();
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();

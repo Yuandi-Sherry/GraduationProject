@@ -405,7 +405,33 @@ void BaseModel::voxelization() {
 	voxelShader.setMat4("projection[0]", voxelCameraX.getOrthology());
 	voxelShader.setMat4("projection[1]", voxelCameraY.getOrthology());
 	voxelShader.setMat4("projection[2]", voxelCameraZ.getOrthology());
+
+	voxelShader.setMat4("projectionInverse[0]", glm::inverse(voxelCameraX.getOrthology()));
+	voxelShader.setMat4("projectionInverse[1]", glm::inverse(voxelCameraY.getOrthology()));
+	voxelShader.setMat4("projectionInverse[2]", glm::inverse(voxelCameraZ.getOrthology()));
+	
+
+	voxelShader.setVec2("halfPixel[0]", glm::vec2(1.0f / resolution.z, 1.0f / resolution.y));
+	voxelShader.setVec2("halfPixel[1]", glm::vec2(1.0f / resolution.x, 1.0f / resolution.z));
+	voxelShader.setVec2("halfPixel[2]", glm::vec2(1.0f / resolution.x, 1.0f / resolution.y));
+	voxelShader.setFloat("coef[0]", 50.0f*step);
+	voxelShader.setFloat("coef[1]", 50.0f*step);
+	voxelShader.setFloat("coef[2]", 50.0f*step);
+
+	// debugging para
+	/*voxelShader.setVec2("halfPixel[0]", glm::vec2(0.0f, 0.0f));
+	voxelShader.setVec2("halfPixel[1]", glm::vec2(0.0f, 0.0f));
+	voxelShader.setVec2("halfPixel[2]", glm::vec2(0.0f, 0.0f));
+
+	voxelShader.setFloat("coef[0]", 1);
+	voxelShader.setFloat("coef[1]", 1);
+	voxelShader.setFloat("coef[2]", 1);*/
+
+	// todo 体素化过程有缺陷，有侧面没有被体素化成功
+	
+
 	// polygon mode
+	
 	// 关闭深度测试和背面剔除，保证模型的全面三角形都进入片元着色器
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_CULL_FACE);
@@ -431,7 +457,6 @@ void BaseModel::voxelization() {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_cntBuffer);
 	voxelShader.use();
 	voxelShader.setVec3("boxMin", boxMin);
-	voxelShader.setVec3("boxMax", boxMax);
 	voxelShader.setFloat("step", step);
 	voxelShader.setVec3("resolution", resolution);
 
@@ -445,8 +470,10 @@ void BaseModel::voxelization() {
 		std::cout << "unMap error\n" << std::endl;
 
 	// draw and count
-	voxelShader.setMat4("model", glm::mat4(1.0f));
+	voxelShader.setMat4("model", glm::scale(glm::mat4(1.0f), glm::vec3(0.9f,0.9f,0.9f)));
 	voxelShader.setMat4("view", voxelCameraZ.GetViewMatrix());
+	voxelShader.setMat4("modelInverse", glm::inverse(glm::scale(glm::mat4(1.0f), glm::vec3(0.9f, 0.9f, 0.9f))));
+	voxelShader.setMat4("viewInverse", glm::inverse(voxelCameraZ.GetViewMatrix()));
 	std::vector<int> markIndex; // 记录GPU计算的体素为1的元素的位置
 	draw();
 	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -454,31 +481,26 @@ void BaseModel::voxelization() {
 	int* readPtr = reinterpret_cast<int*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
 	if (readPtr != nullptr) {
 		// read
-
 		for (int i = 0; i < length; i++) {
 			// 不与网格重合
-			if (i % 10000 == 0) {
-				std::cout << (float)i / length * 100 << "%"<< std::endl;
-			}
-			bool isEdge = false;
 			if (*(readPtr + i) != 0) {
 				markVoxel[i] = 1;
-				
 				markIndex.push_back(i);
-				
 			}
 		}
-		std::cout << "voxelPos.size()" << voxelPos.size() <<  std::endl;
+		std::cout << "markIndex.size()" << markIndex.size() <<  std::endl;
 	}
 	else {
 		std::cout << "fail to read from ssbo" << std::endl;
 	}
 	
+	// 清除多余体素
 	for (int i = 0; i < markIndex.size(); i++) {
 		int iy = markIndex[i] / (resolution.x * resolution.z);
 		int iz = (markIndex[i] - iy * resolution.x * resolution.z) / (resolution.x);
 		int ix = markIndex[i] - iy * resolution.x * resolution.z - iz * resolution.x;
 		glm::vec3 curPos = glm::vec3(ix, iy, iz);
+		int countNeighbor = myUtils::neighbors26(curPos, resolution, markVoxel);
 		// 判断是否26邻域 > 7
 		if (myUtils::neighbors26(curPos, resolution, markVoxel) > 3) {
 			voxelIndex.push_back(curPos);
@@ -489,7 +511,27 @@ void BaseModel::voxelization() {
 		}
 	}
 	
+	// 内部体素化
 
+	/*for (int i = 0; i < length; i++) {
+		if (markVoxel[i] == 0) {
+			int iy = i / (resolution.x * resolution.z);
+			int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
+			int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
+			glm::vec3 curPos = glm::vec3(ix, iy, iz);
+			int countNeighbor = myUtils::neighbors26(curPos, resolution, markVoxel);
+			// 判断是否26邻域 > 7
+			if (countNeighbor >= 9) {
+				markVoxel[i] = 1;
+				voxelIndex.push_back(curPos);
+				voxelPos.push_back(boxMin + glm::vec3(ix * step, iy * step, iz * step));
+			}
+		}
+	}*/
+
+
+	std::cout << "voxelPos.size()" << voxelPos.size() << std::endl;
+	
 	
 	glUnmapBuffer(m_cntBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);

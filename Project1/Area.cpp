@@ -165,7 +165,8 @@ void Area::updateCutVertices(BaseModel & tumor) {
 	glm::vec3 resolution = tumor.getResolution();
 	std::set<int> edgeVoxelsIndex; 
 	// 挖去体素
-	int count1 = 0;
+	int count1 = 0; // 记录边缘体素数量
+	// 处理体素
 	for (int i = 0; i < voxelsPos->size(); ) {
 		// 判断是否在球里面
 		GLfloat dis = glm::distance((*voxelsPos)[i], removePos);
@@ -182,13 +183,14 @@ void Area::updateCutVertices(BaseModel & tumor) {
 			// 标记数组中为1且在result中的变为2，否则仍然为1
 			
 			for (int j = 0; j < resultIndex.size(); j++) {
-				//std::cout << "EXP Area.cpp line 184" << resultIndex[j] << std::endl;
 				// todo 这里有bug
 				
 				if (tumor.markVoxel[resultIndex[j]] == 1) {
 					count1++;
+					// 将对应位置标记为2
 					tumor.markVoxel[resultIndex[j]] = 2;
-					//edgeVoxelsIndex.insert[resultIndex[j]];
+					// 记录位置坐标
+					edgeVoxelsIndex.insert(resultIndex[j]);
 				}
 			}
 			voxelsIndex->erase(voxelsIndex->begin() + i);
@@ -198,13 +200,16 @@ void Area::updateCutVertices(BaseModel & tumor) {
 		}
 	}
 	std::cout << "count1 = " << count1 << std::endl;
-	//std::cout << "edgeVoxels.size() " << edgeVoxels.size() << std::endl;
+	std::cout << "edgeVoxelsIndex.size() " << edgeVoxelsIndex.size() << std::endl;
 
+	// 二维平面参数计算
 	glm::vec3 origin = glm::vec3(-10000.0f, -10000.0f, -10000.0f);
 	glm::vec3 originNormal;
 	glm::vec3 originRight; // 任意一个法向量的垂直方向作为y+
 	// 随便选择一个点做原点
-	std::cout << "Area.cpp line202 length: " << static_cast<int>(resolution.x * resolution.y * resolution.z) << std::endl;
+	// 记录体素位置
+	voxelTest.clear();
+	vertexTest.clear();
 	int count2 = 0;
 	for (int i = 0; i < static_cast<int>(resolution.x * resolution.y * resolution.z); i++) {
 		//std::cout << "[ERROR] i " << i << std::endl;
@@ -231,7 +236,11 @@ void Area::updateCutVertices(BaseModel & tumor) {
 				glm::vec3 OH = glm::dot(OP, originNormal) * originNormal;
 				glm::vec3 OQ = OP - OH;
 				GLfloat theta = acos(glm::dot(glm::normalize(OQ), originRight));
-				voxelTest.push_back(coor);
+				// 世界坐标
+				if (glm::distance(coor, removePos) < 1.2f* cutRadius) {
+					voxelTest.push_back(coor);
+				}
+				
 
 				// 二维坐标：x = rho*sin theta, y = rho * cos theta.
 				//voxelTest.push_back(glm::vec3(rho * sin(theta), rho * cos(theta), 0.0f));
@@ -239,9 +248,11 @@ void Area::updateCutVertices(BaseModel & tumor) {
 				// std::cout << rho * sin(theta) << " " << rho * cos(theta) << std::endl;
 
 			}
+			// 恢复1
+			tumor.markVoxel[i] = 1;
 		}
 	}
-	std::cout << "voxelTest.size() " << voxelTest.size() << "count2 " << count2 << std::endl;
+	std::cout << "voxelTest.size() " << voxelTest.size() << " count2 " << count2 << std::endl;
 	// 删去网格顶点
 	std::vector<GLfloat> tmpVertices(*tumor.getVertices());
 	std::vector<int> tmpIndices(*tumor.getIndices());
@@ -255,9 +266,7 @@ void Area::updateCutVertices(BaseModel & tumor) {
 			tobeDelete.push_back(i);
 		}
 	}
-	
-	
-	
+		
 	int* newIndices = new int[tmpVertices.size()/6]; // 前后indices的映射关系
 	for (int i = 0; i < tmpVertices.size() / 6; i++) {
 		newIndices[i] = i;
@@ -274,6 +283,7 @@ void Area::updateCutVertices(BaseModel & tumor) {
 	}
 
 	// 找到所有边缘indices
+
 	std::set<int> edgeIndices;
 	for (int i = 0; i < tmpIndices.size() / 3; i++) {
 		//记录和移除点相连的三角形
@@ -357,7 +367,7 @@ void Area::testCoorTrans(Shader & shader) {
 	shader.setMat4("view", camera.GetViewMatrix());
 	glm::mat4 model(1.0f);
 
-	// draw edge vertices 网格边缘
+	// draw edge vertices 网格边缘 - 红色 
 	for (int i = 0; i < vertexTest.size(); i++) {
 		shader.setVec3("color", glm::vec3(1.0f,0.0f,0.0f));
 		model = glm::translate(glm::mat4(1.0f), vertexTest[i]);
@@ -366,7 +376,7 @@ void Area::testCoorTrans(Shader & shader) {
 		mySphere.draw();
 	}
 
-	// draw edge voxel 体素边缘
+	// draw edge voxel 体素边缘 - 绿色
 	for (int i = 0; i < voxelTest.size(); i++) {
 		shader.setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
 		model = transformMat * glm::translate(glm::translate(glm::mat4(1.0f), voxelTest[i]), glm::vec3(-4.38f, -201.899f, 148.987f));
@@ -406,9 +416,9 @@ void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & mod
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 	shadowShader.setMat4("model", transformMat * model);
-	for (int i = 0; i < modelsID.size(); i++) {
+	/*for (int i = 0; i < modelsID.size(); i++) {
 		models[modelsID[i]].draw();
-	}
+	}*/
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
 }
 
@@ -452,9 +462,10 @@ void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseMo
 	shader.setInt("isPlane", 0);
 	for (int i = 0; i < modelsID.size(); i++) {
 		shader.setVec3("color", models[modelsID[i]].getColor());
-		//models[modelsID[i]].draw();
+	//	models[modelsID[i]].draw();
 	}
-	
+	//shader.setVec3("color", models[modelsID[1]].getColor());
+	//models[modelsID[1]].draw();
 }
 
 void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {

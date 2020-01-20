@@ -2,6 +2,7 @@
 
 in vec3 FragPos;
 in vec4 BoundingBox;
+in vec3 ProjectPos;
 
 layout (std430, binding = 0) buffer CountBuffer{
     int cnts[];
@@ -9,7 +10,6 @@ layout (std430, binding = 0) buffer CountBuffer{
 
 uniform float step;
 uniform vec3 boxMin;
-uniform vec3 boxMax;
 uniform vec3 resolution;
 
 
@@ -17,6 +17,8 @@ uniform vec3 resolution;
 out vec4 color;
 
 void main(){
+	//if(ProjectPos.x < BoundingBox.x || ProjectPos.y < BoundingBox.y || ProjectPos.x > BoundingBox.z || ProjectPos.y > BoundingBox.w)
+		//discard;
 	int x = int((FragPos.x - boxMin.x)/step);
 	int y = int((FragPos.y - boxMin.y)/step);
 	int z = int((FragPos.z - boxMin.z)/step);
