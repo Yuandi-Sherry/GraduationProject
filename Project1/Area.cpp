@@ -237,9 +237,9 @@ void Area::updateCutVertices(BaseModel & tumor) {
 				glm::vec3 OQ = OP - OH;
 				GLfloat theta = acos(glm::dot(glm::normalize(OQ), originRight));
 				// 世界坐标
-				if (glm::distance(coor, removePos) < 1.2f* cutRadius) {
+				//if (glm::distance(coor, removePos) < 1.2f* cutRadius) {
 					voxelTest.push_back(coor);
-				}
+				//}
 				
 
 				// 二维坐标：x = rho*sin theta, y = rho * cos theta.
@@ -464,8 +464,8 @@ void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseMo
 		shader.setVec3("color", models[modelsID[i]].getColor());
 	//	models[modelsID[i]].draw();
 	}
-	//shader.setVec3("color", models[modelsID[1]].getColor());
-	//models[modelsID[1]].draw();
+	shader.setVec3("color", models[modelsID[1]].getColor());
+	models[modelsID[1]].draw();
 }
 
 void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {

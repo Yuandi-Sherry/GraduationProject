@@ -86,7 +86,7 @@ void main() {
 
 	BoundingBox = calAABB(pos, halfPixel[projectIndex]);
 
-	/*vec4 trianglePlane;
+	vec4 trianglePlane;
 	trianglePlane.xyz = normalize(cross(pos[1].xyz - pos[0].xyz, pos[2].xyz-pos[0].xyz));
 	trianglePlane.w   = -dot(pos[0].xyz, trianglePlane.xyz);
 
@@ -122,9 +122,9 @@ void main() {
 	// 扩大后三角形顶点坐标 裁剪空间
 	pos[0].xyz = vec3(intersection[0].xy, z[0]);
 	pos[1].xyz = vec3(intersection[1].xy, z[1]);
-	pos[2].xyz = vec3(intersection[2].xy, z[2]);*/
+	pos[2].xyz = vec3(intersection[2].xy, z[2]);
 
-	float coef1 = 4.0f;
+	float coef1 = 6.0f;
 	worldPos[0].xyz -= coef1 * worldNormal[0].xyz;
 	worldPos[1].xyz -= coef1 * worldNormal[1].xyz;
 	worldPos[2].xyz -= coef1 * worldNormal[2].xyz;
@@ -149,8 +149,15 @@ void main() {
 	FragPos = voxelPos.xyz;
 	EmitVertex();
 
+	// -----------------------------------------------------------
 
-	/*ProjectPos = pos[1].xyz;
+	/*ProjectPos = pos[0].xyz;
+	gl_Position = pos[0];
+	voxelPos = viewInverse * projectionInverse[projectIndex] * gl_Position;  
+	FragPos = voxelPos.xyz;
+	EmitVertex();
+
+	ProjectPos = pos[1].xyz;
 	gl_Position = pos[1];
 	voxelPos = viewInverse * projectionInverse[projectIndex] * gl_Position;  
 	FragPos = voxelPos.xyz;
@@ -161,6 +168,8 @@ void main() {
 	voxelPos = viewInverse * projectionInverse[projectIndex] * gl_Position;  
 	FragPos = voxelPos.xyz;
 	EmitVertex();*/
+
+	// -----------------------------------------------------------
 
     EndPrimitive();
 }
