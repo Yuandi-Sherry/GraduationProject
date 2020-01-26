@@ -14,7 +14,6 @@
 
 #define FIRST 0
 
-int neighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel);
 BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 {
 	this->color = color;

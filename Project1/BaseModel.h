@@ -16,7 +16,7 @@ class BaseModel
 {
 public:
 	BaseModel(const char *cfilename, glm::vec3 color);
-	BaseModel(const std::vector<GLfloat> &, glm::vec3 color);
+	BaseModel(const std::vector<GLfloat> &, glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f));
 	BaseModel() {
 	}
 	~BaseModel();
@@ -61,7 +61,7 @@ protected:
 	glm::vec3 color;
 	// voxel
 	GLfloat xMax = -10000.0f, xMin = 10000.0f, yMax = -10000.0f, yMin = 10000.0f, zMax = -10000.0f, zMin = 10000.0f;
-	const GLfloat step = 5;
+	const GLfloat step = 2;
 	GLuint m_cntBuffer;
 	std::vector<glm::vec3> voxelPos;
 	std::vector<glm::vec3> voxelIndex;

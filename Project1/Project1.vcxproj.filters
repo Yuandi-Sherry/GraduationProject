@@ -19,6 +19,11 @@
     <ClCompile Include="MySphere.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="Delaunay.cpp" />
+    <ClCompile Include="Triangle.cpp" />
+    <ClCompile Include="Edge.cpp" />
+    <ClCompile Include="MyLine.cpp" />
+    <ClCompile Include="MyTriangles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imconfig.h" />
@@ -27,7 +32,6 @@
     <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imstb_rectpack.h" />
     <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imstb_textedit.h" />
     <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imstb_truetype.h" />
-    <ClInclude Include="..\..\..\..\大三下\ComputerGraphics\作业\Homework5\Project1\Project1\Triangle.h" />
     <ClInclude Include="Area.h" />
     <ClInclude Include="BaseModel.h" />
     <ClInclude Include="Camera.h" />
@@ -42,6 +46,11 @@
     <ClInclude Include="Character.h" />
     <ClInclude Include="MySphere.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="Delaunay.h" />
+    <ClInclude Include="Triangle.h" />
+    <ClInclude Include="Edge.h" />
+    <ClInclude Include="MyLine.h" />
+    <ClInclude Include="MyTriangles.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="camera.frag" />

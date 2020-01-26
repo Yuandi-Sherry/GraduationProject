@@ -26,6 +26,10 @@
 #include "Light.h"
 #include "MySphere.h"
 #include "MyCube.h"
+#include "MyLine.h"
+#include "Delaunay.h"
+#include "BaseModel.h"
+#include "MyTriangles.h"
 enum MODE
 {
 	GENERAL, RULER, CROSS_INTERSECTION, NEAREST_VESSEL, REMOVE_TUMOR
@@ -164,8 +168,20 @@ private:
 	MyCube myCube;
 
 	// test remove
-	std::vector<glm::vec3> voxelTest;
-	std::vector<glm::vec3> vertexTest;
+	std::vector<glm::vec3> voxel3D;
+	std::vector<glm::vec3> vertex3D;
+
+	std::vector<glm::vec2> voxel2D;
+	std::vector<glm::vec2> vertex2D;
+	// test
+	MyLine lines;
+
+	Delaunay mesh;
+
+	MyTriangles * DelaunayTri = NULL;
+	std::vector<MyLine> lineVec;
+
+	//std::vector<GLfloat> 
 };
 
 
