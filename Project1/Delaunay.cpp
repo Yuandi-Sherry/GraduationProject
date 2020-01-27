@@ -4,14 +4,134 @@
 #include <algorithm>
 using namespace std;
 
+bool comp(glm::vec3 ele1, glm::vec3 ele2) {
+	return ele1.x < ele2.x;
+}
 Delaunay::Delaunay() {
-
+	triangleVector.clear(); // 三角形集合
+	pointVector.clear(); // 点集合
+	edgeVector.clear();
 }
 Delaunay::~Delaunay() {
 
 }
 
 void Delaunay::initialize(const glm::vec4 & boundingBox, const std::vector<glm::vec2> & vertices) {
+	triangleVector.clear(); // 三角形集合
+	pointVector.clear(); // 点集合
+	edgeVector.clear();
+	// ----------------------------- PLAN A -----------------------------------
+	// 初始化顶点列表
+	/*for (int i = 0; i < vertices.size(); i++) {
+		pointVector.push_back(glm::vec3(vertices[i],i+3));
+	}
+	// 根据x的位置排序
+	std::sort(pointVector.begin(), pointVector.end(), comp);
+
+	// 确定超级三角形
+	// 包围盒的尺寸
+	const double dx = boundingBox.z - boundingBox.x;
+	const double dy = boundingBox.w - boundingBox.y;
+	const double deltaMax = max(dx, dy);
+	// 中点坐标
+	const double midx = (boundingBox.x + boundingBox.z) / 2.0f;
+	const double midy = (boundingBox.y + boundingBox.w) / 2.0f;
+	// 超级三角形
+	const glm::vec2 p1(midx - 20 * deltaMax, midy - deltaMax);
+	const glm::vec2 p2(midx, midy + 20 * deltaMax);
+	const glm::vec2 p3(midx + 20 * deltaMax, midy - deltaMax);
+
+	pointVector.insert(pointVector.begin(), glm::vec3(p3, 2));
+	pointVector.insert(pointVector.begin(), glm::vec3(p2, 1));
+	pointVector.insert(pointVector.begin(), glm::vec3(p1, 0));
+	
+	std::cout << "pointVector.size() " << pointVector.size() << std::endl;
+	std::vector<Triangle> tmpTriangles;
+	// 将超级三角形保存至未确定三角形列表（temp triangles）
+	tmpTriangles.push_back(Triangle(0, 1, 2));
+	// 将超级三角形push到triangles列表
+	triangleVector.push_back(Triangle(0, 1, 2));
+	// 遍历基于indices顺序的vertices中每一个点,顶点则是由x从小到大出现
+	for (int i = 3; i < pointVector.size(); i++) {
+		// 初始化边缓存数组（edge buffer）
+		std::vector<Edge> polygon;
+		// 遍历temp triangles中的每一个三角形
+		for (int j = 0; j < tmpTriangles.size(); j++) {
+			// 计算该三角形的圆心和半径
+			tmpTriangles[j].calcCircumCircle(pointVector);
+			// 如果该点在外接圆的右侧
+			if (pointVector[i].x > tmpTriangles[j].x + tmpTriangles[j].r) {
+				// std::cout << "pointVector[i].x " << pointVector[i].x << " tmpTriangles[j].x  " << tmpTriangles[j].x << " tmpTriangles[j].r " << tmpTriangles[j].r  << " 点在外接圆的右侧 " << std::endl;
+				// 则该三角形为Delaunay三角形，保存到triangles
+				triangleVector.push_back(tmpTriangles[j]);
+				// 并在temp里去除掉
+				tmpTriangles.erase(tmpTriangles.begin() + j);
+				j--;
+				continue;
+
+			}
+			// 如果该点在外接圆外（即也不是外接圆右侧）
+			else if (glm::distance(glm::vec2(pointVector[i]), glm::vec2(tmpTriangles[j].x, tmpTriangles[j].y)) > tmpTriangles[j].r) {
+				// 则该三角形为不确定
+				// 后面会在问题中讨论
+				// 跳过
+			}
+			// 如果该点在外接圆内
+			else {
+				// 则该三角形不为Delaunay三角形
+				// 将三边保存至edge buffer
+				polygon.push_back(Edge(tmpTriangles[j].vertices[0], tmpTriangles[j].vertices[1]));
+				polygon.push_back(Edge(tmpTriangles[j].vertices[1], tmpTriangles[j].vertices[2]));
+				polygon.push_back(Edge(tmpTriangles[j].vertices[2], tmpTriangles[j].vertices[0]));
+				// 在temp中去除掉该三角形
+				tmpTriangles.erase(tmpTriangles.begin() + j);
+				j--;
+				continue;
+			}
+		}
+		// 对edge buffer进行去重
+		// 查找三角形公共边
+		for (int e1 = 0; e1 < polygon.size(); e1++) {
+			for (int e2 = e1 + 1; e2 < polygon.size(); e2++) {
+				// 如果两个边相等
+				if (Edge::equal(polygon[e1], polygon[e2])) {
+					polygon[e1].isBad = true;
+					polygon[e2].isBad = true;
+				}
+			}
+		}
+
+		// 删除三角形公共边，形成包含p的空腔
+		for (int j = 0; j < polygon.size(); ) {
+			if (polygon[j].isBad) {
+				polygon.erase(polygon.begin() + j);
+			}
+			else {
+				j++;
+			}
+		}
+
+		// 将新插入的点和空腔的边相连接
+		for (int j = 0; j < polygon.size(); j++) {
+			tmpTriangles.push_back(Triangle(i, polygon[j].point1ID, polygon[j].point2ID));
+		}
+	}
+	// todo: 将triangles与temp triangles进行合并
+	/*for (int i = 0; i < tmpTriangles.size(); i++) {
+		triangleVector.push_back(tmpTriangles[i]);
+	}
+	// 移除包含超级三角形顶点的三角形
+	for (int i = 0; i < triangleVector.size(); ) {
+		if (triangleVector[i].containsVertex(0) || triangleVector[i].containsVertex(1) || triangleVector[i].containsVertex(2)) {
+			triangleVector.erase(triangleVector.begin() + i);
+		}
+		else {
+			i++;
+		}
+	}
+	std::cout << "triangleVector.size() " << triangleVector.size() << std::endl;*/
+
+	// ----------------------------- PLAN B -----------------------------------
 	triangleVector.clear(); // 三角形集合
 	pointVector.clear(); // 点集合
 	edgeVector.clear();
@@ -27,11 +147,16 @@ void Delaunay::initialize(const glm::vec4 & boundingBox, const std::vector<glm::
 	const glm::vec2 p2(midx, midy + 20 * deltaMax);
 	const glm::vec2 p3(midx + 20 * deltaMax, midy - deltaMax);
 
-	pointVector.push_back(p1);
-	pointVector.push_back(p2);
-	pointVector.push_back(p3);
+	pointVector.push_back(glm::vec3(p1, 0.0f));
+	pointVector.push_back(glm::vec3(p2, 0.0f));
+	pointVector.push_back(glm::vec3(p3, 0.0f));
 
-	pointVector.insert(pointVector.end(), vertices.begin(), vertices.end());
+	std::vector<glm::vec3> tmpPoints;
+	for (int i = 0; i < vertices.size(); i++) {
+		tmpPoints.push_back(glm::vec3(vertices[i], 0.0f));
+
+	}
+	pointVector.insert(pointVector.end(), tmpPoints.begin(), tmpPoints.end());
 
 	std::cout << "pointVector.size() " << pointVector.size() << std::endl;
 
@@ -39,7 +164,7 @@ void Delaunay::initialize(const glm::vec4 & boundingBox, const std::vector<glm::
 
 	for (int i = 3; i < pointVector.size(); i++) {
 		std::vector<Edge> polygon;
-		for (int j = 0; j < triangleVector.size(); j++) {	
+		for (int j = 0; j < triangleVector.size(); j++) {
 			// 所有外接圆包含p的三角形
 			if (triangleVector[j].circumCircleContains(pointVector, i)) {
 				triangleVector[j].isBad = true;
@@ -84,7 +209,7 @@ void Delaunay::initialize(const glm::vec4 & boundingBox, const std::vector<glm::
 			triangleVector.push_back(Triangle(i, polygon[j].point1ID, polygon[j].point2ID));
 		}
 	}
-	
+
 	// 移除包含超级三角形顶点的三角形
 	for (int i = 0; i < triangleVector.size(); ) {
 		if (triangleVector[i].containsVertex(0) || triangleVector[i].containsVertex(1) || triangleVector[i].containsVertex(2)) {
@@ -94,12 +219,11 @@ void Delaunay::initialize(const glm::vec4 & boundingBox, const std::vector<glm::
 			i++;
 		}
 	}
-
-	for (int i = 0; i < triangleVector.size(); i++) {
+	/*for (int i = 0; i < triangleVector.size(); i++) {
 		edgeVector.push_back(Edge(triangleVector[i].vertices[0], triangleVector[i].vertices[1]));
 		edgeVector.push_back(Edge(triangleVector[i].vertices[1], triangleVector[i].vertices[2]));
 		edgeVector.push_back(Edge(triangleVector[i].vertices[2], triangleVector[i].vertices[0]));
-	}
+	}*/
 	//triangleVector.erase()
 	//------------------------
 	// points

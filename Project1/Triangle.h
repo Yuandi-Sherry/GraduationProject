@@ -19,7 +19,7 @@ public:
 	Edge edges[3]; // 三角形的三条边
 	double x; // 外接圆圆心横坐标
 	double y; // 外接圆圆心纵坐标
-	double r; // 外接圆圆心半径
+	double r = -1; // 外接圆圆心半径
 
 	bool isBad = false;
 
@@ -34,7 +34,10 @@ public:
 	/**
 	 * 判断点是否在外接圆内
 	 */
-	bool circumCircleContains(const std::vector<glm::vec2>& pointVector, const int& point);
+	bool circumCircleContains(const std::vector<glm::vec3>& pointVector, const int& point);
+
+
+	void calcCircumCircle(const std::vector<glm::vec3>& pointVector);
 
 	bool containsVertex(const int& v) const;
 };

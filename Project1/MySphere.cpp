@@ -2,7 +2,7 @@
 #include <iostream>
 void MySphere::generateVertices() {
 	GLfloat theta = 0.0f, phi = 0.0f;
-	int thetaNum = 60, phiNum = 60;
+	int thetaNum = 20, phiNum = 20;
 	GLfloat thetaStep = 2 * PI / thetaNum, phiStep = 2 * PI / phiNum;
 	GLfloat radius = 1.0f;
 	for (float j = 0; j < thetaNum; j++)

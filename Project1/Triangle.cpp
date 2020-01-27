@@ -4,6 +4,9 @@
 #include <iostream>
 #include <cstdlib>
 #include "Edge.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 using namespace std;
 int compare(const void * a, const void * b) {
 	int *pa = (int*)a;
@@ -38,22 +41,30 @@ Triangle::~Triangle() {
 /**
  * 计算三角形的外接圆
  */
-bool Triangle::circumCircleContains(const std::vector<glm::vec2> & pointVector, const int& point) {
-	float a = 2 * (pointVector[vertices[1]].x - pointVector[vertices[0]].x);
-	float b = 2 * (pointVector[vertices[1]].y - pointVector[vertices[0]].y);
-	float c = pointVector[vertices[1]].x * pointVector[vertices[1]].x + pointVector[vertices[1]].y * pointVector[vertices[1]].y - pointVector[vertices[0]].x * pointVector[vertices[0]].x - pointVector[vertices[0]].y * pointVector[vertices[0]].y;
-	float d = 2 * (pointVector[vertices[2]].x - pointVector[vertices[1]].x);
-	float e = 2 * (pointVector[vertices[2]].y - pointVector[vertices[1]].y);
-	float f = pointVector[vertices[2]].x * pointVector[vertices[2]].x + pointVector[vertices[2]].y * pointVector[vertices[2]].y - pointVector[vertices[1]].x * pointVector[vertices[1]].x - pointVector[vertices[1]].y * pointVector[vertices[1]].y;
-	float x = (b * f - e * c) / (b * d - e * a);
-	float y = (d * c - a * f) / (b * d - e * a);
-	float r = glm::distance(glm::vec2(x, y), pointVector[vertices[0]]);
-	if (glm::distance(glm::vec2(x, y), pointVector[point]) < r) {
+bool Triangle::circumCircleContains(const std::vector<glm::vec3> & pointVector, const int& point) {
+	if (r == -1) {
+		calcCircumCircle(pointVector);
+	}
+	if (glm::distance(glm::vec2(x, y), glm::vec2(pointVector[point])) < r) {
 		return true;
 	}
 	return false;
 }
 
+
+void Triangle::calcCircumCircle(const std::vector<glm::vec3>& pointVector) {
+	if (r == -1) {
+		float a = 2 * (pointVector[vertices[1]].x - pointVector[vertices[0]].x);
+		float b = 2 * (pointVector[vertices[1]].y - pointVector[vertices[0]].y);
+		float c = pointVector[vertices[1]].x * pointVector[vertices[1]].x + pointVector[vertices[1]].y * pointVector[vertices[1]].y - pointVector[vertices[0]].x * pointVector[vertices[0]].x - pointVector[vertices[0]].y * pointVector[vertices[0]].y;
+		float d = 2 * (pointVector[vertices[2]].x - pointVector[vertices[1]].x);
+		float e = 2 * (pointVector[vertices[2]].y - pointVector[vertices[1]].y);
+		float f = pointVector[vertices[2]].x * pointVector[vertices[2]].x + pointVector[vertices[2]].y * pointVector[vertices[2]].y - pointVector[vertices[1]].x * pointVector[vertices[1]].x - pointVector[vertices[1]].y * pointVector[vertices[1]].y;
+		x = (b * f - e * c) / (b * d - e * a);
+		y = (d * c - a * f) / (b * d - e * a);
+		r = glm::distance(glm::vec2(x, y), glm::vec2(pointVector[vertices[0]]));
+	}
+}
 /**
  * 三角形是否包含某一顶点
  */

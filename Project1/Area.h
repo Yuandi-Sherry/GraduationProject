@@ -114,6 +114,8 @@ public:
 	void tackleRemoveTumor(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
 	void setRemovePos(glm::vec3 pos);
 	void updateCutVertices(BaseModel& tumor);
+	void planA(BaseModel& tumor);
+	void planB(BaseModel& tumor);
 	void removeTumor(BaseModel& tumor);
 	int getRemoveMode() {
 		return removeMode;
@@ -181,7 +183,9 @@ private:
 	MyTriangles * DelaunayTri = NULL;
 	std::vector<MyLine> lineVec;
 
-	//std::vector<GLfloat> 
+	//std::vector<GLfloat> 	
+	std::vector<glm::vec3> verticesToAppend3D; // 局部坐标
+	std::vector<glm::vec2> verticesToAppend2D; // 平面坐标
 };
 
 

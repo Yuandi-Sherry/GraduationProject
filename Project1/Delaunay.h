@@ -10,7 +10,7 @@ class Delaunay
 {
 public:
 	std::vector<Triangle> triangleVector; // 三角形集合
-	std::vector<glm::vec2> pointVector; // 点集合
+	std::vector<glm::vec3> pointVector; // 点集合
 	std::vector<Edge> edgeVector;
 
 	Delaunay();
