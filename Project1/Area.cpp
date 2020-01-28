@@ -34,7 +34,7 @@ void Area::init() {
 	camera.setOrthology();
 	// mode
 	modeSelection = 4;
-
+	debugIndex = -1;
 	// ruler
 	ruler.initVertexObject();
 	// cut
@@ -162,6 +162,37 @@ void Area::setRemovePos(glm::vec3 pos) {
 	removeMode = 1;
 }
 
+void Area::addPoint() {
+	lineVec.clear();
+	std::cout << "add point " << debugIndex << std::endl;
+	// debug 函数
+	/*for (int i = 0; i < combinedPoints.size()/3; i++) {
+		mesh1.addPoint(combinedPoints[i]);
+
+	}*/
+	mesh1.addPoint(combinedPoints[++debugIndex]);
+	std::cout << "coor: " << combinedPoints[debugIndex].x << " " << combinedPoints[debugIndex].y << std::endl;
+	std::vector<GLfloat> lineVertices;
+	lineVertices.clear();
+	//std::cout << " mesh1.triangleVector.size() " << mesh1.triangleVector.size() << std::endl;
+	// test绘制线
+	for (int i = 0; i < mesh1.triangleVector.size(); i++) {
+		lineVertices.clear();
+		// std::cout << "in debug ";
+		for (int j = 0; j < 3; j++) {
+			// std::cout << mesh1.triangleVector[i].vertices[j] << " ";
+			lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[j]].x);
+			lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[j]].y);
+			lineVertices.push_back(200.0f);
+		}
+		// 使得线段闭合
+		// lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[0]].x);
+		// lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[0]].y);
+		// lineVertices.push_back(100.0f);
+		MyLine line(lineVertices);
+		lineVec.push_back(line);
+	}
+}
 /* 
  * 根据球体表面顶点切割
  */
@@ -316,7 +347,7 @@ void Area::planA(BaseModel& tumor) {
 
 			// 计算二维空间坐标
 			// 弧长
-			GLfloat rho = acos(glm::dot(originNormal, glm::normalize(curVer - origin))) * cutRadius;
+			GLfloat rho = 3 * acos(glm::dot(originNormal, glm::normalize(curVer - origin))) * cutRadius;
 			// 和纵轴夹角（y正半轴
 			glm::vec3 OP = curVer - origin;
 			glm::vec3 OH = glm::dot(OP, originNormal) * originNormal;
@@ -325,7 +356,14 @@ void Area::planA(BaseModel& tumor) {
 			if (glm::dot(glm::normalize(OQ), originUp) < 0) {
 				theta = -theta;
 			}
+			std::cout << "3D: " << curVer.x << " " << curVer.y << " " << curVer.z<< std::endl;
+			for (int k = 0; k < verticesToAppend2D.size(); k++) {
+				if (abs(verticesToAppend2D[k].x - rho * sin(theta)) < 0.000001f && abs(verticesToAppend2D[k].y - rho * cos(theta)) < 0.000001f) {
+					std::cout << "-------------------------球体表面坐标在二维空间相同:" << std::endl;
+				}
+			}
 			verticesToAppend2D.push_back(glm::vec2(rho * sin(theta), rho * cos(theta)));
+			std::cout << "2D: " << rho * sin(theta) << " " << rho * cos(theta) << std::endl;
 		}
 	}
 
@@ -337,7 +375,7 @@ void Area::planA(BaseModel& tumor) {
 		glm::vec3 coor = glm::vec3(tmpVertices[(*it) * 6], tmpVertices[(*it) * 6 + 1], tmpVertices[(*it) * 6 + 2]);
 		// 球面距离
 		GLfloat rho =  //2 * cutRadius;
-		  2*acos(glm::dot(originNormal, glm::normalize(coor - origin))) * cutRadius;
+		  3*2*acos(glm::dot(originNormal, glm::normalize(coor - origin))) * cutRadius;
 		// 和纵轴夹角（y正半轴
 		glm::vec3 OP = coor - origin;
 		glm::vec3 OH = glm::dot(OP, originNormal) * originNormal;
@@ -369,15 +407,15 @@ void Area::planA(BaseModel& tumor) {
 	}
 
 	// -------------在二维空间构造三角剖分-----------------
-	std::vector<glm::vec2> combinedPoints;// 要求voxel在前,vertex在后
+	// 要求voxel在前,vertex在后
 	combinedPoints.assign(verticesToAppend2D.begin(), verticesToAppend2D.end());
 	combinedPoints.insert(combinedPoints.end(), vertex2D.begin(), vertex2D.end());
-	myUtils::generateMesh(combinedPoints, mesh, verticesToAppend2D.size());
-	
+	std::cout << "combinedPoints.size() " << combinedPoints.size() << std::endl;
+	myUtils::generateMesh1(combinedPoints, mesh1, verticesToAppend2D.size());
 	// -------------加入三角剖分的结果-----------------
 	// 插入indices，mesh得到的下标全部-3
 	// 根据mesh对应的下标，加入indices，vertex采用edgeIndices，vertices3D直接往后加
-	for (int i = 0; i < mesh.triangleVector.size(); i++) {
+	/*for (int i = 0; i < mesh.triangleVector.size(); i++) {
 		// 如果都是边缘则删除
 		if (mesh.triangleVector[i].vertices[0] - 3 >= verticesToAppend2D.size()
 			&& mesh.triangleVector[i].vertices[1] - 3 >= verticesToAppend2D.size()
@@ -398,28 +436,12 @@ void Area::planA(BaseModel& tumor) {
 				tmpIndices.push_back(orderedIndices[mesh.triangleVector[i].vertices[j] - 3 - verticesToAppend2D.size()]);
 			}
 		}
-	}
+	}*/
 
 	/*tumor.setVertices(tmpVertices);
 	tumor.setIndices(tmpIndices);*/
 	// 绘制三角剖分
-	std::vector<GLfloat> lineVertices;
-	lineVertices.clear();
-	// test绘制线
-	for (int i = 0; i < mesh.triangleVector.size(); i++) {
-		lineVertices.clear();
-		for (int j = 0; j < 3; j++) {
-			lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[j]].x);
-			lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[j]].y);
-			lineVertices.push_back(-10.0f);
-		}
-		// 使得线段闭合
-		lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[0]].x);
-		lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[0]].y);
-		lineVertices.push_back(-10.0f);
-		MyLine line(lineVertices);
-		lineVec.push_back(line);
-	}
+	
 }
 void Area::planB(BaseModel& tumor) {
 	std::cout << "This is plan B" << std::endl;
@@ -604,7 +626,7 @@ void Area::planB(BaseModel& tumor) {
 			// 世界坐标
 			voxel3D.push_back(coor);
 			// 二维坐标：x = rho*sin theta, y = rho * cos theta.
-			voxel2D.push_back(glm::vec3(rho * sin(theta), rho * cos(theta), -10.0f));
+			voxel2D.push_back(glm::vec3(rho * sin(theta), rho * cos(theta),200.0f));
 			// 恢复1
 			tumor.markVoxel[i] = 1;
 		}
@@ -695,15 +717,14 @@ void Area::planB(BaseModel& tumor) {
 		for (int j = 0; j < 3; j++) {
 			lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[j]].x);
 			lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[j]].y);
-			lineVertices.push_back(-10.0f);
+			lineVertices.push_back(200.0f);
 		}
-		lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[0]].x);
-		lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[0]].y);
-		lineVertices.push_back(-10.0f);
+		//lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[0]].x);
+		//lineVertices.push_back(mesh.pointVector[mesh.triangleVector[i].vertices[0]].y);
+		//lineVertices.push_back(-10.0f);
 		MyLine line(lineVertices);
 		lineVec.push_back(line);
 	}
-	
 }
 void Area::updateCutVertices(BaseModel & tumor) {
 	voxel2D.clear();
@@ -713,6 +734,7 @@ void Area::updateCutVertices(BaseModel & tumor) {
 	verticesToAppend2D.clear();
 	verticesToAppend3D.clear();
 	lineVec.clear();
+	combinedPoints.clear();
 	
 	planA(tumor);
 	//planB(tumor);
@@ -732,25 +754,28 @@ void Area::testCoorTrans(Shader & shader) {
 	glm::mat4 model(1.0f);
 	shader.setMat4("model", model);
 	// draw edge vertices 网格边缘 - 红色 
-	for (int i = 0; i < vertex2D.size(); i++) {
+	// std::cout << "debugIndex " << debugIndex << " verticesToAppend2D - 4 " <<  - 4 - verticesToAppend2D.size() << std::endl;
+	for (int i = 0; i < debugIndex - (int)verticesToAppend2D.size(); i++) {
 		shader.setVec3("color", glm::vec3(1.0f,0.0f,0.0f));
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(vertex2D[i], -10.0f));
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(vertex2D[i], 200.0f));
 		//model = transformMat * glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 		shader.setMat4("model", model);
 		mySphere.draw();
 	}
-
-	for (int i = 0; i < voxel2D.size(); i++) {
+	// std::cout << "debugIndex " << debugIndex << " debugIndex - 4 " << debugIndex - 4 << std::endl;
+	/*for (int i = 0; i < debugIndex - 4; i++) {
+		std::cout << "for";
+		// std::cout << "for i " << i << " " << debugIndex - 4 - voxel2D.size() << std::endl;
 		shader.setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(voxel2D[i], -10.0f));
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(voxel2D[i], 200.0f));
 		// model = transformMat * glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 		shader.setMat4("model", model);
 		mySphere.draw();
-	}
+	}*/
 	// draw edge voxel 体素边缘 - 绿色
-	for (int i = 0; i < verticesToAppend2D.size(); i++) {
+	for (int i = 0; i <= debugIndex; i++) {
 		shader.setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
-		model = glm::translate(glm::mat4(1.0f), glm::vec3(verticesToAppend2D[i], -10.0f));
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(verticesToAppend2D[i], 200.0f));
 		//model = transformMat * glm::translate(model, glm::vec3(-4.38f, -201.899f, 148.987f));
 		shader.setMat4("model", model);
 	    mySphere.draw();
@@ -789,6 +814,8 @@ void Area::testCoorTrans(Shader & shader) {
 		//DelaunayTri->draw();
 	}
 	//std::cout << "lineVec.size() " << lineVec.size() << std::endl;
+
+	shader.setVec3("color", glm::vec3(1.0f, 1.0f, 1.0f));
 	for (int i = 0; i < lineVec.size(); i++) {
 		lineVec[i].draw();
 	}

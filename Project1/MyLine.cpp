@@ -60,6 +60,6 @@ void MyLine::initVertexObject() {
 void MyLine::draw() {
 	glBindVertexArray(VAO);
 	// glDrawArrays(GL_LINE_LOOP, 0, vertices.size()/3);
-	glDrawArrays(GL_LINE_STRIP, 0, vertices.size() / 3);
+	glDrawArrays(GL_LINE_LOOP, 0, vertices.size() / 3);
 	glBindVertexArray(0);
 }

@@ -24,6 +24,7 @@
     <ClCompile Include="Edge.cpp" />
     <ClCompile Include="MyLine.cpp" />
     <ClCompile Include="MyTriangles.cpp" />
+    <ClCompile Include="Delaunay1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imconfig.h" />
@@ -51,6 +52,7 @@
     <ClInclude Include="Edge.h" />
     <ClInclude Include="MyLine.h" />
     <ClInclude Include="MyTriangles.h" />
+    <ClInclude Include="Delaunay1.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="camera.frag" />

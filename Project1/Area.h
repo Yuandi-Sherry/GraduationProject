@@ -28,8 +28,10 @@
 #include "MyCube.h"
 #include "MyLine.h"
 #include "Delaunay.h"
+#include "Delaunay1.h"
 #include "BaseModel.h"
 #include "MyTriangles.h"
+
 enum MODE
 {
 	GENERAL, RULER, CROSS_INTERSECTION, NEAREST_VESSEL, REMOVE_TUMOR
@@ -123,6 +125,7 @@ public:
 
 	void updateLightSpaceMatrix();
 	void testCoorTrans(Shader& shader);
+	void addPoint();
 private:
 	void initDepthBuffer();
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 400.0f);
@@ -179,6 +182,7 @@ private:
 	MyLine lines;
 
 	Delaunay mesh;
+	Delaunay1 mesh1;
 
 	MyTriangles * DelaunayTri = NULL;
 	std::vector<MyLine> lineVec;
@@ -186,6 +190,9 @@ private:
 	//std::vector<GLfloat> 	
 	std::vector<glm::vec3> verticesToAppend3D; // 局部坐标
 	std::vector<glm::vec2> verticesToAppend2D; // 平面坐标
+
+	std::vector<glm::vec2> combinedPoints;
+	int debugIndex = -1;
 };
 
 

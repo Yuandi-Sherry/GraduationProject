@@ -214,7 +214,10 @@ int main()
 			//bonesArea.drawModels(ourShader, shadowShader, models);
 
 		}*/
-		mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
+		//if (currentArea->getRemoveMode() == 1) {
+			mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
+		//}
+		
 		mainArea.testCoorTrans(ourShader);
 		//tumor.voxelization();
 		// display GUI
@@ -274,6 +277,11 @@ void processInput(GLFWwindow *window)
 
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && currentArea->getMode() == REMOVE_TUMOR && currentArea -> getRemoveMode() == 1) {
 		currentArea->removeTumor(models[1]);
+		std::cout << "currentArea->getRemoveMode() " << currentArea->getRemoveMode() << std::endl;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && currentArea->getMode() == REMOVE_TUMOR && currentArea->getRemoveMode() == 0) {
+		currentArea->addPoint();
 	}
 }
 

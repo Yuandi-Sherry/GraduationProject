@@ -1,9 +1,11 @@
 #include "MySphere.h"
 #include <iostream>
+#include <cstdlib>
+#include <cmath> 
 void MySphere::generateVertices() {
 	GLfloat theta = 0.0f, phi = 0.0f;
 	int thetaNum = 20, phiNum = 20;
-	GLfloat thetaStep = 2 * PI / thetaNum, phiStep = 2 * PI / phiNum;
+	GLfloat thetaStep = 2 * PI / thetaNum, phiStep = 2* PI / phiNum;
 	GLfloat radius = 1.0f;
 	for (float j = 0; j < thetaNum; j++)
 	{
@@ -14,6 +16,14 @@ void MySphere::generateVertices() {
 			GLfloat x = radius * cos(phi) * cos(theta);	// 记得转化精度
 			GLfloat y = radius * sin(phi);
 			GLfloat z = radius * cos(phi) * sin(theta);
+
+			if (abs(x + 0.293893f) < 0.000001f
+				&& abs(y + 0.951056) < 0.000001f
+				&& abs(z + 0.0954915)< 0.0000001f) {
+				std::cout << "i " << i << " j " << j << std::endl;
+				std::cout << "phi " << phi /3.14f * 180 << " theta " << theta / 3.14f * 180 << std::endl;
+				std::cout << "cos(phi) " << cos(phi) << " cos(theta) " << cos(theta)  << " sin(phi) " << sin(phi) << " sin(theta) " << sin(theta) << std::endl;
+			}
 			vertices.push_back(x);
 			vertices.push_back(y);
 			vertices.push_back(z);
@@ -42,6 +52,30 @@ void MySphere::generateVertices() {
 		}
 		x = x + 1;
 	}
+
+	// 检测是否有重复坐标
+	int repulicate = 0;
+	for (int i = 0; i < vertices.size(); i+=6) {
+		bool flag = false;
+		for (int j = i+6; j < vertices.size(); j+=6) {
+			/* (std::abs(vertices[i] - vertices[j]) < 0.000000001f
+				&& std::abs(vertices[i+1] - vertices[j+1]) < 0.000000001f
+				&& std::abs(vertices[i+2] - vertices[j+2]) < 0.000000001f) {
+				flag = true;
+				break;
+			}*/
+			if (vertices[i] == vertices[j] && vertices[i + 1] == vertices[j + 1] && vertices[i + 2] == vertices[j + 2]) {
+				flag = true;
+				break;
+			}
+		}
+		if (flag) {
+			std::cout << "重复坐标值：" << vertices[i] << " " << vertices[i + 1] << " " << vertices[i + 2] << std::endl;
+			repulicate++;
+		}
+		
+	}
+	std::cout << "球体表面重复坐标" << repulicate << "顶点个数" << vertices.size()/6 << std::endl;
 }
 
 glm::vec3 MySphere::calNormal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {

@@ -155,6 +155,20 @@ void myUtils::generateMesh(const std::vector<glm::vec2>& combinedPoints, Delauna
 	}*/
 }
 
+void myUtils::generateMesh1(const std::vector<glm::vec2>& combinedPoints, Delaunay1& mesh, const int& size) {
+
+	glm::vec4 boundingbox = getBoundingBox(combinedPoints);
+
+	glm::vec2 basicPoints[4] = {
+		glm::vec2(boundingbox.x, boundingbox.y), // upperLeft
+		glm::vec2(boundingbox.z, boundingbox.y), //upperRight
+		glm::vec2(boundingbox.x, boundingbox.w), // lowerLeft
+		glm::vec2(boundingbox.z, boundingbox.w) // lowerRight
+	};
+	mesh.initialize(boundingbox);
+	
+}
+
 void myUtils::generateMesh(const std::vector<glm::vec2>& vertices, const std::vector<glm::vec2>& voxels, Delaunay& mesh) {
 
 	/*std::vector<glm::vec2> tmpVertices; // 将两个点集合并
