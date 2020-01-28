@@ -41,7 +41,7 @@ namespace myUtils {
 
 	void generateMesh(const std::vector<glm::vec2>& vertices, const std::vector<glm::vec2>& voxels, Delaunay& mesh);
 
-	void generateMesh(const std::vector<glm::vec2>& vertices, Delaunay& mesh);
+	void generateMesh(const std::vector<glm::vec2>& vertices, Delaunay& mesh, const int& size);
 }
 
 #endif // !_MY_UTILS_H_

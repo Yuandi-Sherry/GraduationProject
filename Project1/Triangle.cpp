@@ -45,7 +45,7 @@ bool Triangle::circumCircleContains(const std::vector<glm::vec3> & pointVector, 
 	if (r == -1) {
 		calcCircumCircle(pointVector);
 	}
-	if (glm::distance(glm::vec2(x, y), glm::vec2(pointVector[point])) < r) {
+	if (glm::distance(glm::vec2(x, y), glm::vec2(pointVector[point])) <= r) {
 		return true;
 	}
 	return false;

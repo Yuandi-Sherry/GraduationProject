@@ -139,7 +139,7 @@ Circumcircle myUtils::getCircumcircle(const Triangle& tmp) {
 }*/
 
 
-void myUtils::generateMesh(const std::vector<glm::vec2>& combinedPoints, Delaunay& mesh) {
+void myUtils::generateMesh(const std::vector<glm::vec2>& combinedPoints, Delaunay& mesh, const int & size) {
 
 	glm::vec4 boundingbox = getBoundingBox(combinedPoints);
 	
@@ -149,7 +149,7 @@ void myUtils::generateMesh(const std::vector<glm::vec2>& combinedPoints, Delauna
 		glm::vec2(boundingbox.x, boundingbox.w), // lowerLeft
 		glm::vec2(boundingbox.z, boundingbox.w) // lowerRight
 	};
-	mesh.initialize(boundingbox, combinedPoints);
+	mesh.initialize(boundingbox, combinedPoints, size);
 	/*for (int i = 0; i < 7; i++) {
 		mesh.addPoint(combinedPoints[i].x, combinedPoints[i].y);
 	}*/

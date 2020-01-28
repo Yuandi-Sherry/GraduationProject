@@ -17,7 +17,7 @@ public:
 
 	~Delaunay();
 
-	void initialize(const glm::vec4 &, const std::vector < glm::vec2>& vertices);
+	void initialize(const glm::vec4 &, const std::vector < glm::vec2>& vertices, const int & size);
 
 	/**
 	 * 加入新点
