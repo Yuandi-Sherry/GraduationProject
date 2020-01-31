@@ -10,10 +10,13 @@
 #include "Delaunay.h"
 #include "Delaunay1.h"
 
+#include <queue>
+
+
 namespace myUtils {
 
 	extern std::vector<glm::vec3> movement26;
-
+	extern std::vector<glm::vec3> movement6;
 	struct Triangle {
 		glm::vec2 p1;
 		glm::vec2 p2;
@@ -32,6 +35,22 @@ namespace myUtils {
 
 	int neighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel);
 
+	void fillInNeighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel, std::vector <int>& result);
+
+	void blankInNeighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel, std::vector <int>& result);
+
+	// 返回6邻域坐标
+	void neighbors6(const glm::vec3 curPos, glm::vec3 resolution, std::vector <glm::vec3>& result);
+
+	// 返回6邻域的坐标在数组中的下标
+	void neighbors6(const glm::vec3 curPos, glm::vec3 resolution, std::vector <int>& result);
+
+	void fillInNeighbors6(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel, std::vector <int>& result);
+
+	void blankInNeighbors6(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel, std::vector <int>& result);
+
+	void BFS(const glm::vec3& resolution, int* markVoxel, std::queue<int>& DFSindices, const int& length, const int& threshold);
+
 	void delaunay(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& voxels);
 
 	glm::vec4 getBoundingBox(const std::vector<glm::vec2>& array);
@@ -44,7 +63,7 @@ namespace myUtils {
 
 	void generateMesh(const std::vector<glm::vec2>& vertices, Delaunay& mesh, const int& size);
 
-	void generateMesh1(const std::vector<glm::vec2>& vertices, Delaunay1& mesh, const int& size);
+	void generateMesh1(const std::vector<glm::vec2>& vertices, Delaunay1& mesh);
 }
 
 #endif // !_MY_UTILS_H_

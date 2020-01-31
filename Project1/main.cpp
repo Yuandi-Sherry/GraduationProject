@@ -215,10 +215,12 @@ int main()
 
 		}*/
 		//if (currentArea->getRemoveMode() == 1) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
 		//}
 		
-		mainArea.testCoorTrans(ourShader);
+		// mainArea.testCoorTrans(ourShader);
 		//tumor.voxelization();
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();

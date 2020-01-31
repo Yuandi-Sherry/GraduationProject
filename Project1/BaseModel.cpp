@@ -1,4 +1,4 @@
-#include "BaseModel.h"
+ï»¿#include "BaseModel.h"
 #include <fstream>
 #include <vector>
 #include <iostream>
@@ -32,7 +32,7 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 			return;
 		// read triangle mesh in the loop
 		glm::vec3 vector1, vector2, normal, tmpTriangleEdge[3];
-		// ´æ¶¥µã×ø±êºÍ¶à¸öÊı×éÏÂ±êµÄÓ³Éä¹ØÏµ
+		// å­˜é¡¶ç‚¹åæ ‡å’Œå¤šä¸ªæ•°ç»„ä¸‹æ ‡çš„æ˜ å°„å…³ç³»
 		std::unordered_map< std::string, std::vector<int>> mapping;
 		for (int i = 0; i < 200; i++)
 		{
@@ -40,7 +40,7 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 			in.read((char*)coorXYZ, 12 * sizeof(float));
 			std::ostringstream ss;
 			std::string key;
-			for (int j = 1; j < 4; j++) // Èı½ÇĞÎÈı¸öµãµÄx,y,z
+			for (int j = 1; j < 4; j++) // ä¸‰è§’å½¢ä¸‰ä¸ªç‚¹çš„x,y,z
 			{
 				ss << coorXYZ[j * 3];
 				std::string s1(ss.str());
@@ -53,10 +53,10 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 				tmpTriangleEdge[j - 1].x = coorXYZ[j * 3];
 				tmpTriangleEdge[j - 1].y = coorXYZ[j * 3 + 1];
 				tmpTriangleEdge[j - 1].z = coorXYZ[j * 3 + 2];
-				// ²éÕÒkeyÊÇ·ñ´æÔÚ
+				// æŸ¥æ‰¾keyæ˜¯å¦å­˜åœ¨
 				std::unordered_map< std::string, std::vector<int>> ::const_iterator foundKey = mapping.find(key);
 				if (foundKey == mapping.end()) {
-					std::vector<int> tmp = { i * 18 + (j - 1) * 6 }; // ¶¥µãµÄX×ø±êµÄÏÂ±ê
+					std::vector<int> tmp = { i * 18 + (j - 1) * 6 }; // é¡¶ç‚¹çš„Xåæ ‡çš„ä¸‹æ ‡
 					mapping.insert({ key, tmp });
 				}
 				else {
@@ -65,11 +65,11 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 					mapping[key] = tmp;
 				}
 			}
-			// ¼ÆËã·¨ÏòÁ¿
+			// è®¡ç®—æ³•å‘é‡
 			vector1 = tmpTriangleEdge[0] - tmpTriangleEdge[1];
 			vector2 = tmpTriangleEdge[0] - tmpTriangleEdge[2];
 			normal = glm::normalize(glm::cross(vector1, vector2));
-			// ´æÈëvertices
+			// å­˜å…¥vertices
 			for (int j = 0; j < 3; j++) {
 				vertices.push_back(tmpTriangleEdge[j].x);
 				vertices.push_back(tmpTriangleEdge[j].y);
@@ -82,15 +82,15 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 		}
 		in.close();
 
-		// ¸üĞÂ¶¥µã·¨ÏòÁ¿
-		std::cout << "¸üĞÂ¶¥µã·¨ÏòÁ¿" << std::endl;
+		// æ›´æ–°é¡¶ç‚¹æ³•å‘é‡
+		std::cout << "æ›´æ–°é¡¶ç‚¹æ³•å‘é‡" << std::endl;
 		int i = 0;
 		for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++ , i++) {
 			if (i % 100 == 0) {
 				std::cout << i*100/(float)mapping.size()  << "%" << std::endl;
 			}
 			
-			// ¼ÆËãÆ½¾ù·¨ÏòÁ¿
+			// è®¡ç®—å¹³å‡æ³•å‘é‡
 			glm::vec3 normal(0.0f, 0.0f, 0.0f);
 			for (int j = 0; j < it->second.size(); j++) {
 				normal.x += vertices[it->second[j]];
@@ -130,7 +130,7 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 			return;
 		// read triangle mesh in the loop
 		glm::vec3 vector1, vector2, normal, tmpTriangleEdge[3];
-		// ´æ¶¥µã×ø±êºÍ¶à¸öÊı×éÏÂ±êµÄÓ³Éä¹ØÏµ
+		// å­˜é¡¶ç‚¹åæ ‡å’Œå¤šä¸ªæ•°ç»„ä¸‹æ ‡çš„æ˜ å°„å…³ç³»
 		std::unordered_map< std::string, std::vector<int>> mapping;
 		for (int i = 0; i < triangles; i++)
 		{
@@ -138,7 +138,7 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 			in.read((char*)coorXYZ, 12 * sizeof(float));
 			std::string key;
 			normal = glm::vec3(coorXYZ[0], coorXYZ[1], coorXYZ[2]);
-			for (int j = 1; j < 4; j++) // Èı½ÇĞÎÈı¸öµãµÄx,y,z
+			for (int j = 1; j < 4; j++) // ä¸‰è§’å½¢ä¸‰ä¸ªç‚¹çš„x,y,z
 			{
 				key.assign((char*)(coorXYZ + j * 3), ((char*)(coorXYZ + j * 3)) + 3 * sizeof(float));
 				
@@ -150,7 +150,7 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 				vertices.push_back(normal.z);
 				std::unordered_map< std::string, std::vector<int>> ::const_iterator foundKey = mapping.find(key);
 				if (foundKey == mapping.end()) {
-					std::vector<int> tmp = { i * 18 + (j - 1) * 6 }; // ¶¥µãµÄX×ø±êµÄÏÂ±ê
+					std::vector<int> tmp = { i * 18 + (j - 1) * 6 }; // é¡¶ç‚¹çš„Xåæ ‡çš„ä¸‹æ ‡
 					mapping.insert({ key, tmp });
 				}
 				else {
@@ -165,13 +165,13 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 		}
 		in.close();
 	
-		std::cout << "¸üĞÂ¶¥µã·¨ÏòÁ¿" << std::endl;
+		std::cout << "æ›´æ–°é¡¶ç‚¹æ³•å‘é‡" << std::endl;
 		int k = 0;
 		for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++, k++) {
 			if (k % 100 == 0) {
 				std::cout << k * 100 / (float)mapping.size() << "%" << std::endl;
 			}
-			// ¼ÆËãÆ½¾ù·¨ÏòÁ¿
+			// è®¡ç®—å¹³å‡æ³•å‘é‡
 			glm::vec3 normal(0.0f, 0.0f, 0.0f);
 			for (int j = 0; j < it->second.size(); j++) {
 				normal.x += vertices[it->second[j] + 3];
@@ -202,7 +202,7 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 	}
 	else {
 		/*int index = 0;
-		std::unordered_map< std::string, int> mapping; // ¶¥µãºÍindex
+		std::unordered_map< std::string, int> mapping; // é¡¶ç‚¹å’Œindex
 		std::ifstream in(cfilename, std::ifstream::in | std::ifstream::binary);
 		if (!in) {
 			std::cout << "fail to open file " << cfilename << std::endl;
@@ -226,12 +226,12 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 			
 			float coorXYZ[18];
 			in.read((char*)coorXYZ, 18 * sizeof(float));
-			for (int j = 0; j < 3; j++) // Èı½ÇĞÎÈı¸öµãµÄx,y,z
+			for (int j = 0; j < 3; j++) // ä¸‰è§’å½¢ä¸‰ä¸ªç‚¹çš„x,y,z
 			{
 				std::string key = std::to_string(coorXYZ[j * 6]) + std::to_string(coorXYZ[j * 6 +1]) + std::to_string(coorXYZ[j * 6+2]);
-				// ÅĞ¶ÏÊÇ·ñÔÚmappingÀï
+				// åˆ¤æ–­æ˜¯å¦åœ¨mappingé‡Œ
 				std::unordered_map< std::string, int> ::const_iterator foundKey = mapping.find(key);
-				if (foundKey == mapping.end()) { // Èç¹û²»ÔÚ
+				if (foundKey == mapping.end()) { // å¦‚æœä¸åœ¨
 					mapping.insert({ key, index });
 					indices.push_back(index);
 					index++;
@@ -242,7 +242,7 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 					vertices.push_back(coorXYZ[j * 6 + 4]);
 					vertices.push_back(coorXYZ[j * 6 + 5]);
 				}
-				else { // Èç¹ûÔÚ
+				else { // å¦‚æœåœ¨
 					indices.push_back(foundKey->second);
 				}
 			}
@@ -386,7 +386,8 @@ void BaseModel::voxelization() {
 	boxMin = glm::vec3(xMin, yMin, zMin);
 	glm::vec3 boxMax = glm::vec3(xMax, yMax, zMax);
 	glm::vec3 range = boxMax - boxMin;
-	resolution = glm::vec3(range.x / step, range.y / step, range.z / step);
+	resolution = glm::vec3(static_cast<int>(range.x / step), static_cast<int>(range.y / step), static_cast<int>(range.z / step));
+
 	// camera position
 	Camera voxelCameraX(glm::vec3(boxMin.x + 0.2f, ((boxMin + boxMax) / 2.0f).y, ((boxMin + boxMax) / 2.0f).z));
 	Camera voxelCameraY(glm::vec3(((boxMin + boxMax) / 2.0f).x, boxMin.y + 0.2f, ((boxMin + boxMax) / 2.0f).z));
@@ -426,12 +427,12 @@ void BaseModel::voxelization() {
 	voxelShader.setFloat("coef[1]", 1);
 	voxelShader.setFloat("coef[2]", 1);*/
 
-	// todo ÌåËØ»¯¹ı³ÌÓĞÈ±Ïİ£¬ÓĞ²àÃæÃ»ÓĞ±»ÌåËØ»¯³É¹¦
+	// todo ä½“ç´ åŒ–è¿‡ç¨‹æœ‰ç¼ºé™·ï¼Œæœ‰ä¾§é¢æ²¡æœ‰è¢«ä½“ç´ åŒ–æˆåŠŸ
 	
 
 	// polygon mode
 	
-	// ¹Ø±ÕÉî¶È²âÊÔºÍ±³ÃæÌŞ³ı£¬±£Ö¤Ä£ĞÍµÄÈ«ÃæÈı½ÇĞÎ¶¼½øÈëÆ¬Ôª×ÅÉ«Æ÷
+	// å…³é—­æ·±åº¦æµ‹è¯•å’ŒèƒŒé¢å‰”é™¤ï¼Œä¿è¯æ¨¡å‹çš„å…¨é¢ä¸‰è§’å½¢éƒ½è¿›å…¥ç‰‡å…ƒç€è‰²å™¨
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
@@ -473,7 +474,7 @@ void BaseModel::voxelization() {
 	voxelShader.setMat4("view", voxelCameraZ.GetViewMatrix());
 	voxelShader.setMat4("modelInverse", glm::inverse(glm::mat4(1.0f)));
 	voxelShader.setMat4("viewInverse", glm::inverse(voxelCameraZ.GetViewMatrix()));
-	std::vector<int> markIndex; // ¼ÇÂ¼GPU¼ÆËãµÄÌåËØÎª1µÄÔªËØµÄÎ»ÖÃ
+	std::vector<int> markIndex; // è®°å½•GPUè®¡ç®—çš„ä½“ç´ ä¸º1çš„å…ƒç´ çš„ä½ç½®
 	draw();
 	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_cntBuffer);
@@ -481,7 +482,7 @@ void BaseModel::voxelization() {
 	if (readPtr != nullptr) {
 		// read
 		for (int i = 0; i < length; i++) {
-			// ²»ÓëÍø¸ñÖØºÏ
+			// ä¸ä¸ç½‘æ ¼é‡åˆ
 			if (*(readPtr + i) != 0) {
 				markVoxel[i] = 1;
 				markIndex.push_back(i);
@@ -493,8 +494,8 @@ void BaseModel::voxelization() {
 		std::cout << "fail to read from ssbo" << std::endl;
 	}
 	
-	// Çå³ı¶àÓàÌåËØ
-	for (int i = 0, j = markIndex.size() -1; i < markIndex.size()/2 && j > 0; i++, j--) {
+	// æ¸…é™¤å¤šä½™ä½“ç´ 
+	/*for (int i = 0, j = markIndex.size() -1; i < markIndex.size()/2 && j > 0; i++, j--) {
 
 		// i
 		int iy = markIndex[i] / (resolution.x * resolution.z);
@@ -502,10 +503,10 @@ void BaseModel::voxelization() {
 		int ix = markIndex[i] - iy * resolution.x * resolution.z - iz * resolution.x;
 		glm::vec3 curPosI = glm::vec3(ix, iy, iz);
 		int countNeighbor = myUtils::neighbors26(curPosI, resolution, markVoxel);
-		// ÅĞ¶ÏÊÇ·ñ26ÁÚÓò > 7
+		// åˆ¤æ–­æ˜¯å¦26é‚»åŸŸ > 7ï¼Œè…èš€
 		if (myUtils::neighbors26(curPosI, resolution, markVoxel) > 3) {
-			voxelIndex.push_back(curPosI);
-			voxelPos.push_back(boxMin + glm::vec3(ix * step, iy * step, iz * step));
+			// voxelIndex.push_back(curPosI);
+			// voxelPos.push_back(boxMin + glm::vec3(ix * step, iy * step, iz * step));
 		}
 		else {
 			markVoxel[markIndex[i]] = 0;
@@ -517,56 +518,84 @@ void BaseModel::voxelization() {
 		int jx = markIndex[j] - jy * resolution.x * resolution.z - jz * resolution.x;
 		glm::vec3 curPosJ = glm::vec3(jx, jy, jz);
 		countNeighbor = myUtils::neighbors26(curPosJ, resolution, markVoxel);
-		// ÅĞ¶ÏÊÇ·ñ26ÁÚÓò > 7
+		// åˆ¤æ–­æ˜¯å¦26é‚»åŸŸ > 7
 		if (myUtils::neighbors26(curPosJ, resolution, markVoxel) > 3) {
-			voxelIndex.push_back(curPosJ);
-			voxelPos.push_back(boxMin + glm::vec3(jx * step, jy * step, jz * step));
 		}
 		else {
 			markVoxel[markIndex[j]] = 0;
 		}
 
+	}*/
+	
+
+	// è†¨èƒ€ t æ¬¡
+	for (int t = 0; t < 2; t++) {
+		for (int i = 0, j = 0; i < length / 2 && j > 0; i++, j--) {
+			if (markVoxel[i] == 0) {
+				int iy = i / (resolution.x * resolution.z);
+				int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
+				int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
+				glm::vec3 curPos = glm::vec3(ix, iy, iz);
+				int countNeighbor = myUtils::neighbors26(curPos, resolution, markVoxel);
+				// åˆ¤æ–­æ˜¯å¦26é‚»åŸŸ > 7
+				if (countNeighbor >= 3) {
+					markVoxel[i] = 1;
+				}
+			}
+			if (markVoxel[j] == 0) {
+				int jy = j / (resolution.x * resolution.z);
+				int jz = (j - jy * resolution.x * resolution.z) / (resolution.x);
+				int jx = j - jy * resolution.x * resolution.z - jz * resolution.x;
+				glm::vec3 curPos = glm::vec3(jx, jy, jz);
+				int countNeighbor = myUtils::neighbors26(curPos, resolution, markVoxel);
+				// åˆ¤æ–­æ˜¯å¦26é‚»åŸŸ > 7
+				if (countNeighbor >= 3) {
+					markVoxel[j] = 1;
+				}
+			}
+		}
 	}
 	
-	// ÄÚ²¿ÌåËØ»¯
-
-	for (int i = 0, j =0; i < length/2 && j > 0; i++, j--) {
-		if (markVoxel[i] == 0) {
+	// æ·±åº¦ä¼˜å…ˆæœç´¢
+	std::queue<int> inputQueue; 
+	// å°†ä½“ç´ ä¸­å¿ƒpushè¿›å»ï¼Œtodo
+	
+	inputQueue.push(length/2);// å·²ç»éªŒè¯length/2å¯¹åº”çš„ä½“ç´ åœ¨æ¨¡å‹å†…éƒ¨
+	myUtils::BFS(resolution, markVoxel, inputQueue, length, 1);
+	/*for (int y = 0; y < resolution.y; y++) {
+		for (int z = 0; z < resolution.z; z++) {
+			for (int x = 0; x < resolution.x; x++) {
+				if ((int)(x + y * resolution.x * resolution.z + z * resolution.x) == length/2) {
+					std::cout << "âšª";
+				} else if(markVoxel[(int)(x + y * resolution.x * resolution.z + z * resolution.x)] == 1) {
+					std::cout << "â– ";
+				}
+				else if (markVoxel[(int)(x + y * resolution.x * resolution.z + z * resolution.x)] == 2) {
+					std::cout << "â–¡";
+				}
+				else {
+					std::cout << "  ";
+				}
+			}
+			std::cout << std::endl;
+		}
+		std::cout << "----------------------------------------------------------"<< std::endl;
+	}*/
+	
+	for (int i = 0; i < length; i++) {
+		if (markVoxel[i] == 2 || markVoxel[i] == 1) {
 			int iy = i / (resolution.x * resolution.z);
 			int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
 			int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
-			glm::vec3 curPos = glm::vec3(ix, iy, iz);
-			int countNeighbor = myUtils::neighbors26(curPos, resolution, markVoxel);
-			// ÅĞ¶ÏÊÇ·ñ26ÁÚÓò > 7
-			if (countNeighbor >= 3) {
-				markVoxel[i] = 1;
-				voxelIndex.push_back(curPos);
-				voxelPos.push_back(boxMin + glm::vec3(ix * step, iy * step, iz * step));
-			}
-		}
-		if (markVoxel[j] == 0) {
-			int jy = j / (resolution.x * resolution.z);
-			int jz = (j - jy * resolution.x * resolution.z) / (resolution.x);
-			int jx = j - jy * resolution.x * resolution.z - jz * resolution.x;
-			glm::vec3 curPos = glm::vec3(jx, jy, jz);
-			int countNeighbor = myUtils::neighbors26(curPos, resolution, markVoxel);
-			// ÅĞ¶ÏÊÇ·ñ26ÁÚÓò > 7
-			if (countNeighbor >= 3) {
-				markVoxel[j] = 1;
-				voxelIndex.push_back(curPos);
-				voxelPos.push_back(boxMin + glm::vec3(jx * step, jy * step, jz * step));
-			}
+			voxelPos.push_back(boxMin + glm::vec3(ix * step, iy * step, iz * step));
+			voxelIndex.push_back(glm::vec3(ix, iy, iz));
 		}
 	}
-
-
 	std::cout << "voxelPos.size()" << voxelPos.size() << std::endl;
-	
-	
 	glUnmapBuffer(m_cntBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glDeleteBuffers(1, &m_cntBuffer);
-	// todo ÒÆ³ı±ßÔµÉÏµÄµã£¬¼´cubeºÍÍø¸ñÏà½»¾ÍÒÆ³ı => voxelPosµ½Íø¸ñÃ¿¸öÈı½ÇĞÎµÄ¾àÀë<step/2,ÔòÒÆ³ı
+	// todo ç§»é™¤è¾¹ç¼˜ä¸Šçš„ç‚¹ï¼Œå³cubeå’Œç½‘æ ¼ç›¸äº¤å°±ç§»é™¤ => voxelPosåˆ°ç½‘æ ¼æ¯ä¸ªä¸‰è§’å½¢çš„è·ç¦»<step/2,åˆ™ç§»é™¤
 	
 }
 

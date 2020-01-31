@@ -32,6 +32,7 @@ public:
 
 	void deleteCommonEdges(const int& badTriangleID, std::vector<Edge>& boundaryEdges);
 
+	void deleteSuperTriangle();
 };
 
 

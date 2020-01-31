@@ -107,7 +107,7 @@ void main()
 	// lower part
 	else {
 		if(plane.x * fs_in.aPos.x + plane.y * fs_in.aPos.y + plane.z * fs_in.aPos.z + plane.w < 0) {
-			FragColor =  vec4(getLightingColor(color) * color, 1.0f);
+			FragColor =  vec4(getLightingColor(color) * color, 0.5f);
 		} else {
 			discard;
 		} 

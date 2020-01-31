@@ -59,7 +59,7 @@ void Delaunay1::initialize(const glm::vec4& boundingBox) {
  */
 void Delaunay1::addPoint(const glm::vec2 & newPoint) {
 	int count1 = 0;
-	std::cout << "---------------------------------------" << std::endl;
+	// std::cout << "---------------------------------------" << std::endl;
 	// ¼ÇÂ¼¿ÕÇ»
 	std::vector<Edge> polygon;
 	int index = pointVector.size();
@@ -172,5 +172,19 @@ void Delaunay1::addPoint(const glm::vec2 & newPoint) {
  */
 
 void Delaunay1::deleteCommonEdges(const int& badTriangleID, std::vector<Edge>& boundaryEdges) {
+
+}
+
+
+void Delaunay1::deleteSuperTriangle() {
+	for (int i = 0; i < triangleVector.size(); ) {
+		if (triangleVector[i].containsVertex(0) || triangleVector[i].containsVertex(1)
+			|| triangleVector[i].containsVertex(2) || triangleVector[i].containsVertex(3)) {
+			triangleVector.erase(triangleVector.begin() + i);
+		}
+		else {
+			i++;
+		}
+	}
 
 }

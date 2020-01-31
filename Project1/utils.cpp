@@ -1,9 +1,10 @@
-#include "utils.h"
+ï»¿#include "utils.h"
 #include <vector>
 #include <iostream>
 #include <glad/glad.h>
 #include "Delaunay.h"
 #include <cmath>
+#include <queue>
 
 std::vector<glm::vec3> myUtils::movement26 = {
 		{-1,-1,-1}, {-1,-1, 0},{-1,-1, 1},
@@ -16,6 +17,59 @@ std::vector<glm::vec3> myUtils::movement26 = {
 		{ 1, 0,-1}, { 1, 0, 0},{ 1, 0, 1},
 		{ 1, 1,-1}, { 1, 1, 0},{ 1, 1, 1}
 };
+
+std::vector<glm::vec3> myUtils::movement6 = {
+		{-1, 0, 0}, { 0,-1, 0},	{ 0, 0,-1},
+		{ 0, 0, 1}, { 0, 1, 0}, { 1, 0, 0}
+};
+
+
+void myUtils::neighbors6(const glm::vec3 curPos, glm::vec3 resolution, std::vector <glm::vec3>& result) {
+	if (result.size() > 0) {
+		std::cout << "in neighbors26: result.size() !=0 " << std::endl;
+	}
+	for (int i = 0; i < 6; i++) {
+		if ((curPos + movement6[i]).x >= 0 && (curPos + movement6[i]).x < resolution.x
+			&& (curPos + movement6[i]).y >= 0 && (curPos + movement6[i]).y < resolution.y
+			&& (curPos + movement6[i]).z >= 0 && (curPos + movement6[i]).z < resolution.z)
+			result.push_back(curPos + movement6[i]);
+	}
+}
+
+void myUtils::neighbors6(const glm::vec3 curPos, glm::vec3 resolution, std::vector <int>& result) {
+	std::vector <glm::vec3> tmp;
+	neighbors6(curPos, resolution, tmp);
+	for (int i = 0; i < tmp.size(); i++) {
+		int ans = tmp[i].x + tmp[i].y * resolution.x * resolution.z + tmp[i].z * resolution.x;
+		if (ans < resolution.y * resolution.x * resolution.z) {
+			result.push_back(ans);
+		}
+
+	}
+}
+
+void myUtils::fillInNeighbors6(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel, std::vector <int>& result) {
+	std::vector <glm::vec3> tmp;
+	neighbors6(curPos,resolution, tmp);
+	for (int i = 0; i < tmp.size(); i++) {
+		int ans = tmp[i].x + tmp[i].y * resolution.x * resolution.z + tmp[i].z * resolution.x;
+		if (markVoxel[ans] == 1) {
+			result.push_back(ans);
+		}
+	}
+}
+
+void myUtils::blankInNeighbors6(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel, std::vector <int>& result) {
+	std::vector <glm::vec3> tmp;
+	neighbors6(curPos,resolution, tmp);
+	for (int i = 0; i < tmp.size(); i++) {
+		int ans = tmp[i].x + tmp[i].y * resolution.x * resolution.z + tmp[i].z * resolution.x;
+		if (markVoxel[ans] == 0) {
+			result.push_back(ans);
+		}
+	}
+}
+
 
 void myUtils::neighbors26(const glm::vec3 curPos, std::vector <glm::vec3>& result) {
 	if (result.size() > 0) {
@@ -33,18 +87,34 @@ void myUtils::neighbors26(const glm::vec3 curPos, glm::vec3 resolution, std::vec
 	for (int i = 0; i < tmp.size(); i++) {
 		int ans = tmp[i].x + tmp[i].y * resolution.x * resolution.z + tmp[i].z * resolution.x;
 		if (ans < resolution.y * resolution.x * resolution.z) {
-			//std::cout << "intput: " << ans << std::endl;
-			//std::cout << "intput: " << tmp[i].x << " " << tmp[i].y << " " << tmp[i].z << " index: " << ans << std::endl;
-			//int iy = ans / (resolution.x * resolution.z);
-			//int iz = (ans - iy * resolution.x * resolution.z) / (resolution.x);
-			//int ix = ans - iy * resolution.x * resolution.z - iz * resolution.x;
-			//std::cout << "output: " << ix << " " << iy << " " << iz << " ans: " << ans << std::endl;
-			//glm::vec3 coor = tumor.boxMin + glm::vec3(ix * tumor.getStep(), iy * tumor.getStep(), iz * tumor.get
 			result.push_back(ans);
 		}
-
 	}
 }
+
+void myUtils::fillInNeighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel, std::vector <int>& result) {
+	std::vector <glm::vec3> tmp;
+	neighbors26(curPos, tmp);
+	for (int i = 0; i < tmp.size(); i++) {
+		int ans = tmp[i].x + tmp[i].y * resolution.x * resolution.z + tmp[i].z * resolution.x;
+		if (markVoxel[ans] == 1) {
+			result.push_back(ans);
+		}
+	}
+}
+
+void myUtils::blankInNeighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel, std::vector <int>& result) {
+	std::vector <glm::vec3> tmp;
+	neighbors26(curPos, tmp);
+	for (int i = 0; i < tmp.size(); i++) {
+		int ans = tmp[i].x + tmp[i].y * resolution.x * resolution.z + tmp[i].z * resolution.x;
+		if (markVoxel[ans] == 0 || markVoxel[ans] == -1) {
+			result.push_back(ans);
+		}
+	}
+}
+
+
 
 int myUtils::neighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int* markVoxel) {
 	int count = 0;
@@ -60,49 +130,102 @@ int myUtils::neighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int
 	}
 	return count;
 }
+// ç”¨äºæ·±åº¦ä¼˜å…ˆæœç´¢ï¼Œå¦‚æœè¿”å›å€¼ä¸ºtrueï¼Œè¯´æ˜26é‚»åŸŸæœ‰å†…å®¹,DFSindicesæœ€åˆå­˜èµ·å§‹ç‚¹åœ¨markVoxelçš„ä¸‹æ ‡
+void myUtils::BFS(const glm::vec3& resolution, int* markVoxel, std::queue<int> & DFSindices, const int& length, const int& threshold) {
+	std::cout << "length: " << length << std::endl;
+	// éå†æ•°ç»„
+	while (!DFSindices.empty()) {
+		
+		if (markVoxel[DFSindices.front()]!=0) {
+			DFSindices.pop();
+			continue;
+		}
+		
+		//std::cout << DFSindices.front() << std::endl;
+		std::vector <int> result;
+		int iy = DFSindices.front() / (resolution.x * resolution.z);
+		int iz = (DFSindices.front() - iy * resolution.x * resolution.z) / (resolution.x);
+		int ix = DFSindices.front() - iy * resolution.x * resolution.z - iz * resolution.x;
+		glm::vec3 curPos = glm::vec3(ix, iy, iz);
+		//std::cout << DFSindices.front() << ": " << ix << " " << iy << " " << iz<< std::endl;
+		// è·å¾—26é‚»åŸŸä¸­æœªmarkçš„ä¸‹æ ‡
+		blankInNeighbors6(curPos, resolution, markVoxel, result);	
+		// åˆ™æ ‡è®°ä¸º1
+		markVoxel[DFSindices.front()] = 1; // åæ¥æ ‡è®°çš„è®°ä¸º2
+		// å¦‚æœå¾—åˆ°çš„26é‚»åŸŸç©ºç™½çš„æ•°å¤§äºthresholdï¼Œå°†é‚»åŸŸåŠ å…¥é˜Ÿåˆ—
+		if (result.size() > threshold) { 
+			for (int j = 0; j < result.size(); j++) {
+				DFSindices.push(result[j]);
+			}	
+		}
+		DFSindices.pop();
+		// è¾“å‡º
+		//for (int y = 0; y < resolution.y; y++) {
+			/*for (int z = 0; z < resolution.z; z++) {
+				for (int x = 0; x < resolution.x; x++) {
+					if ((int)(x + iy * resolution.x * resolution.z + z * resolution.x) == length / 2) {
+						std::cout << "âšª";
+					}
+					else if (markVoxel[(int)(x + iy * resolution.x * resolution.z + z * resolution.x)] == 1) {
+						std::cout << "â– ";
+					}
+					else if (markVoxel[(int)(x + iy * resolution.x * resolution.z + z * resolution.x)] == 2) {
+						std::cout << "â–¡";
+					}
+					else {
+						std::cout << "  ";
+					}
+				}
+				std::cout << std::endl;
+			}
+			std::cout << "----------------------------------------------------------" << std::endl;*/
+		//}
+
+	}	
+}
 
 /*void myUtils::delaunay(const std::vector<glm::vec3> & vertices, const std::vector<glm::vec3>& voxels) {
-	// ¼ÆËã°üÎ§ºĞ
+	// è®¡ç®—åŒ…å›´ç›’
 	std::vector<glm::vec3> tmpVertices;
 	tmpVertices.assign(vertices.begin(), vertices.end());
 	tmpVertices.insert(vertices.end(), voxels.begin(), voxels.end());
 	glm::vec4 boundingbox = getBoundingBox(tmpVertices);
 
-	// ¼ÆËã³¬¼¶Èı½ÇĞÎ
+	// è®¡ç®—è¶…çº§ä¸‰è§’å½¢
 	glm::vec2 range = glm::vec2(boundingbox.z - boundingbox.x, boundingbox.w - boundingbox.y);
-	// ÉÏ·½¶¥µã:
+	// ä¸Šæ–¹é¡¶ç‚¹:
 	glm::vec2 ver1 = glm::vec2((boundingbox.x + boundingbox.z)/2.0f, boundingbox.w + range.y+1.0f);
-	// ×óÏÂ½Ç¶¥µã
+	// å·¦ä¸‹è§’é¡¶ç‚¹
 	glm::vec2 ver2 = glm::vec2(boundingbox.x - range.x / 2.0f - 1.0f, boundingbox.y - 1.0f);
 	glm::vec2 ver3 = glm::vec2(boundingbox.z + range.x / 2.0f + 1.0f, boundingbox.y - 1.0f);
-	// ½«³¬¼¶Èı½ÇĞÎ¼ÓÈë¶¥µãÊı×é
+	// å°†è¶…çº§ä¸‰è§’å½¢åŠ å…¥é¡¶ç‚¹æ•°ç»„
 	tmpVertices.insert(tmpVertices.begin(), glm::vec3(ver3, -10.0f));
 	tmpVertices.insert(tmpVertices.begin(), glm::vec3(ver2, -10.0f));
 	tmpVertices.insert(tmpVertices.begin(), glm::vec3(ver1, -10.0f));
 	std::vector<Triangle> tmpTriangles;
 	Triangle superTri(ver1, ver2, ver3);
 	tmpTriangles.push_back(superTri);
-	// ³¬¼¶Èı½ÇĞÎÍâ½ÓÔ²
+	// è¶…çº§ä¸‰è§’å½¢å¤–æ¥åœ†
 	Circumcircle superCircumcircle = getCircumcircle(superTri);
 	std::vector<glm::vec2> edgeIndexPair;
 
 	std::vector<glm::vec2> tmpResult = getEdges(0, 1, 2);
 	edgeIndexPair.insert(edgeIndexPair.end(), tmpResult.begin(), tmpResult.end());
-	// ±éÀú¶¥µã
+	// éå†é¡¶ç‚¹
 	for (int i = 3; i < tmpVertices.size(); i++) {
 		if (glm::distance(glm::vec2(), superCircumcircle.center) < superCircumcircle.radius) { 
-			// µãÔÚÍâ½ÓÔ²ÄÚ£¬½«Èı½ÇĞÎµÄÈı¸ö±ß±£´æµ½±ßÔµÊı×éÖĞ
+			// ç‚¹åœ¨å¤–æ¥åœ†å†…ï¼Œå°†ä¸‰è§’å½¢çš„ä¸‰ä¸ªè¾¹ä¿å­˜åˆ°è¾¹ç¼˜æ•°ç»„ä¸­
 			std::vector<glm::vec2> tmpResult = getEdges(i-3, i-2, i-1);
 			edgeIndexPair.insert(edgeIndexPair.end(), tmpResult.begin(), tmpResult.end());
-			// tmpTrianglesÖĞÉ¾³ı
+			// tmpTrianglesä¸­åˆ é™¤
 			tmpTriangles.erase(tmpTriangles.begin() + i - 3);
 			
-			// ¼ÓÈë¸ÃµãÓëÆäËûµãµÄedge
+			// åŠ å…¥è¯¥ç‚¹ä¸å…¶ä»–ç‚¹çš„edge
 			edgeIndexPair.push_back(glm::vec2(i, i-3));
 			edgeIndexPair.push_back(glm::vec2(i, i - 2));
 			edgeIndexPair.push_back(glm::vec2(i, i - 1));
 
-			// ½«ĞÂ×é³ÉµÄÈı¸öÈı½ÇĞÎ¼ÓÈëtmpTriangles
+			// å°†æ–°ç»„æˆçš„ä¸‰ä¸ªä¸‰è§’å½¢åŠ å…¥tmpTriangles
 			tmpTriangles.push_back(Triangle(tmpVertices[i - 2], tmpVertices[i - 1], tmpVertices[i]));
 			tmpTriangles.push_back(Triangle(tmpVertices[i - 3], tmpVertices[i - 2], tmpVertices[i]));
 			tmpTriangles.push_back(Triangle(tmpVertices[i - 3], tmpVertices[i - 1], tmpVertices[i]));
@@ -112,7 +235,7 @@ int myUtils::neighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int
 	}
 }
 
-// »ñµÃÈı½ÇĞÎÈı¸ö±ßµÄÅÅÁĞ×éºÏ: ÄæÊ±Õë
+// è·å¾—ä¸‰è§’å½¢ä¸‰ä¸ªè¾¹çš„æ’åˆ—ç»„åˆ: é€†æ—¶é’ˆ
 std::vector<glm::vec2> myUtils::getEdges(const int & index1, const int& index2, const int& index3 ) {
 	std::vector<glm::vec2> ans;
 	ans.push_back(glm::vec2(index2, index1));
@@ -155,7 +278,7 @@ void myUtils::generateMesh(const std::vector<glm::vec2>& combinedPoints, Delauna
 	}*/
 }
 
-void myUtils::generateMesh1(const std::vector<glm::vec2>& combinedPoints, Delaunay1& mesh, const int& size) {
+void myUtils::generateMesh1(const std::vector<glm::vec2>& combinedPoints, Delaunay1& mesh) {
 
 	glm::vec4 boundingbox = getBoundingBox(combinedPoints);
 
@@ -171,7 +294,7 @@ void myUtils::generateMesh1(const std::vector<glm::vec2>& combinedPoints, Delaun
 
 void myUtils::generateMesh(const std::vector<glm::vec2>& vertices, const std::vector<glm::vec2>& voxels, Delaunay& mesh) {
 
-	/*std::vector<glm::vec2> tmpVertices; // ½«Á½¸öµã¼¯ºÏ²¢
+	/*std::vector<glm::vec2> tmpVertices; // å°†ä¸¤ä¸ªç‚¹é›†åˆå¹¶
 	tmpVertices.assign(vertices.begin(), vertices.end());
 	tmpVertices.insert(tmpVertices.end()-1, voxels.begin(), voxels.end());
 	glm::vec4 boundingbox = getBoundingBox(tmpVertices);

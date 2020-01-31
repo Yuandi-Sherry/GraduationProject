@@ -5,29 +5,35 @@
 void MySphere::generateVertices() {
 	GLfloat theta = 0.0f, phi = 0.0f;
 	int thetaNum = 20, phiNum = 20;
-	GLfloat thetaStep = 2 * PI / thetaNum, phiStep = 2* PI / phiNum;
+	GLfloat thetaStep =  PI / thetaNum, phiStep = 2* PI / phiNum;
 	GLfloat radius = 1.0f;
-	for (float j = 0; j < thetaNum; j++)
+	// 最上面的点
+	GLfloat x = radius * cos(phi) * sin(theta);	// 记得转化精度
+	GLfloat y = radius * sin(phi) * sin(theta);
+	GLfloat z = radius * cos(theta);
+
+	vertices.push_back(x);
+	vertices.push_back(y);
+	vertices.push_back(z);
+	glm::vec3 normal = glm::normalize(glm::vec3(x, y, z));
+	vertices.push_back(normal.x);
+	vertices.push_back(normal.y);
+	vertices.push_back(normal.z);
+	// 后续的
+	for (float j = 1; j < thetaNum; j++)
 	{
 		for (float i = 0; i < phiNum; i++)
 		{
 			phi = phiStep * i;
 			theta = thetaStep * j; // 起点都是轴指向的方向。根据右手定则决定转向，只要转向相同，那么两个就合适
-			GLfloat x = radius * cos(phi) * cos(theta);	// 记得转化精度
-			GLfloat y = radius * sin(phi);
-			GLfloat z = radius * cos(phi) * sin(theta);
+			x = radius * cos(phi) * sin(theta);	// 记得转化精度
+			y = radius * sin(phi) * sin(theta);
+			z =  radius* cos(theta);
 
-			if (abs(x + 0.293893f) < 0.000001f
-				&& abs(y + 0.951056) < 0.000001f
-				&& abs(z + 0.0954915)< 0.0000001f) {
-				std::cout << "i " << i << " j " << j << std::endl;
-				std::cout << "phi " << phi /3.14f * 180 << " theta " << theta / 3.14f * 180 << std::endl;
-				std::cout << "cos(phi) " << cos(phi) << " cos(theta) " << cos(theta)  << " sin(phi) " << sin(phi) << " sin(theta) " << sin(theta) << std::endl;
-			}
 			vertices.push_back(x);
 			vertices.push_back(y);
 			vertices.push_back(z);
-			glm::vec3 normal = glm::normalize(glm::vec3(x,y,z));
+			normal = glm::normalize(glm::vec3(x,y,z));
 			if (abs(x - 0.0f) < 0.001f && abs(y - 0.0f) < 0.001f && abs(z - 0.0f) < 0.001f) {
 				std::cout << "法向量为0" << std::endl;
 			}
@@ -36,9 +42,67 @@ void MySphere::generateVertices() {
 			vertices.push_back(normal.z);
 		}
 	}
+	// 最后的点
+	phi = phiStep * phiNum;
+	theta = thetaStep * thetaNum;
+	x = radius * cos(phi) * sin(theta);	// 记得转化精度
+	y = radius * sin(phi) * sin(theta);
+	z = radius * cos(theta);
+	vertices.push_back(x);
+	vertices.push_back(y);
+	vertices.push_back(z);
+	normal = glm::normalize(glm::vec3(x, y, z));
+	vertices.push_back(normal.x);
+	vertices.push_back(normal.y);
+	vertices.push_back(normal.z);
+
 
 	int only = vertices.size();
-	int num = (int)((only / (3 * thetaNum)) * 2);
+	std::cout << "vertices.size() in ball " << vertices.size() /6 << std::endl;
+
+	
+	// 第一行的indices
+	// 1 ~ 20
+	for (int i = 1; i < phiNum; i++) {
+		indices.push_back(0);
+		indices.push_back(i);
+		indices.push_back(i+1);
+	}
+	indices.push_back(0);
+	indices.push_back(phiNum);
+	indices.push_back(1);
+
+	for (int j = 0; j < thetaNum - 1; j++) {// 19
+		for (int i = 0; i < phiNum - 1; i++) { // 20
+			indices.push_back(j* phiNum + i + 1);
+			indices.push_back((j+1) * phiNum + i + 1);
+			indices.push_back((j + 1) * phiNum + i + 2);
+
+			indices.push_back(j * phiNum + i + 1);
+			indices.push_back(j * phiNum + i + 2);
+			indices.push_back((j + 1) * phiNum + i + 2);
+		}
+		// 第一个和最后一个的闭合: i = 0 和 i = 19
+		indices.push_back(j * phiNum + 19 + 1);
+		indices.push_back((j + 1) * phiNum + 19 + 1);
+		indices.push_back((j + 1) * phiNum + 1);
+
+		indices.push_back(j * phiNum + 19 + 1);
+		indices.push_back(j * phiNum + 1);
+		indices.push_back((j + 1) * phiNum + 1);
+	}
+
+	// 和最后一个点的连接
+	for (int i = 0; i < phiNum - 1; i++) {
+		indices.push_back(vertices.size()/6 - 1);
+		indices.push_back((thetaNum-2) * phiNum+i+1);
+		indices.push_back((thetaNum -2) * phiNum+i+2);
+	}
+	indices.push_back(vertices.size() / 6 - 1);
+	indices.push_back((thetaNum - 2) * phiNum + 1);
+	indices.push_back((thetaNum - 2) * phiNum + 19 + 1);
+	// for(int i = 0; i < )
+	/*int num = (int)((only / (3 * thetaNum)) * 2);
 	for (int x = 0; x < phiNum / 2;)
 	{
 		for (int y = 0; y < thetaNum; y++)
@@ -63,7 +127,7 @@ void MySphere::generateVertices() {
 				&& std::abs(vertices[i+2] - vertices[j+2]) < 0.000000001f) {
 				flag = true;
 				break;
-			}*/
+			}
 			if (vertices[i] == vertices[j] && vertices[i + 1] == vertices[j + 1] && vertices[i + 2] == vertices[j + 2]) {
 				flag = true;
 				break;
@@ -75,7 +139,7 @@ void MySphere::generateVertices() {
 		}
 		
 	}
-	std::cout << "球体表面重复坐标" << repulicate << "顶点个数" << vertices.size()/6 << std::endl;
+	std::cout << "球体表面重复坐标" << repulicate << "顶点个数" << vertices.size()/6 << std::endl;*/
 }
 
 glm::vec3 MySphere::calNormal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
