@@ -387,7 +387,14 @@ void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & mod
 	for (int i = 0; i < modelsID.size(); i++) {
 		models[modelsID[i]].draw();
 	}
-	ruler.draw();
+	if (modeSelection == RULER || modeSelection == NEAREST_VESSEL) {
+		model = glm::translate(glm::mat4(1.0f), ruler.position);
+		model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0, 0, 1));
+		model = glm::scale(model, glm::vec3(ruler.scaleSize, ruler.scaleSize, 1));
+		shadowShader.setMat4("model", model);
+		ruler.draw();
+	}
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
 }
 
@@ -446,10 +453,11 @@ void Area::drawRuler(Shader & textureShader, Shader& shader) {
 	textureShader.setVec3("lightPos", camera.Position);
 	textureShader.setMat4("projection", camera.getOrthology());
 	textureShader.setMat4("view", camera.GetViewMatrix());
+	//改为从0刻度开始
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, ruler.position);
 	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0, 0, 1));
-	model = glm::scale(model, glm::vec3(ruler.scaleSize * 20, ruler.scaleSize * 20, 1));
+	model = glm::scale(model, glm::vec3(ruler.scaleSize, ruler.scaleSize, 1));
 	textureShader.setMat4("model", model);
 	ruler.generateTexture();
 	ruler.draw();
@@ -506,15 +514,17 @@ void Area::setRulerVertex(const glm::vec3& vertexPosition) {
 
 void Area::updateRuler(const glm::vec3& pos1, const glm::vec3& pos2) { // 输入参数为世界坐标
 	// calculate ruler attributes
-	ruler.distance = glm::distance(pos1, pos2);
-	ruler.position = (pos1 + pos2) / 2.0f;
+	ruler.distance = glm::distance(pos1, pos2);	
 	ruler.ends[0] = pos1;
 	ruler.ends[1] = pos2;
 	ruler.ends[0].z = ruler.CUTFACE;
 	ruler.ends[1].z = ruler.CUTFACE;
+	GLfloat projLen = glm::distance(ruler.ends[0], ruler.ends[1]);
+	ruler.scaleSize = projLen / ruler.distance * 20 ;
+	cout << "scale " << ruler.scaleSize << endl;
+	ruler.position = pos1 - (pos1 - pos2) / ruler.scaleSize / 2.0f;
 	ruler.position.z = ruler.CUTFACE;
-	GLfloat projLen = glm::distance(pos1, pos2);
-	ruler.scaleSize = projLen / ruler.distance;
+	// 使pos1为刻度0
 	ruler.rotateAngle = atan((pos1.y - pos2.y) / (pos1.x - pos2.x));
 }
 
@@ -557,8 +567,18 @@ void Area::findNearest(BaseModel& vessel) {
 	updateRuler(model * glm::vec4(nearestPos, 1.0f), model * glm::vec4(NVLocalPos, 1.0f));
 }
 
+
+
 void Area::removeTumor(BaseModel& tumor) {
-	updateCutVertices(tumor);
-	tumor.initVertexObject();
-	removeMode = 0;
+	// if it will cut vessels
+	// 
+	/*if (checkCutVessels(models[0])) {
+		// 
+	}
+	else {*/
+		updateCutVertices(tumor);
+		tumor.initVertexObject();
+		removeMode = 0;
+	//}
+	
 }
