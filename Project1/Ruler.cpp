@@ -50,12 +50,11 @@ void Ruler::initVertexObject() {
 void Ruler::generateTexture() {
 	
 }
-void Ruler::draw(Shader & shader) {
+void Ruler::draw() {
 	// bind Texture
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	// render container
-	shader.use();
 	glBindVertexArray(VAO);
 	glDrawArrays(GL_TRIANGLES, 0, vertices.size() * 3);
 }

@@ -16,7 +16,7 @@ public:
 	}
 	void initVertexObject();
 	void generateTexture();
-	void draw(Shader & shader);
+	void draw();
     void move(Camera_Movement direction, float deltaTime);
     glm::vec3 getPosition();
     glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);

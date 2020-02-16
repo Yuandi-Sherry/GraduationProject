@@ -384,9 +384,10 @@ void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & mod
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model,-BaseModel::modelCenter);
 	shadowShader.setMat4("model", transformMat * model);
-	/*for (int i = 0; i < modelsID.size(); i++) {
+	for (int i = 0; i < modelsID.size(); i++) {
 		models[modelsID[i]].draw();
-	}*/
+	}
+	ruler.draw();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
 }
 
@@ -451,7 +452,7 @@ void Area::drawRuler(Shader & textureShader, Shader& shader) {
 	model = glm::scale(model, glm::vec3(ruler.scaleSize * 20, ruler.scaleSize * 20, 1));
 	textureShader.setMat4("model", model);
 	ruler.generateTexture();
-	ruler.draw(textureShader);
+	ruler.draw();
 
 	// ends
 	shader.use();
