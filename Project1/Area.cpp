@@ -29,11 +29,12 @@ Area::~Area()
 }
 
 void Area::init() {
+	std::cout << "inie"<< std::endl;
 	camera.setPosition(cameraPos);
 //	ortho = glm::ortho(-orthoWidth / 2, orthoWidth / 2, -orthoWidth / 2 * height / width, orthoWidth / 2 * height / width, Near, 1000.0f);
 	camera.setOrthology();
 	// mode
-	modeSelection = 4;
+	// modeSelection = 0;
 	debugIndex = -1;
 	// ruler
 	ruler.initVertexObject();
@@ -156,7 +157,6 @@ void Area::tackleRemoveTumor(Shader& shader, Shader& shadowShader, std::vector<B
 }
 
 void Area::setRemovePos(glm::vec3 pos) {
-	
 	// local coordinate
 	removePos = glm::inverse(glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f))) * glm::inverse(transformMat) * glm::vec4(pos, 1.0f);
 	removeMode = 1;
@@ -164,7 +164,6 @@ void Area::setRemovePos(glm::vec3 pos) {
 
 void Area::addPoint() {
 	lineVec.clear();
-	std::cout << "add point " << debugIndex << std::endl;
 	// debug 函数
 	for (int i = 0; i < combinedPoints.size(); i++) {
 		mesh1.addPoint(combinedPoints[i]);
@@ -179,13 +178,13 @@ void Area::addPoint() {
 	lineVertices.clear();
 	//std::cout << " mesh1.triangleVector.size() " << mesh1.triangleVector.size() << std::endl;
 	// test绘制线
-	for (int i = 0; i < mesh1.triangleVector.size(); i++) {
+	for (std::list<Triangle>::iterator it = mesh1.triangleVector.begin(); it != mesh1.triangleVector.end(); it++) {
 		lineVertices.clear();
 		// std::cout << "in debug ";
 		for (int j = 0; j < 3; j++) {
 			// std::cout << mesh1.triangleVector[i].vertices[j] << " ";
-			lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[j]].x);
-			lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[j]].y);
+			lineVertices.push_back(mesh1.pointVector[it->vertices[j]].x);
+			lineVertices.push_back(mesh1.pointVector[it->vertices[j]].y);
 			lineVertices.push_back(200.0f);
 		}
 		// 使得线段闭合
@@ -429,44 +428,37 @@ void Area::planA(BaseModel& tumor) {
 	lineVertices.clear();
 	//std::cout << " mesh1.triangleVector.size() " << mesh1.triangleVector.size() << std::endl;
 	// test绘制线
-	for (int i = 0; i < mesh1.triangleVector.size(); i++) {
+	for (std::list<Triangle>::iterator it = mesh1.triangleVector.begin(); it != mesh1.triangleVector.end(); it++) {
 		lineVertices.clear();
-		// std::cout << "in debug ";
 		for (int j = 0; j < 3; j++) {
-			// std::cout << mesh1.triangleVector[i].vertices[j] << " ";
-			lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[j]].x);
-			lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[j]].y);
+			lineVertices.push_back(mesh1.pointVector[it->vertices[j]].x);
+			lineVertices.push_back(mesh1.pointVector[it->vertices[j]].y);
 			lineVertices.push_back(200.0f);
 		}
-		// 使得线段闭合
-		// lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[0]].x);
-		// lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[0]].y);
-		// lineVertices.push_back(100.0f);
 		MyLine line(lineVertices);
 		lineVec.push_back(line);
 	}
 	// -------------加入三角剖分的结果-----------------
 	// 插入indices，mesh得到的下标全部-3
 	// 根据mesh对应的下标，加入indices，vertex采用edgeIndices，vertices3D直接往后加
-	for (int i = 0; i < mesh1.triangleVector.size(); i++) {
+	for (std::list<Triangle>::iterator it = mesh1.triangleVector.begin(); it != mesh1.triangleVector.end(); it++) {
 		// 如果都是边缘则删除
-		if (mesh1.triangleVector[i].vertices[0] - 4 >= verticesToAppend2D.size()
-			&& mesh1.triangleVector[i].vertices[1] - 4 >= verticesToAppend2D.size()
-			&& mesh1.triangleVector[i].vertices[2] - 4 >= verticesToAppend2D.size()) {
-			i++;
+		if (it->vertices[0] - 4 >= verticesToAppend2D.size()
+			&& it->vertices[1] - 4 >= verticesToAppend2D.size()
+			&& it->vertices[2] - 4 >= verticesToAppend2D.size()) {
+			it++;
 			continue;
 		}
 		for (int j = 0; j < 4; j++) {
-			
 			// 如果是球面坐标
-			if (mesh1.triangleVector[i].vertices[j] - 4 < verticesToAppend2D.size()) {
+			if (it->vertices[j] - 4 < verticesToAppend2D.size()) {
 				// vertices3D在vertices的下标为：原始长度（移除后，插入前） + 在合并中的位置
-				tmpIndices.push_back(oldVerticesSize / 6 + mesh1.triangleVector[i].vertices[j] - 4);
+				tmpIndices.push_back(oldVerticesSize / 6 + it->vertices[j] - 4);
 			}
 			// 如果是vertex
 			else {
 				// vertex的下标为edgeIndices
-				tmpIndices.push_back(orderedIndices[mesh1.triangleVector[i].vertices[j] - 4 - verticesToAppend2D.size()]);
+				tmpIndices.push_back(orderedIndices[it->vertices[j] - 4 - verticesToAppend2D.size()]);
 			}
 		}
 	}
@@ -589,8 +581,6 @@ void Area::planB(BaseModel& tumor) {
 			// 标记数组中为1且在result中的变为2，否则仍然为1
 
 			for (int j = 0; j < resultIndex.size(); j++) {
-				// todo 这里有bug
-
 				if (tumor.markVoxel[resultIndex[j]] == 1) {
 					// 将对应位置标记为2
 					tumor.markVoxel[resultIndex[j]] = 2;
@@ -609,13 +599,12 @@ void Area::planB(BaseModel& tumor) {
 	glm::vec3 originNormal;
 	glm::vec3 originRight; // 任意一个法向量的垂直方向作为x+
 	glm::vec3 originUp;
+	std::cout << "maxDot " << maxDot << std::endl;
 	for (int i = 0; i < static_cast<int>(resolution.x * resolution.y * resolution.z); i++) {
-		
 		if (tumor.markVoxel[i] == 2) {
 			int iy = i / (resolution.x * resolution.z);
 			int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
 			int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
-			//std::cout << "output: " << ix << " " << iy << " " << iz << " index: " << i << std::endl;
 			glm::vec3 coor = tumor.boxMin + glm::vec3(ix * tumor.getStep(), iy * tumor.getStep(), iz * tumor.getStep());
 			glm::vec3 tmpNormal = glm::normalize(removePos - coor);
 			// 确定原点
@@ -631,14 +620,13 @@ void Area::planB(BaseModel& tumor) {
 		int originZ = (originIndex - originY * resolution.x * resolution.z) / (resolution.x);
 		int originX = originIndex - originY * resolution.x * resolution.z - originZ * resolution.x;
 		origin = tumor.boxMin + glm::vec3(originX * tumor.getStep(), originY * tumor.getStep(), originZ * tumor.getStep());
-		std::cout << "origin: " << origin.x << " " << origin.y << " " << origin.z << " index: " << originIndex<< std::endl;
 		// 法向量
 		originNormal = glm::normalize(removePos - origin);
 		originRight = glm::normalize(glm::cross(originNormal, glm::vec3(0, 0, 1)));
 		originUp = glm::normalize(glm::cross(originNormal, originRight));
 		voxel2D.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
 		voxel3D.push_back(origin);
-		tumor.markVoxel[originIndex] = 1;
+		tumor.markVoxel[originIndex] = 0; // 这个位置就不存在了，而改为tumor模型上的位置了
 	}
 	else {
 		std::cout << "FAIL TO FIND ORIGIN" << std::endl;
@@ -671,59 +659,20 @@ void Area::planB(BaseModel& tumor) {
 			if (glm::dot(glm::normalize(OQ), originUp) < 0) {
 				theta = -theta;
 			}
-			// 判断重复体素
-			bool replicate = false;
-			for (int k = 0; k < voxel2D.size(); k++) {
-				if (abs(voxel2D[k].x - rho * cos(theta)) < 0.0001f
-					&& abs(voxel2D[k].y - rho * sin(theta)) < 0.0001f) {
-					replicate = true;
-					break;
-					/*std::cout << "-------------------------------------" << std::endl;
-					std::cout << "数组中：3D " << voxel3D[k].x << "  " << voxel3D[k].y << " " << voxel3D[k].z << " index: " << k << "；2D " << voxel2D[k].x << "  " << voxel2D[k].y << std::endl;
-					glm::vec3 tmpCoor = glm::vec3(voxel3D[k].x, voxel3D[k].y, voxel3D[k].z);
-
-					// 计算平面上的坐标: 弧长
-					double tmpRho = 2 * acos(glm::dot(originNormal, glm::normalize(tmpCoor - origin))) * cutRadius;
-					// 和纵轴夹角（y正半轴
-					glm::vec3 tmpOP = tmpCoor - origin;
-					glm::vec3 tmpOH = glm::dot(tmpOP, originNormal) * originNormal;
-					glm::vec3 tmpOQ = tmpOP - tmpOH;
-					GLfloat tmpTheta = acos(glm::dot(glm::normalize(tmpOQ), originRight));
-					std::cout << "theta " << tmpTheta << "；sin(theta) " << sin(tmpTheta) << "；cos(theta) " << cos(tmpTheta) << "； rho " << tmpRho << std::endl;
-					std::cout << "tmpOP " << tmpOP.x << " " << tmpOP.y << " " << tmpOP.z << std::endl;
-					std::cout << "tmpOQ " << tmpOQ.x << " " << tmpOQ.y << " " << tmpOQ.z << std::endl;
-					std::cout << "tmpOH " << tmpOH.x << " " << tmpOH.y << " " << tmpOH.z << std::endl;
-					std::cout << "tmpDot " << glm::dot(originNormal, glm::normalize(coor - origin)) << std::endl;
-					std::cout << "-------------" << std::endl;
-					std::cout << "重复：" << coor.x << "  " << coor.y  << " " << coor .z << " index: " << i << "；" << rho * cos(theta)  << " " << rho * sin(theta) << std::endl;
-					std::cout << "theta " << theta << "；sin(theta) " << sin(theta) << "；cos(theta) " << cos(theta) << "； rho " << rho << std::endl;
-					std::cout << "OP " << OP.x << " " << OP.y << " " << OP.z << std::endl;
-					std::cout << "OQ " << OQ.x << " " << OQ.y << " " << OQ.z << std::endl;
-					std::cout << "OH " << OH.x << " " << OH.y << " " << OH.z << std::endl;
-					std::cout << "Dot " << glm::dot(originNormal, glm::normalize(coor - origin)) << std::endl;*/
-				}
-			}
-			if (!replicate) {
-				// 世界坐标
-				voxel3D.push_back(newCoor);
-				// 二维坐标：x = rho*sin theta, y = rho * cos theta.
-				voxel2D.push_back(glm::vec3(rho* cos(theta), rho* sin(theta), 200.0f));
-			}
-			else {
-				std::cout << "重复了";
-			}
-			
+			// 世界坐标
+			voxel3D.push_back(newCoor);
+			// 二维坐标：x = rho*sin theta, y = rho * cos theta.
+			voxel2D.push_back(glm::vec3(rho* cos(theta), rho* sin(theta), 200.0f));
 			// 恢复1
 			tumor.markVoxel[i] = 1;
 		}
 	}
-	std::cout << "voxel3D.size()" << voxel3D.size() << std::endl;
+
 	// 计算边缘顶点的二维空间坐标
 	std::vector<int> orderedIndices;
 	for (std::set<int>::iterator it = edgeIndices.begin(); it != edgeIndices.end(); it++) {
 		glm::vec3 coor = glm::vec3(tmpVertices[(*it) * 6], tmpVertices[(*it) * 6 + 1], tmpVertices[(*it) * 6 + 2]);
 		// 调整三维坐标
-		//std::cout << "coor: " << coor.x << " " << coor.y << " " << coor.z << std::endl;
 		GLfloat distance = glm::distance(coor, removePos);
 		glm::vec3 newCoor = coor + (removePos - coor) * (distance - cutRadius) / distance;
 		
@@ -731,11 +680,11 @@ void Area::planB(BaseModel& tumor) {
 		tmpVertices[(*it) * 6] = newCoor.x;
 		tmpVertices[(*it) * 6 + 1] = newCoor.y;
 		tmpVertices[(*it) * 6 + 2] = newCoor.z;
-		// 球面距离
-		GLfloat rho = // 5 * cutRadius;
-		5*acos(glm::dot(originNormal, glm::normalize(newCoor - origin))) * cutRadius;
-	// todo凸包的同时重建顺序
-	// 和纵轴夹角（y正半轴
+
+		// 计算球面距离
+		GLfloat rho = 5*acos(glm::dot(originNormal, glm::normalize(newCoor - origin))) * cutRadius;
+
+		// 计算和纵轴夹角（y正半轴
 		glm::vec3 OP = newCoor - origin;
 		glm::vec3 OH = glm::dot(OP, originNormal) * originNormal;
 		glm::vec3 OQ = OP - OH;
@@ -790,13 +739,13 @@ void Area::planB(BaseModel& tumor) {
 	lineVertices.clear();
 	//std::cout << " mesh1.triangleVector.size() " << mesh1.triangleVector.size() << std::endl;
 	// test绘制线
-	for (int i = 0; i < mesh1.triangleVector.size(); i++) {
+	for (std::list<Triangle>::iterator it = mesh1.triangleVector.begin(); it != mesh1.triangleVector.end(); it++) {
 		lineVertices.clear();
 		// std::cout << "in debug ";
 		for (int j = 0; j < 3; j++) {
 			// std::cout << mesh1.triangleVector[i].vertices[j] << " ";
-			lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[j]].x);
-			lineVertices.push_back(mesh1.pointVector[mesh1.triangleVector[i].vertices[j]].y);
+			lineVertices.push_back(mesh1.pointVector[it->vertices[j]].x);
+			lineVertices.push_back(mesh1.pointVector[it->vertices[j]].y);
 			lineVertices.push_back(200.0f);
 		}
 		MyLine line(lineVertices);
@@ -804,24 +753,24 @@ void Area::planB(BaseModel& tumor) {
 	}
 	// mesh1得到的下标全部-3
 	// 根据mesh1对应的下标，加入indices，vertex采用edgeIndices，voxel直接往后加
-	for (int i = 0; i < mesh1.triangleVector.size(); i++) {
+	for (std::list<Triangle>::iterator it = mesh1.triangleVector.begin(); it != mesh1.triangleVector.end(); it++) {
 		// 三个点都为顶点则去除
-		/*if (mesh1.triangleVector[i].vertices[0] - 4 >= voxel2D.size()
-			&& mesh1.triangleVector[i].vertices[1] - 4 >= voxel2D.size()
-			&& mesh1.triangleVector[i].vertices[2] - 4 >= voxel2D.size()) {
+		/*if (it->vertices[0] - 4 >= voxel2D.size()
+			&& it->vertices[1] - 4 >= voxel2D.size()
+			&& it->vertices[2] - 4 >= voxel2D.size()) {
 
 		}
 		else {*/
 			for (int j = 0; j < 3; j++) {
 				// 如果是体素坐标
-				if (mesh1.triangleVector[i].vertices[j] - 4 < (int)voxel2D.size()) {
+				if (it->vertices[j] - 4 < (int)voxel2D.size()) {
 					// vertices4D在vertices的下标为：原始长度（移除后，插入前） + 在合并中的位置
-					tmpIndices.push_back(oldVerticesSize + mesh1.triangleVector[i].vertices[j] - 4);
+					tmpIndices.push_back(oldVerticesSize + it->vertices[j] - 4);
 				}
 				// 如果是vertex
 				else {
 					// vertex的下标为edgeIndices
-					tmpIndices.push_back(orderedIndices[mesh1.triangleVector[i].vertices[j] - 4 - (int)voxel2D.size()]);
+					tmpIndices.push_back(orderedIndices[it->vertices[j] - 4 - (int)voxel2D.size()]);
 				}
 			}
 		//}	
@@ -965,27 +914,28 @@ void Area::drawModels(Shader & shader, Shader & shadowShader, std::vector<BaseMo
 	shader.setMat4("view", camera.GetViewMatrix());
 	std::vector<glm::vec3>* tmpVoxelPos = models[1].getVoxelsPos();
 	glm::mat4 model(1.0f);
-	if (modeSelection == REMOVE_TUMOR) {
-		
+	// debug 显示体素
+	/*if (modeSelection == REMOVE_TUMOR) {
 		if (tmpVoxelPos->size() != 0) {// 有体素坐标
 			for (int j = 0; j < tmpVoxelPos->size(); j++) {
 				shader.setVec3("color", models[1].getColor());
 				model = glm::scale(transformMat * glm::translate(glm::translate(glm::mat4(1.0f), (*tmpVoxelPos)[j]), glm::vec3(-4.38f, -201.899f, 148.987f)), glm::vec3(models[1].getStep() / 1.2, models[1].getStep() / 1.2, models[1].getStep() / 1.2));
 				shader.setMat4("model", model);
-				//mySphere.draw();
+				// mySphere.draw();
 			}
 		}
-	}
+	}*/
 	model = glm::translate(glm::mat4(1.0f), glm::vec3(-4.38f, -201.899f, 148.987f));
 	shader.setMat4("model", transformMat * model);
 	shader.setInt("withLight", 1);
 	shader.setInt("isPlane", 0);
 	for (int i = 0; i < modelsID.size(); i++) {
 		shader.setVec3("color", models[modelsID[i]].getColor());
-		// models[modelsID[i]].draw();
+		models[modelsID[i]].draw();
 	}
-	shader.setVec3("color", models[modelsID[1]].getColor());
-	models[modelsID[1]].draw();
+	// debug 单独显示肿瘤
+	/*shader.setVec3("color", models[modelsID[1]].getColor());
+	models[modelsID[1]].draw();*/
 }
 
 void Area::drawCutFace(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models) {
@@ -1171,28 +1121,12 @@ void Area::calculatePlane() {
 void Area::displayGUI() {
 	ImGui::RadioButton("General", &modeSelection, GENERAL);
 	ImGui::RadioButton("Ruler", &modeSelection, RULER);
-	ImGui::RadioButton("Cut", &modeSelection, CROSS_INTERSECTION);
 	ImGui::RadioButton("Nearest Vessel", &modeSelection, NEAREST_VESSEL);
 	ImGui::RadioButton("Rmove Tumor", &modeSelection, REMOVE_TUMOR);
-	//std::cout << modeSelection << std::endl;
-	if (modeSelection == 3) {
-		if (cutMode == 1) {
-			ImGui::Text("selecting");
-		}
-		else if (cutMode == 2) {
-			ImGui::Text("press C to confirm");
-		}
-		else {
-			ImGui::Text("confirmed");
-		}
+	// adjust the radius of removing tumor
+	if (modeSelection == REMOVE_TUMOR) {
+		ImGui::SliderFloat("remove rumor radius: ", &cutRadius, 0, 20);
 	}
-	else if (modeSelection == REMOVE_TUMOR) {
-		if (removeMode == 1) { // 调节半径
-			std::string str = "Radius: " + std::to_string(cutRadius);
-			ImGui::Text(str.c_str());
-		}
-	}
-
 }
 
 void Area::setLocalCoordinate(glm::vec3 worldCoor, BaseModel & vessel) {

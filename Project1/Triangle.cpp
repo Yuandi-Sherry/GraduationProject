@@ -1,6 +1,6 @@
 #include "Triangle.h"
 #include <cmath>
-#include <vector>
+#include <list>
 #include <iostream>
 #include <cstdlib>
 #include "Edge.h"

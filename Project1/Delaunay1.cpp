@@ -50,6 +50,7 @@ void Delaunay1::initialize(const glm::vec4& boundingBox) {
 
 	triangleVector.push_back(Triangle(0, 1, 2));
 	triangleVector.push_back(Triangle(3, 1, 2));
+	superTriNum = pointVector.size();
 }
 
 /**
@@ -58,109 +59,38 @@ void Delaunay1::initialize(const glm::vec4& boundingBox) {
  * @y: 新点y坐标
  */
 void Delaunay1::addPoint(const glm::vec2 & newPoint) {
-	int count1 = 0;
-	// std::cout << "---------------------------------------" << std::endl;
 	// 记录空腔
-	std::vector<Edge> polygon;
+	std::list<Edge> polygon;
 	int index = pointVector.size();
 	pointVector.push_back(glm::vec3(newPoint, 0.0f));
 
-	for (int i = 0; i < triangleVector.size(); i++) {
+	for (std::list<Triangle>::iterator it = triangleVector.begin(); it != triangleVector.end(); it++) {
 		// 所有外接圆包含p的三角形
-		if (triangleVector[i].circumCircleContains(pointVector, index)) {
-			triangleVector[i].isBad = true;
+		if (it->circumCircleContains(pointVector, index)) {
+			it->isBad = true;
 
 			// 将三角形边缘作为空腔
-			polygon.push_back(Edge(triangleVector[i].vertices[0], triangleVector[i].vertices[1]));
-			polygon.push_back(Edge(triangleVector[i].vertices[1], triangleVector[i].vertices[2]));
-			polygon.push_back(Edge(triangleVector[i].vertices[2], triangleVector[i].vertices[0]));
+			polygon.push_back(Edge(it->vertices[0], it->vertices[1]));
+			polygon.push_back(Edge(it->vertices[1], it->vertices[2]));
+			polygon.push_back(Edge(it->vertices[2], it->vertices[0]));
 		}
 	}
-	//std::cout << "最初：triangleVector.size() " << triangleVector.size() << std::endl;
-	//std::cout << "最初：polygon.size() " << polygon.size() << std::endl;
-	// 移除影响三角形：todo - list
-
-	for (int i = 0; i < triangleVector.size(); ) {
-		if (triangleVector[i].isBad) {
-			triangleVector.erase(triangleVector.begin() + i);
+	// 移除影响三角形
+	for (std::list<Triangle>:: iterator it = triangleVector.begin(); it != triangleVector.end();) {
+		if (it->isBad) {
+			it = triangleVector.erase(it);
 		}
 		else {
-			i++;
+			it++;
 		}
 	}
-	//std::cout << "删除后：triangleVector.size() " << triangleVector.size() << std::endl;
-	std::vector<Edge> tmp;
-	std::vector<pair<int, int>> tmpIndex;
-	// 查找三角形公共边
-	for (int e1 = 0; e1 < polygon.size(); e1++) {
-		for (int e2 = e1 + 1; e2 < polygon.size(); e2++) {
-			// 如果两个边相等
-			if (Edge::equal(polygon[e1], polygon[e2])) {
-				if (polygon[e1].isBad || polygon[e2].isBad) {
-					tmp.push_back(polygon[e1]);
-					tmp.push_back(polygon[e2]);
-					tmpIndex.push_back(make_pair(e1, e2));
-					count1++;
-				}
-				polygon[e1].isBad = true;
-				polygon[e2].isBad = true;
-			}
-		}
-	}
-	/*if (count1 != 0) {
-		std::cout << "重复polygon：" << count1 << std::endl;
-		for (int j = 0; j < tmp.size(); j += 2) {
-			std::cout << "edge1: " << tmpIndex[j / 2].first << " " << tmp[j].point1ID << " " << tmp[j].point2ID << std::endl;
-			std::cout << "edge2: " << tmpIndex[j / 2].second << " " << tmp[j + 1].point1ID << " " << tmp[j + 1].point2ID << std::endl;
-		}
-	}*/
-
-
-	// 删除三角形公共边，形成包含p的空腔
-	for (int i = 0; i < polygon.size(); ) {
-		if (polygon[i].isBad) {
-			polygon.erase(polygon.begin() + i);
-		}
-		else {
-			i++;
-		}
-	}
-	//std::cout << "删除后：polygon.size() " << polygon.size() << std::endl;
-	// 将新插入的点和空腔的边相连接
-	for (int i = 0; i < polygon.size(); i++) {
-		int count2 = 0;
-		// 新加入的三角形如果与之前三角形数组中三角形有超过两个重复边，则重复
-		for (int j = 0; j < triangleVector.size(); j++) {
-			if (Edge::equal(Edge(polygon[i].point1ID, polygon[i].point2ID), 
-				Edge(triangleVector[j].vertices[0], triangleVector[j].vertices[1]))) {
-				count2++;
-			}
-			else if (Edge::equal(Edge(polygon[i].point1ID, polygon[i].point2ID),
-				Edge(triangleVector[j].vertices[0], triangleVector[j].vertices[2]))) {
-				count2++;
-			}
-			else if (Edge::equal(Edge(polygon[i].point1ID, polygon[i].point2ID),
-				Edge(triangleVector[j].vertices[1], triangleVector[j].vertices[2]))) {
-				count2++;
-			}
-		}
-		if (count2 > 1) {
-			std::cout << "ID1： " << polygon[i].point1ID << "  ID2: " << polygon[i].point2ID << std::endl;
-		}
-		triangleVector.push_back(Triangle(index, polygon[i].point1ID, polygon[i].point2ID));
-	}
-	// debug
-	/*if (count1 != 0) {
-		for (int i = 0; i < triangleVector.size(); i++) {
-			std::cout << "triangle: " << i << " - ";
-			for (int j = 0; j < 3; j++) {
-				std::cout << triangleVector[i].vertices[j] << " ";
-			}
-			std::cout << std::endl;
-		}
-	}*/
+	deleteCommonEdges(polygon);
 	
 
+	// 将新插入的点和空腔的边相连接
+	for (std::list<Edge>::iterator it = polygon.begin(); it != polygon.end(); it++) {
+		triangleVector.push_back(Triangle(index, it->point1ID, it->point2ID));
+	}
 }
 
 /**
@@ -171,19 +101,39 @@ void Delaunay1::addPoint(const glm::vec2 & newPoint) {
  * @newPoint: 像素点坐标
  */
 
-void Delaunay1::deleteCommonEdges(const int& badTriangleID, std::vector<Edge>& boundaryEdges) {
+void Delaunay1::deleteCommonEdges(std::list<Edge>& polygon) {
+	// 查找三角形公共边
+	for (std::list<Edge>::iterator e1 = polygon.begin(); e1 != polygon.end(); e1++) {
+		std::list<Edge>::iterator e2 = e1;
+		e2++;
+		for (; e2 != polygon.end(); e2++) {
+			if (Edge::equal(*e1, *e2)) {
+				e1->isBad = true;
+				e2->isBad = true;
+			}
+		}
+	}
 
+	// 删除三角形公共边，形成包含p的空腔
+	for (std::list<Edge>::iterator it = polygon.begin(); it != polygon.end(); ) {
+		if (it->isBad) {
+			it = polygon.erase(it);
+		}
+		else {
+			it++;
+		}
+	}
 }
 
 
 void Delaunay1::deleteSuperTriangle() {
-	for (int i = 0; i < triangleVector.size(); ) {
-		if (triangleVector[i].containsVertex(0) || triangleVector[i].containsVertex(1)
-			|| triangleVector[i].containsVertex(2) || triangleVector[i].containsVertex(3)) {
-			triangleVector.erase(triangleVector.begin() + i);
+	for (std::list<Triangle>::iterator it = triangleVector.begin(); it != triangleVector.end(); ) {
+		if (it->containsVertex(0) || it->containsVertex(1)
+			|| it->containsVertex(2) || it->containsVertex(3)) {
+			it = triangleVector.erase(it);
 		}
 		else {
-			i++;
+			it++;
 		}
 	}
 

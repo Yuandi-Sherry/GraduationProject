@@ -32,6 +32,8 @@
 #include "BaseModel.h"
 #include "MyTriangles.h"
 
+#define SCALE_RULER 12.8
+
 enum MODE
 {
 	GENERAL, RULER, CROSS_INTERSECTION, NEAREST_VESSEL, REMOVE_TUMOR
@@ -53,12 +55,10 @@ public:
 	void setTransformMat(const glm::mat4x4& curMat) {
 		transformMat = curMat;
 	}
-	void setCutTransformMat(const glm::mat4x4& curMat) {
-		transformForCut[selectedCutAreaIndex] = curMat * transformForCut[selectedCutAreaIndex];
-	}
 	glm::vec4 getViewport();
 	void init();
-	//void drawLight(Shader & shader, Light& light);
+
+	/*----------------------RULER----------------------*/
 	void setRulerVertex(const glm::vec3 & vertexPosition);
 	
 	void displayGUI();
@@ -68,8 +68,6 @@ public:
 	glm::vec3 tmpCutFaceVertices[3]; // current operating line vertices
 	glm::vec3 transCutFaceVertices[3]; // current operating line vertices
 	
-	
-
 	// cut 
 	// bool confirmedCut = false;//
 	void tackleCrossIntersection(Shader & shader, Shader & shadowShader, std::vector<BaseModel> & models);
@@ -97,14 +95,14 @@ public:
 	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models);
 	void drawRuler(Shader& textureShader, Shader& pointShader);
 	std::string getDistance() {
-		return "Distance: " + std::to_string(ruler.distance / 15);
 		switch (modeSelection) {
 		case RULER:
-			return "Distance: " + std::to_string(ruler.distance / 13);
+			return "Distance: " + std::to_string(ruler.distance / SCALE_RULER);
 		case NEAREST_VESSEL:
-			return "Distance: " + std::to_string(vesselDistance / 13);
+			return "Distance: " + std::to_string(vesselDistance / SCALE_RULER);
+		default:
+			return "Distance: " + std::to_string(ruler.distance / SCALE_RULER);
 		}
-
 	}
 
 	// nearest vessl

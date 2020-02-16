@@ -187,9 +187,9 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		/*if (currentArea->getMode() == RULER) {
+		if (currentArea->getMode() == RULER) {
 			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
-			//characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+			characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 			//vesselArea.tackleRuler(ourShader, shadowShader, textureShader, models);
 			//tumorArea.tackleRuler(ourShader, shadowShader, textureShader,  models);
 			//bonesArea.tackleRuler(ourShader, shadowShader, textureShader, models);
@@ -202,26 +202,18 @@ int main()
 		}
 		else if (currentArea->getMode() == NEAREST_VESSEL) {
 			mainArea.tackleNearestVessel(ourShader, shadowShader, textureShader, models);
+			characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 		}
 		else if (currentArea->getMode() == REMOVE_TUMOR) {
 			mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
 		}
 		else {
-			//
 			mainArea.drawModels(ourShader, shadowShader, models);
 			//vesselArea.drawModels(ourShader, shadowShader, models);
 			//tumorArea.drawModels(ourShader, shadowShader, models);
 			//bonesArea.drawModels(ourShader, shadowShader, models);
 
-		}*/
-		//if (currentArea->getRemoveMode() == 1) {
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
-		//}
-		
-		// mainArea.testCoorTrans(ourShader);
-		//tumor.voxelization();
+		}
 		// display GUI
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -276,15 +268,16 @@ void processInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && currentArea->getCutMode() == 3) {
 		currentArea->setCutMode(1);
 	}
-
+	// 挖去模式
+	// 选定切除位置后，按C，切除肿瘤
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && currentArea->getMode() == REMOVE_TUMOR && currentArea -> getRemoveMode() == 1) {
 		currentArea->removeTumor(models[1]);
 		std::cout << "currentArea->getRemoveMode() " << currentArea->getRemoveMode() << std::endl;
 	}
-
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && currentArea->getMode() == REMOVE_TUMOR && currentArea->getRemoveMode() == 0) {
+	// 
+	/*if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && currentArea->getMode() == REMOVE_TUMOR && currentArea->getRemoveMode() == 0) {
 		currentArea->addPoint();
-	}
+	}*/
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -311,8 +304,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 	lastX = xpos;
 	lastY = ypos;
-
-	if (rbutton_down) {
+	// can not rotate the model if using ruler
+	if (rbutton_down && !(currentArea->getMode() == NEAREST_VESSEL || currentArea->getMode() == RULER)) {
 		glm::mat4x4 rotationMatY = glm::mat4x4(1.0f);
 		glm::mat4x4 rotationMatX = glm::mat4x4(1.0f);
 		const float R_SPEED = 0.1f;
@@ -320,20 +313,13 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 		// since the last frame 
 		rotationMatY = glm::rotate(rotationMatY, xoffset * deltaTime * R_SPEED, glm::vec3(0, 1, 0));
 		rotationMatX = glm::rotate(rotationMatX, -yoffset * deltaTime * R_SPEED, glm::vec3(1, 0, 0));
-		if (currentArea->getMode() == CROSS_INTERSECTION && currentArea->getCutMode() == 3) {
-			//currentArea->updateTransformForCut();
-			currentArea->setCutTransformMat(rotationMatY * rotationMatX);
-		}
-		else {
-			currentArea->setTransformMat(rotationMatY * rotationMatX *(currentArea->getTransformMat()));
-		}
-		
+		currentArea->setTransformMat(rotationMatY * rotationMatX *(currentArea->getTransformMat()));
 	}
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
 	// 鼠标左键
-	if (button == GLFW_MOUSE_BUTTON_LEFT) {
+	if (button == GLFW_MOUSE_BUTTON_LEFT && !ImGui::GetIO().WantCaptureMouse) {
 		if (GLFW_PRESS == action) {
 			lbutton_down = true;
 			// select area
@@ -349,12 +335,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			else {
 				currentArea = &bonesArea;
 			}
-			// ruler
+			/*----------------------RULER----------------------*/
+			// RULER模式下，选择测量的两个端点位置
 			if (currentArea->getMode() == RULER) {
 				currentArea->setRulerVertex(getObjCoor(lastX, lastY));
 			}
 			// cut
-			if (currentArea-> getMode() == CROSS_INTERSECTION){
+			/*if (currentArea-> getMode() == CROSS_INTERSECTION){
 				if (currentArea->getCutMode() == 3) {
 					if (lastX < currentArea->getViewport()[0] + currentArea->getViewport()[2] / 2) {
 						currentArea->selectedCutAreaIndex = 0;
@@ -366,17 +353,17 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 				else if (currentArea->getCutMode() == 1) {
 					currentArea->setCutFaceVertex(getObjCoor(lastX, lastY));
 				}
-			}
-			// NV
+			}*/
+			/*----------------------NEAREST_VESSEL----------------------*/
+			// 选择模型上任意位置
 			if (currentArea->getMode() == NEAREST_VESSEL) {
 				currentArea->setLocalCoordinate(getObjCoor(lastX, lastY), models[0]);
 			}
-			// remove
+			/*----------------------REMOVE_TUMOR----------------------*/
+			// 选择切除的位置
 			if (currentArea->getMode() == REMOVE_TUMOR) {
 				currentArea->setRemovePos(getObjCoor(lastX, lastY));
 			}
-
-			
 		}
 		else if (GLFW_RELEASE == action)
 			lbutton_down = false;
@@ -388,7 +375,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		else if (GLFW_RELEASE == action)
 			rbutton_down = false;
 	}
-	
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called

@@ -495,9 +495,8 @@ void BaseModel::voxelization() {
 	}
 	
 	// 清除多余体素
-	/*for (int i = 0, j = markIndex.size() -1; i < markIndex.size()/2 && j > 0; i++, j--) {
-
-		// i
+	for (int i = 0, j = markIndex.size() -1; i < markIndex.size()/2 && j > 0; i++, j--) {
+		// i - 正向遍历
 		int iy = markIndex[i] / (resolution.x * resolution.z);
 		int iz = (markIndex[i] - iy * resolution.x * resolution.z) / (resolution.x);
 		int ix = markIndex[i] - iy * resolution.x * resolution.z - iz * resolution.x;
@@ -512,7 +511,7 @@ void BaseModel::voxelization() {
 			markVoxel[markIndex[i]] = 0;
 		}
 
-		// j
+		// j - 反向遍历
 		int jy = markIndex[j] / (resolution.x * resolution.z);
 		int jz = (markIndex[j] - jy * resolution.x * resolution.z) / (resolution.x);
 		int jx = markIndex[j] - jy * resolution.x * resolution.z - jz * resolution.x;
@@ -525,7 +524,7 @@ void BaseModel::voxelization() {
 			markVoxel[markIndex[j]] = 0;
 		}
 
-	}*/
+	}
 	
 
 	// 膨胀 t 次
