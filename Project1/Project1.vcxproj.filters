@@ -19,12 +19,11 @@
     <ClCompile Include="MySphere.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="utils.cpp" />
-    <ClCompile Include="Delaunay.cpp" />
     <ClCompile Include="Triangle.cpp" />
     <ClCompile Include="Edge.cpp" />
     <ClCompile Include="MyLine.cpp" />
     <ClCompile Include="MyTriangles.cpp" />
-    <ClCompile Include="Delaunay1.cpp" />
+    <ClCompile Include="Delaunay.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\OpenGL\imGui\imconfig.h" />
@@ -47,12 +46,11 @@
     <ClInclude Include="Character.h" />
     <ClInclude Include="MySphere.h" />
     <ClInclude Include="utils.h" />
-    <ClInclude Include="Delaunay.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="Edge.h" />
     <ClInclude Include="MyLine.h" />
     <ClInclude Include="MyTriangles.h" />
-    <ClInclude Include="Delaunay1.h" />
+    <ClInclude Include="Delaunay.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="camera.frag" />

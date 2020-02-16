@@ -17,333 +17,77 @@
 BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 {
 	this->color = color;
-	if (FIRST == 1) {
-		std::ifstream in(cfilename, std::ifstream::in | std::ifstream::binary);
-		if (!in) {
-			std::cout << "fail to open file " << cfilename << std::endl;
-			return;
-		}
-		char str[80];
-		in.read(str, 80);
-		// record amount of triangles
-		int triangles;
-		in.read((char*)&triangles, sizeof(int));
-		if (triangles == 0)
-			return;
-		// read triangle mesh in the loop
-		glm::vec3 vector1, vector2, normal, tmpTriangleEdge[3];
-		// 存顶点坐标和多个数组下标的映射关系
-		std::unordered_map< std::string, std::vector<int>> mapping;
-		for (int i = 0; i < 200; i++)
-		{
-			float coorXYZ[12];
-			in.read((char*)coorXYZ, 12 * sizeof(float));
-			std::ostringstream ss;
-			std::string key;
-			for (int j = 1; j < 4; j++) // 三角形三个点的x,y,z
-			{
-				ss << coorXYZ[j * 3];
-				std::string s1(ss.str());
-				ss << coorXYZ[j * 3 + 1];
-				std::string s2(ss.str());
-				ss << coorXYZ[j * 3 + 2];
-				std::string s3(ss.str());
-				// generate key
-				key = s1 + s2 + s3;
-				tmpTriangleEdge[j - 1].x = coorXYZ[j * 3];
-				tmpTriangleEdge[j - 1].y = coorXYZ[j * 3 + 1];
-				tmpTriangleEdge[j - 1].z = coorXYZ[j * 3 + 2];
-				// 查找key是否存在
-				std::unordered_map< std::string, std::vector<int>> ::const_iterator foundKey = mapping.find(key);
-				if (foundKey == mapping.end()) {
-					std::vector<int> tmp = { i * 18 + (j - 1) * 6 }; // 顶点的X坐标的下标
-					mapping.insert({ key, tmp });
-				}
-				else {
-					std::vector<int> tmp = foundKey->second;
-					tmp.push_back(i * 18 + (j - 1) * 6);
-					mapping[key] = tmp;
-				}
-			}
-			// 计算法向量
-			vector1 = tmpTriangleEdge[0] - tmpTriangleEdge[1];
-			vector2 = tmpTriangleEdge[0] - tmpTriangleEdge[2];
-			normal = glm::normalize(glm::cross(vector1, vector2));
-			// 存入vertices
-			for (int j = 0; j < 3; j++) {
-				vertices.push_back(tmpTriangleEdge[j].x);
-				vertices.push_back(tmpTriangleEdge[j].y);
-				vertices.push_back(tmpTriangleEdge[j].z);
-				vertices.push_back(normal.x);
-				vertices.push_back(normal.y);
-				vertices.push_back(normal.z);
-			}
-			in.read((char*)coorXYZ, 2);
-		}
-		in.close();
-
-		// 更新顶点法向量
-		std::cout << "更新顶点法向量" << std::endl;
-		int i = 0;
-		for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++ , i++) {
-			if (i % 100 == 0) {
-				std::cout << i*100/(float)mapping.size()  << "%" << std::endl;
-			}
-			
-			// 计算平均法向量
-			glm::vec3 normal(0.0f, 0.0f, 0.0f);
-			for (int j = 0; j < it->second.size(); j++) {
-				normal.x += vertices[it->second[j]];
-				normal.y += vertices[it->second[j] + 1];
-				normal.z += vertices[it->second[j] + 2];
-			}
-			normal /= sqrt(pow(normal.x, 2) + pow(normal.y, 2) + pow(normal.z, 2));
-			for (int j = 0; j < it->second.size(); j++) {
-				vertices[it->second[j] + 3] = normal.x;
-				vertices[it->second[j] + 4] = normal.y;
-				vertices[it->second[j] + 5] = normal.z;
-			}
-		}
-		std::string outName(cfilename);
-		outName = outName[0] + "_normal.stl";
-		std::ofstream out("test.stl", std::ofstream::out | std::ofstream::binary);
-		out << str;
-		out << triangles;
-		for (int i = 0; i < vertices.size(); i++) {
-			out << vertices[i];
-		}
-		out.close();
+	vertices.clear();
+	std::string inNameVertices(cfilename, cfilename + strlen(cfilename));
+	inNameVertices.insert(strlen(cfilename) - 4, "_vertices");
+	std::ifstream inVer(inNameVertices.c_str(), std::ifstream::in | std::ifstream::binary);
+	if (!inVer) {
+		std::cout << "fail to open file " << inNameVertices << std::endl;
+		return;
 	}
-	else if (FIRST == 2) {
-		std::cout << "first= 2" << std::endl;
-		std::ifstream in(cfilename, std::ifstream::in | std::ifstream::binary);
-		if (!in) {
-			std::cout << "fail to open file " << cfilename << std::endl;
-			return;
-		}
-		char str[80];
-		in.read(str, 80);
-		// record amount of triangles
-		int triangles;
-		in.read((char*)&triangles, sizeof(int));
-		if (triangles == 0)
-			return;
-		// read triangle mesh in the loop
-		glm::vec3 vector1, vector2, normal, tmpTriangleEdge[3];
-		// 存顶点坐标和多个数组下标的映射关系
-		std::unordered_map< std::string, std::vector<int>> mapping;
-		for (int i = 0; i < triangles; i++)
-		{
-			float coorXYZ[12];
-			in.read((char*)coorXYZ, 12 * sizeof(float));
-			std::string key;
-			normal = glm::vec3(coorXYZ[0], coorXYZ[1], coorXYZ[2]);
-			for (int j = 1; j < 4; j++) // 三角形三个点的x,y,z
-			{
-				key.assign((char*)(coorXYZ + j * 3), ((char*)(coorXYZ + j * 3)) + 3 * sizeof(float));
-				
-				vertices.push_back(coorXYZ[j * 3]);
-				vertices.push_back(coorXYZ[j * 3 + 1]);
-				vertices.push_back(coorXYZ[j * 3 + 2]);
-				vertices.push_back(normal.x);
-				vertices.push_back(normal.y);
-				vertices.push_back(normal.z);
-				std::unordered_map< std::string, std::vector<int>> ::const_iterator foundKey = mapping.find(key);
-				if (foundKey == mapping.end()) {
-					std::vector<int> tmp = { i * 18 + (j - 1) * 6 }; // 顶点的X坐标的下标
-					mapping.insert({ key, tmp });
-				}
-				else {
-					//std::cout << "bingo" << std::endl;
-					std::vector<int> tmp = foundKey->second;
-					tmp.push_back(i * 18 + (j - 1) * 6);
-					mapping[key] = tmp;
-				}
-			}
-
-			in.read((char*)coorXYZ, 2);
-		}
-		in.close();
-	
-		std::cout << "更新顶点法向量" << std::endl;
-		int k = 0;
-		for (std::unordered_map<std::string, std::vector<int>>::iterator it = mapping.begin(); it != mapping.end(); it++, k++) {
-			if (k % 100 == 0) {
-				std::cout << k * 100 / (float)mapping.size() << "%" << std::endl;
-			}
-			// 计算平均法向量
-			glm::vec3 normal(0.0f, 0.0f, 0.0f);
-			for (int j = 0; j < it->second.size(); j++) {
-				normal.x += vertices[it->second[j] + 3];
-				normal.y += vertices[it->second[j] + 4];
-				normal.z += vertices[it->second[j] + 5];
-			}
-			normal /= sqrt(pow(normal.x, 2) + pow(normal.y, 2) + pow(normal.z, 2));
-			for (int j = 0; j < it->second.size(); j++) {
-				vertices[it->second[j] + 3] = normal.x;
-				vertices[it->second[j] + 4] = normal.y;
-				vertices[it->second[j] + 5] = normal.z;
-			}
-		}
-		std::string outName(cfilename, cfilename + strlen(cfilename));
-		//std::cout << "test name " << outName << std::endl  << std::endl;
-		outName.insert(strlen(cfilename) - 4, "_normal");
-		//std::cout << "test name " << outName << std::endl << std::endl;
-		std::ofstream out(outName.c_str() , std::ofstream::out | std::ofstream::binary);
-		out.write((char*)str, 80);
-		// out << str;
-		out.write((char*)&triangles, sizeof(int));
-		// out << triangles;
-		std::cout << "triangles " << triangles << std::endl;
-		for (int i = 0; i < vertices.size(); i++) {
-			out.write((char*)&vertices[i], sizeof(GLfloat));
-		}
-		out.close();
+	int verSize;
+	inVer.read((char*)&verSize, sizeof(int));
+	if (verSize == 0) {
+		std::cout << "verSize == 0 " << std::endl;
+		return;
 	}
-	else {
-		/*int index = 0;
-		std::unordered_map< std::string, int> mapping; // 顶点和index
-		std::ifstream in(cfilename, std::ifstream::in | std::ifstream::binary);
-		if (!in) {
-			std::cout << "fail to open file " << cfilename << std::endl;
-			return;
-		}
-		char str[80];
-		in.read(str, 80);
-		// record amount of triangles
-		int triangles;
-		in.read((char*)&triangles, sizeof(int));
-		if (triangles == 0) {
-			std::cout << "triangles == 0 " << std::endl;
-			return;
-		}
-		else {
-			std::cout << "triangles " << triangles << std::endl;
-		}
-		
-		for (int i = 0; i < triangles; i++)
-		{
-			
-			float coorXYZ[18];
-			in.read((char*)coorXYZ, 18 * sizeof(float));
-			for (int j = 0; j < 3; j++) // 三角形三个点的x,y,z
-			{
-				std::string key = std::to_string(coorXYZ[j * 6]) + std::to_string(coorXYZ[j * 6 +1]) + std::to_string(coorXYZ[j * 6+2]);
-				// 判断是否在mapping里
-				std::unordered_map< std::string, int> ::const_iterator foundKey = mapping.find(key);
-				if (foundKey == mapping.end()) { // 如果不在
-					mapping.insert({ key, index });
-					indices.push_back(index);
-					index++;
-					vertices.push_back(coorXYZ[j * 6]);
-					vertices.push_back(coorXYZ[j * 6 + 1]);
-					vertices.push_back(coorXYZ[j * 6 + 2]);
-					vertices.push_back(coorXYZ[j * 6 + 3]);
-					vertices.push_back(coorXYZ[j * 6 + 4]);
-					vertices.push_back(coorXYZ[j * 6 + 5]);
+	float tmpFloat;
+	for (int i = 0; i < verSize; i+=6)
+	{
+		for (int j = 0; j < 6; j++) {
+			inVer.read((char*)&tmpFloat, sizeof(GLfloat));
+			vertices.push_back(tmpFloat);
+			if (j == 0) {
+				if (tmpFloat < xMin) {
+					xMin = tmpFloat;
 				}
-				else { // 如果在
-					indices.push_back(foundKey->second);
+				else if (tmpFloat > xMax) {
+					xMax = tmpFloat;
+				}
+			}
+			else if (j == 1) {
+				if (tmpFloat < yMin) {
+					yMin = tmpFloat;
+				}
+				else if (tmpFloat > yMax) {
+					yMax = tmpFloat;
+				}
+			}
+			else if (j == 2) {
+				if (tmpFloat < zMin) {
+					zMin = tmpFloat;
+				}
+				else if (tmpFloat > zMax) {
+					zMax = tmpFloat;
 				}
 			}
 		}
-		in.close();
-
-
-		// write in vertices
-		int verSize = vertices.size();
-		std::string outNameVertices(cfilename, cfilename + strlen(cfilename));
-		outNameVertices.insert(strlen(cfilename) - 4, "_vertices");
-		std::ofstream outVer(outNameVertices.c_str(), std::ofstream::out | std::ofstream::binary);
-		outVer.write((char*)&verSize, sizeof(int));
-		std::cout << "write in vertices " << vertices.size() << std::endl;
-		for (int i = 0; i < vertices.size(); i++) {
-			outVer.write((char*)&vertices[i], sizeof(GLfloat));
-		}
-		outVer.close();
-		// write in indices
-		int indSize = indices.size();
-		std::string outNameIndices(cfilename, cfilename + strlen(cfilename));
-		outNameIndices.insert(strlen(cfilename) - 4, "_indices");
-		std::ofstream outInd(outNameIndices.c_str(), std::ofstream::out | std::ofstream::binary);
-		outInd.write((char*)&indSize, sizeof(int));
-		std::cout << "write in indices " << indices.size() << std::endl;
-		for (int i = 0; i < indices.size(); i++) {
-			outInd.write((char*)&indices[i], sizeof(int));
-		}
-		outInd.close();*/
-
-		vertices.clear();
-		std::string inNameVertices(cfilename, cfilename + strlen(cfilename));
-		inNameVertices.insert(strlen(cfilename) - 4, "_vertices");
-		std::ifstream inVer(inNameVertices.c_str(), std::ifstream::in | std::ifstream::binary);
-		if (!inVer) {
-			std::cout << "fail to open file " << inNameVertices << std::endl;
-			return;
-		}
-		int verSize;
-		inVer.read((char*)&verSize, sizeof(int));
-		if (verSize == 0) {
-			std::cout << "verSize == 0 " << std::endl;
-			return;
-		}
-		float tmpFloat;
-		for (int i = 0; i < verSize; i+=6)
-		{
-			for (int j = 0; j < 6; j++) {
-				inVer.read((char*)&tmpFloat, sizeof(GLfloat));
-				vertices.push_back(tmpFloat);
-				if (j == 0) {
-					if (tmpFloat < xMin) {
-						xMin = tmpFloat;
-					}
-					else if (tmpFloat > xMax) {
-						xMax = tmpFloat;
-					}
-				}
-				else if (j == 1) {
-					if (tmpFloat < yMin) {
-						yMin = tmpFloat;
-					}
-					else if (tmpFloat > yMax) {
-						yMax = tmpFloat;
-					}
-				}
-				else if (j == 2) {
-					if (tmpFloat < zMin) {
-						zMin = tmpFloat;
-					}
-					else if (tmpFloat > zMax) {
-						zMax = tmpFloat;
-					}
-				}
-			}
-		}
-		inVer.close();
-
-		indices.clear();
-		std::string outNameIndices(cfilename, cfilename + strlen(cfilename));
-		outNameIndices.insert(strlen(cfilename) - 4, "_indices");
-		std::ifstream inInd(outNameIndices.c_str(), std::ifstream::in | std::ifstream::binary);
-		if (!inInd) {
-			std::cout << "fail to open file " << outNameIndices << std::endl;
-			return;
-		}
-		int indSize;
-		inInd.read((char*)&indSize, sizeof(int));
-		if (indSize == 0) {
-			std::cout << "indSize == 0 " << std::endl;
-			return;
-		}
-		int tmpInt;
-		for (int i = 0; i < indSize; i++)
-		{
-			inInd.read((char*)&tmpInt, sizeof(int));
-			indices.push_back(tmpInt);
-		}
-		inInd.close();
-
 	}
+	inVer.close();
+	modelCenter += glm::vec3((xMax+xMin)/6.0f, (yMax + yMin) / 6.0f, (zMax + zMin) / 6.0f);
+	cout << "center " << modelCenter.x << " " << modelCenter.y << " " << modelCenter.z << endl;
+	indices.clear();
+	std::string outNameIndices(cfilename, cfilename + strlen(cfilename));
+	outNameIndices.insert(strlen(cfilename) - 4, "_indices");
+	std::ifstream inInd(outNameIndices.c_str(), std::ifstream::in | std::ifstream::binary);
+	if (!inInd) {
+		std::cout << "fail to open file " << outNameIndices << std::endl;
+		return;
+	}
+	int indSize;
+	inInd.read((char*)&indSize, sizeof(int));
+	if (indSize == 0) {
+		std::cout << "indSize == 0 " << std::endl;
+		return;
+	}
+	int tmpInt;
+	for (int i = 0; i < indSize; i++)
+	{
+		inInd.read((char*)&tmpInt, sizeof(int));
+		indices.push_back(tmpInt);
+	}
+	inInd.close();
+
 }
 
 BaseModel::BaseModel(const std::vector<GLfloat> &vertices, glm::vec3 color) {
@@ -351,8 +95,6 @@ BaseModel::BaseModel(const std::vector<GLfloat> &vertices, glm::vec3 color) {
 }
 BaseModel::~BaseModel()
 {
-	std::cout << "-----------~BaseModel-------" << std::endl;
-	//delete [] markVoxel;
 }
 void BaseModel::initVertexObject() {
 	glGenVertexArrays(1, &VAO);
@@ -418,19 +160,6 @@ void BaseModel::voxelization() {
 	voxelShader.setFloat("coef[1]", 100.0f*step);
 	voxelShader.setFloat("coef[2]", 100.0f*step);
 
-	// debugging para
-	/*voxelShader.setVec2("halfPixel[0]", glm::vec2(0.0f, 0.0f));
-	voxelShader.setVec2("halfPixel[1]", glm::vec2(0.0f, 0.0f));
-	voxelShader.setVec2("halfPixel[2]", glm::vec2(0.0f, 0.0f));
-
-	voxelShader.setFloat("coef[0]", 1);
-	voxelShader.setFloat("coef[1]", 1);
-	voxelShader.setFloat("coef[2]", 1);*/
-
-	// todo 体素化过程有缺陷，有侧面没有被体素化成功
-	
-
-	// polygon mode
 	
 	// 关闭深度测试和背面剔除，保证模型的全面三角形都进入片元着色器
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -441,11 +170,8 @@ void BaseModel::voxelization() {
 	
 
 	int length = static_cast<int>(resolution.x * resolution.y * resolution.z);
-	std::cout << "BaseModel.cpp line411 length: " << length << std::endl;
 	if (markVoxel == NULL) {
-		std::cout << "mark voxel new buffer, length = " << length << std::endl;
 		markVoxel = new int[length];
-
 		for (int i = 0; i < length; i++) {
 			markVoxel[i] = 0;
 		}
@@ -488,7 +214,6 @@ void BaseModel::voxelization() {
 				markIndex.push_back(i);
 			}
 		}
-		std::cout << "markIndex.size()" << markIndex.size() <<  std::endl;
 	}
 	else {
 		std::cout << "fail to read from ssbo" << std::endl;
@@ -525,7 +250,6 @@ void BaseModel::voxelization() {
 		}
 
 	}
-	
 
 	// 膨胀 t 次
 	for (int t = 0; t < 2; t++) {
@@ -561,25 +285,6 @@ void BaseModel::voxelization() {
 	
 	inputQueue.push(length/2);// 已经验证length/2对应的体素在模型内部
 	myUtils::BFS(resolution, markVoxel, inputQueue, length, 1);
-	/*for (int y = 0; y < resolution.y; y++) {
-		for (int z = 0; z < resolution.z; z++) {
-			for (int x = 0; x < resolution.x; x++) {
-				if ((int)(x + y * resolution.x * resolution.z + z * resolution.x) == length/2) {
-					std::cout << "⚪";
-				} else if(markVoxel[(int)(x + y * resolution.x * resolution.z + z * resolution.x)] == 1) {
-					std::cout << "■";
-				}
-				else if (markVoxel[(int)(x + y * resolution.x * resolution.z + z * resolution.x)] == 2) {
-					std::cout << "□";
-				}
-				else {
-					std::cout << "  ";
-				}
-			}
-			std::cout << std::endl;
-		}
-		std::cout << "----------------------------------------------------------"<< std::endl;
-	}*/
 	
 	for (int i = 0; i < length; i++) {
 		if (markVoxel[i] == 2 || markVoxel[i] == 1) {
@@ -590,7 +295,6 @@ void BaseModel::voxelization() {
 			voxelIndex.push_back(glm::vec3(ix, iy, iz));
 		}
 	}
-	std::cout << "voxelPos.size()" << voxelPos.size() << std::endl;
 	glUnmapBuffer(m_cntBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glDeleteBuffers(1, &m_cntBuffer);

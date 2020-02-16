@@ -57,6 +57,7 @@ Area mainArea, vesselArea, tumorArea, bonesArea;
 Area* currentArea = &mainArea;
 Character characterController;
 std::vector<BaseModel> models;
+glm::vec3 BaseModel::modelCenter = glm::vec3(0.0f);
 int main()
 {
 	// initialize GLFW
@@ -194,12 +195,6 @@ int main()
 			//tumorArea.tackleRuler(ourShader, shadowShader, textureShader,  models);
 			//bonesArea.tackleRuler(ourShader, shadowShader, textureShader, models);
 		}
-		else if (currentArea->getMode() == CROSS_INTERSECTION) {
-			mainArea.tackleCrossIntersection(ourShader, shadowShader,  models);
-			//vesselArea.tackleCrossIntersection(ourShader, shadowShader, models);
-			//tumorArea.tackleCrossIntersection(ourShader, shadowShader,models );
-			//bonesArea.tackleCrossIntersection(ourShader, shadowShader, models);
-		}
 		else if (currentArea->getMode() == NEAREST_VESSEL) {
 			mainArea.tackleNearestVessel(ourShader, shadowShader, textureShader, models);
 			characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
@@ -262,17 +257,10 @@ void processInput(GLFWwindow *window)
 	currentArea->updateLightSpaceMatrix();
 	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
 		(*currentArea->getCamera()).alterMouse();
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && currentArea->getCutMode() == 2) {
-		currentArea->setCutMode(3);
-	}
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && currentArea->getCutMode() == 3) {
-		currentArea->setCutMode(1);
-	}
 	// 挖去模式
 	// 选定切除位置后，按C，切除肿瘤
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && currentArea->getMode() == REMOVE_TUMOR && currentArea -> getRemoveMode() == 1) {
 		currentArea->removeTumor(models[1]);
-		std::cout << "currentArea->getRemoveMode() " << currentArea->getRemoveMode() << std::endl;
 	}
 	// 
 	/*if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && currentArea->getMode() == REMOVE_TUMOR && currentArea->getRemoveMode() == 0) {

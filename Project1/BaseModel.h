@@ -15,6 +15,7 @@ extern const GLuint SHADOW_WIDTH, SHADOW_HEIGHT;
 class BaseModel
 {
 public:
+	static glm::vec3 modelCenter;
 	BaseModel(const char *cfilename, glm::vec3 color);
 	BaseModel(const std::vector<GLfloat> &, glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f));
 	BaseModel() {

@@ -8,7 +8,6 @@
 #include <glad/glad.h>
 #include <vector>
 #include "Delaunay.h"
-#include "Delaunay1.h"
 
 #include <queue>
 
@@ -59,11 +58,8 @@ namespace myUtils {
 
 	std::vector<glm::vec2> getEdges(const int& index1, const int& index2, const int& index3);
 
-	void generateMesh(const std::vector<glm::vec2>& vertices, const std::vector<glm::vec2>& voxels, Delaunay& mesh);
 
-	void generateMesh(const std::vector<glm::vec2>& vertices, Delaunay& mesh, const int& size);
-
-	void generateMesh1(const std::vector<glm::vec2>& vertices, Delaunay1& mesh);
+	void generateMesh(const std::vector<glm::vec2>& vertices, Delaunay& mesh);
 }
 
 #endif // !_MY_UTILS_H_

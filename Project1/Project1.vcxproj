@@ -137,7 +137,6 @@
     <ClCompile Include="Character.cpp" />
     <ClCompile Include="CrossSectionPlane.cpp" />
     <ClCompile Include="Delaunay.cpp" />
-    <ClCompile Include="Delaunay1.cpp" />
     <ClCompile Include="Edge.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="imgui_impl_glfw.cpp" />
@@ -166,7 +165,6 @@
     <ClInclude Include="Character.h" />
     <ClInclude Include="CrossSectionPlane.h" />
     <ClInclude Include="Delaunay.h" />
-    <ClInclude Include="Delaunay1.h" />
     <ClInclude Include="Edge.h" />
     <ClInclude Include="MyCylinder.h" />
     <ClInclude Include="imgui_impl_glfw.h" />

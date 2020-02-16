@@ -261,24 +261,7 @@ Circumcircle myUtils::getCircumcircle(const Triangle& tmp) {
 	return circumCircle;
 }*/
 
-
-void myUtils::generateMesh(const std::vector<glm::vec2>& combinedPoints, Delaunay& mesh, const int & size) {
-
-	glm::vec4 boundingbox = getBoundingBox(combinedPoints);
-	
-	glm::vec2 basicPoints[4] = {
-		glm::vec2(boundingbox.x, boundingbox.y), // upperLeft
-		glm::vec2(boundingbox.z, boundingbox.y), //upperRight
-		glm::vec2(boundingbox.x, boundingbox.w), // lowerLeft
-		glm::vec2(boundingbox.z, boundingbox.w) // lowerRight
-	};
-	mesh.initialize(boundingbox, combinedPoints, size);
-	/*for (int i = 0; i < 7; i++) {
-		mesh.addPoint(combinedPoints[i].x, combinedPoints[i].y);
-	}*/
-}
-
-void myUtils::generateMesh1(const std::vector<glm::vec2>& combinedPoints, Delaunay1& mesh) {
+void myUtils::generateMesh(const std::vector<glm::vec2>& combinedPoints, Delaunay& mesh) {
 
 	glm::vec4 boundingbox = getBoundingBox(combinedPoints);
 
@@ -290,25 +273,6 @@ void myUtils::generateMesh1(const std::vector<glm::vec2>& combinedPoints, Delaun
 	};
 	mesh.initialize(boundingbox);
 	
-}
-
-void myUtils::generateMesh(const std::vector<glm::vec2>& vertices, const std::vector<glm::vec2>& voxels, Delaunay& mesh) {
-
-	/*std::vector<glm::vec2> tmpVertices; // 将两个点集合并
-	tmpVertices.assign(vertices.begin(), vertices.end());
-	tmpVertices.insert(tmpVertices.end()-1, voxels.begin(), voxels.end());
-	glm::vec4 boundingbox = getBoundingBox(tmpVertices);
-	glm::vec2 basicPoints[4] = {
-		glm::vec2(boundingbox.x, boundingbox.y), // upperLeft
-		glm::vec2(boundingbox.z,boundingbox.y), //upperRight
-		glm::vec2(boundingbox.x, boundingbox.w), // lowerLeft
-		glm::vec2(boundingbox.z,boundingbox.w) // lowerRight
-
-	};
-	mesh.initialize(basicPoints);
-	for (int i = 0; i < 2; i++) {
-		mesh.addPoint(tmpVertices[i].x, tmpVertices[i].y);
-	}*/
 }
 
 glm::vec4 myUtils::getBoundingBox(const std::vector<glm::vec2>& array) {
