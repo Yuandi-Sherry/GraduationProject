@@ -60,6 +60,11 @@ namespace myUtils {
 
 
 	void generateMesh(const std::vector<glm::vec2>& vertices, Delaunay& mesh);
+
+	/*glm::vec3 calculateNormal(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3) {
+		glm::vec3 normal = glm::cross(p1 - p2, p2 - p3);
+		r
+	}*/
 }
 
 #endif // !_MY_UTILS_H_

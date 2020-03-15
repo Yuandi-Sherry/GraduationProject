@@ -56,8 +56,8 @@ GLfloat color1[3] = { 0.6f, 0.0f, 0.0f }, color2[3] = {0.5f, 0.5f, 0.6f}, color3
 Area mainArea, vesselArea, tumorArea, bonesArea;
 Area* currentArea = &mainArea;
 Character characterController;
-std::vector<BaseModel> models;
 glm::vec3 BaseModel::modelCenter = glm::vec3(0.0f);
+std::vector<BaseModel> Area::models = {};
 int main()
 {
 	// initialize GLFW
@@ -69,7 +69,7 @@ int main()
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	// create window
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Graduation Project", nullptr, nullptr);
 	if (window == nullptr)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -122,24 +122,24 @@ int main()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	models.push_back(vessel);
-	models.push_back(tumor);
-	models.push_back(bones);
+	Area::models.push_back(vessel);
+	Area::models.push_back(tumor);
+	Area::models.push_back(bones);
 	
 	std::vector<GLint> tmp = {0, 1, 2};
-	mainArea.setModelsID(tmp, models);
+	mainArea.setModelsID(tmp);
 
 	tmp.clear();
 	tmp.push_back(0);
-	vesselArea.setModelsID(tmp, models);
+	vesselArea.setModelsID(tmp);
 	
 	tmp.clear();
 	tmp.push_back(1);
-	tumorArea.setModelsID(tmp, models);
+	tumorArea.setModelsID(tmp);
 
 	tmp.clear();
 	tmp.push_back(2);
-	bonesArea.setModelsID(tmp, models);
+	bonesArea.setModelsID(tmp);
 
 	mainArea.init();
 	vesselArea.init();
@@ -189,24 +189,24 @@ int main()
 
 
 		if (currentArea->getMode() == RULER) {
-			mainArea.tackleRuler(ourShader, shadowShader, textureShader, models);
+			mainArea.tackleRuler(ourShader, shadowShader, textureShader);
 			characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 			//vesselArea.tackleRuler(ourShader, shadowShader, textureShader, models);
 			//tumorArea.tackleRuler(ourShader, shadowShader, textureShader,  models);
 			//bonesArea.tackleRuler(ourShader, shadowShader, textureShader, models);
 		}
 		else if (currentArea->getMode() == NEAREST_VESSEL) {
-			mainArea.tackleNearestVessel(ourShader, shadowShader, textureShader, models);
+			mainArea.tackleNearestVessel(ourShader, shadowShader, textureShader);
 			characterController.RenderText(characterShader, currentArea->getDistance(), 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 		}
 		else if (currentArea->getMode() == REMOVE_TUMOR) {
-			mainArea.tackleRemoveTumor(ourShader, shadowShader, models);
+			mainArea.tackleRemoveTumor(ourShader, shadowShader);
 		}
 		else {
-			mainArea.drawModels(ourShader, shadowShader, models);
-			//vesselArea.drawModels(ourShader, shadowShader, models);
-			//tumorArea.drawModels(ourShader, shadowShader, models);
-			//bonesArea.drawModels(ourShader, shadowShader, models);
+			mainArea.drawModels(ourShader, shadowShader);
+			vesselArea.drawModels(ourShader, shadowShader);
+			tumorArea.drawModels(ourShader, shadowShader);
+			bonesArea.drawModels(ourShader, shadowShader);
 
 		}
 		// display GUI
@@ -260,7 +260,7 @@ void processInput(GLFWwindow *window)
 	// 挖去模式
 	// 选定切除位置后，按C，切除肿瘤
 	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && currentArea->getMode() == REMOVE_TUMOR && currentArea -> getRemoveMode() == 1) {
-		currentArea->removeTumor(models[1]);
+		currentArea->removeTumor(Area::models[1]);
 	}
 	// 
 	/*if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS && currentArea->getMode() == REMOVE_TUMOR && currentArea->getRemoveMode() == 0) {
@@ -345,7 +345,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			/*----------------------NEAREST_VESSEL----------------------*/
 			// 选择模型上任意位置
 			if (currentArea->getMode() == NEAREST_VESSEL) {
-				currentArea->setLocalCoordinate(getObjCoor(lastX, lastY), models[0]);
+				currentArea->setLocalCoordinate(getObjCoor(lastX, lastY), Area::models[0]);
 			}
 			/*----------------------REMOVE_TUMOR----------------------*/
 			// 选择切除的位置

@@ -92,6 +92,13 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 
 BaseModel::BaseModel(const std::vector<GLfloat> &vertices, glm::vec3 color) {
 	this->vertices.assign(vertices.begin(), vertices.end());
+	this->color = color;
+}
+
+BaseModel::BaseModel(const std::vector<GLfloat>& vertices, const std::vector<int>& indices, glm::vec3 color) {
+	this->vertices.assign(vertices.begin(), vertices.end());
+	this->indices.assign(indices.begin(), indices.end());
+	this->color = color;
 }
 BaseModel::~BaseModel()
 {
@@ -103,6 +110,7 @@ void BaseModel::initVertexObject() {
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	cout << "debug  1  " << vertices.size();
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), &(vertices.front()), GL_STATIC_DRAW);
 
 	glGenBuffers(1, &EBO);

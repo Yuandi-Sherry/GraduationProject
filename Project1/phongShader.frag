@@ -27,7 +27,34 @@ uniform float specularStrength;
 
 uniform vec3 color;
 uniform int withShadow;
+uniform int hasNoise;
+float hash(vec2 p) { 
+    return fract(1e4 * sin(17.0 * p.x + p.y * 0.1) * (0.1 + abs(sin(p.y * 13.0 + p.x))));
+}
 
+float random (float n) {
+    return fract(sin(n)*1000000.);
+}
+float noise(vec2 x) {
+    vec2 i = floor(x);
+    vec2 f = fract(x);
+
+	// Four corners in 2D of a tile
+	float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+
+    // Simple 2D lerp using smoothstep envelope between the values.
+	// return vec3(mix(mix(a, b, smoothstep(0.0, 1.0, f.x)),
+	//			mix(c, d, smoothstep(0.0, 1.0, f.x)),
+	//			smoothstep(0.0, 1.0, f.y)));
+
+	// Same code, with the clamps in smoothstep and common subexpressions
+	// optimized away.
+    vec2 u = f * f * (3.0 - 2.0 * f);
+	return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
 float ShadowCalculation(vec4 fragPosLightSpace, float bias)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -49,7 +76,12 @@ float ShadowCalculation(vec4 fragPosLightSpace, float bias)
 }
 
 vec3 getLightingColor (vec3 color) {
-    vec3 normal = normalize(fs_in.Normal);
+	/*float r = 0.5f;
+	vec2 uResolution = vec2(r, r);
+	vec2 position = fs_in.aPos.xy/uResolution.xy;
+	float wave = noise(position);*/
+	vec3 normal;
+	normal =  normalize(fs_in.Normal);
     vec3 lightColor = vec3(1.0);
     // Ambient
     vec3 ambient = ambientStrength * color;
@@ -86,30 +118,22 @@ vec3 getLightingColor (vec3 color) {
 }
 
 
+
+
 void main()
 {   
+	float r = 0.5f;
+	vec2 uResolution = vec2(r, r);
+	vec2 position = fs_in.FragPos.xy/uResolution.xy;
+	float wave = noise(position);
 	if(isPlane == 1) {
 		FragColor = vec4(1.0f, 1.0f, 1.0f, 0.3f);
 		return;
 	}
 	// no cut 
-	if(cut == 0) {
-		FragColor = vec4( getLightingColor(color) * color, 1.0f);
-	} 
-	// upper part
-	else if(cut == 1) {
-		if(plane.x * fs_in.aPos.x + plane.y * fs_in.aPos.y + plane.z * fs_in.aPos.z + plane.w > 0) {
-			FragColor = vec4(getLightingColor(color) * color, 1.0f);
-		} else {
-			discard;
-		}
-	} 
-	// lower part
-	else {
-		if(plane.x * fs_in.aPos.x + plane.y * fs_in.aPos.y + plane.z * fs_in.aPos.z + plane.w < 0) {
-			FragColor =  vec4(getLightingColor(color) * color, 0.5f);
-		} else {
-			discard;
-		} 
-	}
+	//float rand = rand();
+	if(hasNoise == 1)
+		FragColor =  vec4( getLightingColor(color) * color, 1.0f)+vec4(vec3(wave)* 0.2f, 0.0f) ;
+	else
+		FragColor =  vec4( getLightingColor(color) * color, 1.0f);
 }

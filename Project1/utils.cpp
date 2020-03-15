@@ -132,7 +132,6 @@ int myUtils::neighbors26(const glm::vec3 curPos, glm::vec3 resolution, const int
 }
 // 用于深度优先搜索，如果返回值为true，说明26邻域有内容,DFSindices最初存起始点在markVoxel的下标
 void myUtils::BFS(const glm::vec3& resolution, int* markVoxel, std::queue<int> & DFSindices, const int& length, const int& threshold) {
-	std::cout << "length: " << length << std::endl;
 	// 遍历数组
 	while (!DFSindices.empty()) {
 		
@@ -147,7 +146,6 @@ void myUtils::BFS(const glm::vec3& resolution, int* markVoxel, std::queue<int> &
 		int iz = (DFSindices.front() - iy * resolution.x * resolution.z) / (resolution.x);
 		int ix = DFSindices.front() - iy * resolution.x * resolution.z - iz * resolution.x;
 		glm::vec3 curPos = glm::vec3(ix, iy, iz);
-		//std::cout << DFSindices.front() << ": " << ix << " " << iy << " " << iz<< std::endl;
 		// 获得26邻域中未mark的下标
 		blankInNeighbors6(curPos, resolution, markVoxel, result);	
 		// 则标记为1

@@ -4,6 +4,7 @@
 // system headers
 #include <vector>
 #include <map>
+#include <iomanip>
 
 // openGL headers
 // glm
@@ -49,17 +50,22 @@ public:
 	Camera* getCamera() {	return &camera;		}
 	glm::mat4x4 getTransformMat() {		return transformMat;	}
 	std::string getDistance() {
+		stringstream ss;
+		ss << std::fixed << std::setprecision(2);
 		switch (modeSelection) {
 		case RULER:
-			return "Distance: " + std::to_string(ruler.distance / SCALE_RULER);
+			ss <<  ruler.distance / SCALE_RULER;
+			break;
 		case NEAREST_VESSEL:
-			return "Distance: " + std::to_string(vesselDistance / SCALE_RULER);
-		default:
-			return "Distance: " + std::to_string(ruler.distance / SCALE_RULER);
+			ss << vesselDistance / SCALE_RULER;
 		}
+		string str;
+		ss >>  str;
+		return "Distance: " + str;
+
 	}
 	
-	void setModelsID(const std::vector<GLint>&, std::vector<BaseModel> & models);
+	void setModelsID(const std::vector<GLint>&);
 	void setViewport(GLfloat left, GLfloat button, GLfloat right, GLfloat top);
 	glm::vec4 getViewport();
 	
@@ -69,23 +75,23 @@ public:
 	void displayGUI();
 
 	/*----------------------GENERAL----------------------*/
-	void drawModels(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
+	void drawModels(Shader& shader, Shader& shadowShader);
 	/*----------------------RULER----------------------*/
 	/**
 	 * get ends of distance to measure by ruler
 	 */
 	void setRulerVertex(const glm::vec3 & vertexPosition);
-	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models);
+	void tackleRuler(Shader& shader, Shader& shadowShader, Shader& textureShader);
 	void drawRuler(Shader& textureShader, Shader& pointShader);
 	
 	/*----------------------NEAREST_VESSEL----------------------*/
 	void setLocalCoordinate(glm::vec3 worldCoor, BaseModel& vessel);
 
-	void tackleNearestVessel(Shader& shader, Shader& shadowShader, Shader& textureShader, std::vector<BaseModel>& models);
+	void tackleNearestVessel(Shader& shader, Shader& shadowShader, Shader& textureShader);
 
 	/*----------------------REMOVE_TUMOR----------------------*/
 	void setRemovePos(glm::vec3 pos);
-	void tackleRemoveTumor(Shader& shader, Shader& shadowShader, std::vector<BaseModel>& models);
+	void tackleRemoveTumor(Shader& shader, Shader& shadowShader);
 	void updateCutVertices(BaseModel& tumor);
 	void removeTumor(BaseModel& tumor);
 	int getRemoveMode() {
@@ -93,6 +99,7 @@ public:
 	}
 
 	void updateLightSpaceMatrix();
+	static std::vector<BaseModel> models;
 private:
 	void initDepthBuffer();
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 400.0f);

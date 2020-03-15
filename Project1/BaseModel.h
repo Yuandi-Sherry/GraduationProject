@@ -18,6 +18,8 @@ public:
 	static glm::vec3 modelCenter;
 	BaseModel(const char *cfilename, glm::vec3 color);
 	BaseModel(const std::vector<GLfloat> &, glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f));
+
+	BaseModel(const std::vector<GLfloat>&, const std::vector<int>&, glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f));
 	BaseModel() {
 	}
 	~BaseModel();
@@ -26,6 +28,7 @@ public:
 	}
 	void setVertices(const std::vector<GLfloat> vers) {
 		this->vertices.assign(vers.begin(), vers.end());
+
 	}
 	std::vector<int>* getIndices() {
 		return &indices;
