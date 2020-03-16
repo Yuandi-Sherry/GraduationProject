@@ -132,8 +132,8 @@ void main()
 	}
 	// no cut 
 	//float rand = rand();
-	if(hasNoise == 1)
+	/*if(hasNoise == 1)
 		FragColor =  vec4( getLightingColor(color) * color, 1.0f)+vec4(vec3(wave)* 0.2f, 0.0f) ;
-	else
+	else*/
 		FragColor =  vec4( getLightingColor(color) * color, 1.0f);
 }

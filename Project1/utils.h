@@ -65,6 +65,7 @@ namespace myUtils {
 		glm::vec3 normal = glm::cross(p1 - p2, p2 - p3);
 		r
 	}*/
+	glm::vec3 getInnerPoint(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3);
 }
 
 #endif // !_MY_UTILS_H_

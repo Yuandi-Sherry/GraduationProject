@@ -272,7 +272,13 @@ void myUtils::generateMesh(const std::vector<glm::vec2>& combinedPoints, Delauna
 	mesh.initialize(boundingbox);
 	
 }
-
+glm::vec3 myUtils::getInnerPoint(const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3) {
+	GLfloat edge1 = glm::distance(p3, p2);
+	GLfloat edge2 = glm::distance(p1, p3);
+	GLfloat edge3 = glm::distance(p1, p2);
+	glm::vec3 normal = (edge1 * p1 + edge2 * p2 + edge3 * p3) / (edge1 + edge2 + edge3);
+	return normal;
+}
 glm::vec4 myUtils::getBoundingBox(const std::vector<glm::vec2>& array) {
 	GLfloat xMin = 10000.0f, xMax = -10000.0f, yMin = 10000.0f, yMax = -10000.0f;
 	for (int i = 0; i < array.size(); i++) {

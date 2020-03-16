@@ -238,7 +238,7 @@ void Area::updateCutVertices(BaseModel & tumor) {
 		origin = tumor.boxMin + glm::vec3(originX * tumor.getStep(), originY * tumor.getStep(), originZ * tumor.getStep());
 		GLfloat distance = glm::distance(origin, removePos);
 		origin = origin + (removePos - origin) * (distance - cutRadius) / distance;
-		cout << "ruler : " << (distance - cutRadius) / distance << endl;
+		//cout << "ruler : " << (distance - cutRadius) / distance << endl;
 		// 法向量
 		originNormal = glm::normalize(removePos - origin);
 		originRight = glm::normalize(glm::cross(originNormal, glm::vec3(0, 0, 1)));
@@ -281,10 +281,10 @@ void Area::updateCutVertices(BaseModel & tumor) {
 			// voxel3D.push_back(coor);
 			voxel2D.push_back(glm::vec3(rho * cos(theta), rho * sin(theta), 200.0f));
 			// 球体里外改一改
-			int tmpStep = 4;
+			/*int tmpStep = 5;
 			double random = rand() % tmpStep;
 			random -= tmpStep/2;
-			newCoor += (GLfloat)random * glm::normalize(removePos - newCoor);
+			newCoor += (GLfloat)random * glm::normalize(removePos - newCoor);*/
 			cutVertices.push_back(newCoor.x);
 			cutVertices.push_back(newCoor.y);
 			cutVertices.push_back(newCoor.z);
@@ -341,36 +341,119 @@ void Area::updateCutVertices(BaseModel & tumor) {
 	// vertices: 和combinedPoints顺序一致
 	// indices: mesh的order-4即可
 	// 先是voxel,再是vertex
+	vector<GLfloat> interplotedVer;
+	int cutVerticesSize = cutVertices.size() / 6;
 	for (std::list<Triangle>::iterator it = mesh.triangleVector.begin(); it != mesh.triangleVector.end(); it++) {
 		// 三个点都为顶点则去除
 		vector<int> verIndices;
 		for (int j = 0; j < 3; j++) {
 			verIndices.push_back(it->vertices[j] - 4);
-			cutIndices.push_back(it->vertices[j] - 4);
 		}
-		// p1-p2, p2 - p3
-		glm::vec3 normal = glm::cross(glm::vec3(cutVertices[verIndices[0]*6], cutVertices[verIndices[0] * 6+1], cutVertices[verIndices[0] * 6+2]) 
-			- glm::vec3(cutVertices[verIndices[1] * 6], cutVertices[verIndices[1] * 6 + 1], cutVertices[verIndices[1] * 6 + 2]),
-			glm::vec3(cutVertices[verIndices[1] * 6], cutVertices[verIndices[1] * 6 + 1], cutVertices[verIndices[1] * 6 + 2])
-			- glm::vec3(cutVertices[verIndices[2] * 6], cutVertices[verIndices[2] * 6 + 1], cutVertices[verIndices[2] * 6 + 2]));
-		normal = normalize(normal);
-		
-		for (int j = 0; j < 3; j++) {
-			if (glm::dot(normal, removePos - glm::vec3(cutVertices[verIndices[j] * 6], cutVertices[verIndices[j] * 6 + 1], cutVertices[verIndices[j] * 6 + 2]))<0) {
-				cutVertices[verIndices[j] * 6 + 3] -= normal.x;
-				cutVertices[verIndices[j] * 6 + 4] -= normal.y;
-				cutVertices[verIndices[j] * 6 + 5] -= normal.z;
+		// 判断是否需要插值
+		// if(需要)
+		vector<glm::vec3> points = {
+			glm::vec3(cutVertices[verIndices[0] * 6], cutVertices[verIndices[0] * 6 + 1], cutVertices[verIndices[0] * 6 + 2]),
+			glm::vec3(cutVertices[verIndices[1] * 6], cutVertices[verIndices[1] * 6 + 1], cutVertices[verIndices[1] * 6 + 2]),
+			glm::vec3(cutVertices[verIndices[2] * 6], cutVertices[verIndices[2] * 6 + 1], cutVertices[verIndices[2] * 6 + 2])
+		};
+		// 判断是否已经修改
+		GLfloat thresArea = 2.0f;
+		glm::vec3 normal = glm::cross(points[0]-points[1], points[1]-points[2]);
+		if (glm::distance(normal, glm::vec3(0,0,0))/2.0f > thresArea) {
+			// 计算内心坐标
+			glm::vec3 incenter = myUtils::getInnerPoint(points[0], points[1], points[2]);
+			// 将incenter放在球体表面
+			GLfloat distance = glm::distance(incenter, removePos);
+			incenter = incenter + (removePos - incenter) * (distance - cutRadius) / distance; 			
+			int tmpStep = 1;
+			double random = rand() % tmpStep;
+			random -= tmpStep / 2;
+			incenter += (GLfloat)random * glm::normalize(removePos - incenter);
+			// 调整第一个的三角形
+			if (abs(glm::distance(points[0], removePos) - cutRadius) < 0.0001f && abs(glm::distance(points[1], removePos) - cutRadius) < 0.0001f && abs(glm::distance(points[2], removePos) - cutRadius) < 0.0001f) {
+				cout << "add random" << endl;
+				// 加入随机
+				int tmpStep = 2;
+				double random = rand() % tmpStep;
+				random -= tmpStep / 2;
+				for (int j = 0; j < 2; j++) {
+					points[j] += (GLfloat)random * glm::normalize(removePos - points[j]);
+					for (int k = 0; k < 3; k++) {
+						cutVertices[verIndices[j] * 6 + k] = points[j][k];
+					}
+				}
+				incenter += (GLfloat)random * glm::normalize(removePos - incenter);
 			}
-			else {
-				cutVertices[verIndices[j] * 6 + 3] += normal.x;
-				cutVertices[verIndices[j] * 6 + 4] += normal.y;
-				cutVertices[verIndices[j] * 6 + 5] += normal.z;
+			// 将内心作为新增加的顶点坐标
+			interplotedVer.push_back(incenter.x);
+			interplotedVer.push_back(incenter.y);
+			interplotedVer.push_back(incenter.z);
+			// 计算法向量
+			glm::vec3 newNormal = glm::vec3(0.0f, 0.0f, 0.0f);
+			for (int k = 0; k < 3; k++) {
+				// std::cout << k << " " << (k % 3 + 1) % 3 << " " << ((k + 1) % 3 + 1) % 3 << std::endl;
+				glm::vec3 tmp = glm::normalize(glm::cross(points[(k%3+1)%3] - incenter, incenter - points[((k+1)%3+1)%3]));
+				if (glm::dot(tmp, removePos - incenter) < 0) {
+					tmp = -(tmp);
+				} 
+				newNormal += tmp;
+				// 和插值顶点相连的两个顶点更新法向量
+				tmp /= 2.0f;
+				cutVertices[verIndices[(k % 3 + 1) % 3] * 6 + 3] += tmp.x;
+				cutVertices[verIndices[(k % 3 + 1) % 3] * 6 + 4] += tmp.y;
+				cutVertices[verIndices[(k % 3 + 1) % 3] * 6 + 5] += tmp.z;
+				cutVertices[verIndices[((k + 1) % 3 + 1) % 3] * 6 + 3] += tmp.x;
+				cutVertices[verIndices[((k + 1) % 3 + 1) % 3] * 6 + 4] += tmp.y;
+				cutVertices[verIndices[((k + 1) % 3 + 1) % 3] * 6 + 5] += tmp.z;
+				// 插入和插值顶点构成的
+				cutIndices.push_back(cutVerticesSize + (interplotedVer.size() - 3) / 6);
+				cutIndices.push_back(verIndices[(k % 3 + 1) % 3]);
+				cutIndices.push_back(verIndices[((k + 1) % 3 + 1) % 3]);
 			}
-			
+			//newNormal = glm::cross();
+			if (glm::dot(normal, removePos - incenter) < 0) {
+				normal = -normal;
+			}
+			//newNormal = normalize(removePos - incenter);
+			newNormal = normalize(newNormal);
+			interplotedVer.push_back(newNormal.x);
+			interplotedVer.push_back(newNormal.y);
+			interplotedVer.push_back(newNormal.z);
+		}
+		else {
+			if (abs(glm::distance(points[0], removePos)- cutRadius ) <0.0001f && abs(glm::distance(points[1], removePos) - cutRadius) < 0.0001f && abs(glm::distance(points[2], removePos)- cutRadius) < 0.0001f) {
+				cout << "add random" << endl;
+				// 加入随机
+				int tmpStep = 5;
+				double random = rand() % tmpStep;
+				random -= tmpStep / 2;
+				for (int j = 0; j < 3; j++) {
+					points[j] += (GLfloat)random * glm::normalize(removePos - points[j]);
+					for (int k = 0; k < 3; k++) {
+						cutVertices[verIndices[j] * 6 + k] = points[j][k];
+					}
+				}
+
+			}
+			cutIndices.insert(cutIndices.end(), verIndices.begin(), verIndices.end());
+			normal = normalize(normal);
+			for (int j = 0; j < 3; j++) {
+				if (glm::dot(normal, removePos - glm::vec3(cutVertices[verIndices[j] * 6], cutVertices[verIndices[j] * 6 + 1], cutVertices[verIndices[j] * 6 + 2])) < 0) {
+					cutVertices[verIndices[j] * 6 + 3] -= normal.x;
+					cutVertices[verIndices[j] * 6 + 4] -= normal.y;
+					cutVertices[verIndices[j] * 6 + 5] -= normal.z;
+				}
+				else {
+					cutVertices[verIndices[j] * 6 + 3] += normal.x;
+					cutVertices[verIndices[j] * 6 + 4] += normal.y;
+					cutVertices[verIndices[j] * 6 + 5] += normal.z;
+				}
+			}
 		}
 	}
+		
 	// 更新cutVertices的法向量
-
+	cutVertices.insert(cutVertices.end(), interplotedVer.begin(), interplotedVer.end());
 	BaseModel cutTumor(cutVertices, cutIndices, glm::vec3(235.0f/255, 122.0f/255, 119.0f/255));
 	cutTumor.initVertexObject();
 	// 加入Models
