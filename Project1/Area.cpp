@@ -231,6 +231,35 @@ void subdivide(const int& verticesIndex, const vector<int>& verIndices, vector<G
 	}
 }
 
+glm::vec3 voxelToCoord(const int & i, const glm::vec3 & resolution, BaseModel* tumor) {
+	int iy = i / (resolution.x * resolution.z);
+	int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
+	int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
+	return (*tumor).boxMin + glm::vec3(ix * (*tumor).getStep(), iy * (*tumor).getStep(), iz * (*tumor).getStep());
+
+}
+
+glm::vec2 get2DCoord(const glm::vec3 & coor, const vector<GLfloat>& tmpVertices, const glm::vec3& removePos, const int & cutRadius, const glm::vec3 & originNormal, 
+	const glm::vec3& origin, const glm::vec3& originRight, const glm::vec3& originUp, const int& coef) {
+	// 计算平面上的坐标: 弧长
+	/*double rho = acos(glm::dot(originNormal, glm::normalize(newCoor - origin))) * cutRadius * glm::distance(newCoor, origin) / 10.0f;
+	// 和纵轴夹角（y正半轴
+	*/
+	GLfloat distance = glm::distance(coor, removePos);
+	glm::vec3 newCoor = coor + (removePos - coor) * (distance - cutRadius) / distance;
+	// 计算球面距离
+	GLfloat rho = coef * acos(glm::dot(originNormal, glm::normalize(newCoor - origin))) * cutRadius * glm::distance(newCoor, origin) / 10.0f;
+	// 计算和纵轴夹角（y正半轴
+	glm::vec3 OP = newCoor - origin;
+	glm::vec3 OH = glm::dot(OP, originNormal) * originNormal;
+	glm::vec3 OQ = OP - OH;
+	GLfloat theta = acos(glm::dot(glm::normalize(OQ), originRight));
+	if (glm::dot(glm::normalize(OQ), originUp) < 0) {
+		theta = -theta;
+	}
+	return glm::vec2(rho * cos(theta), rho * sin(theta));
+	//vertex2D.push_back());
+}
 void Area::updateCutVertices(BaseModel * tumor) {
 	voxel2D.clear();
 	voxel3D.clear();
@@ -360,10 +389,7 @@ void Area::updateCutVertices(BaseModel * tumor) {
 	glm::vec3 originUp;
 	for (int i = 0; i < static_cast<int>(resolution.x * resolution.y * resolution.z); i++) {
 		if ((*tumor).markVoxel[i] == 2) {
-			int iy = i / (resolution.x * resolution.z);
-			int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
-			int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
-			glm::vec3 coor = (*tumor).boxMin + glm::vec3(ix * (*tumor).getStep(), iy * (*tumor).getStep(), iz * (*tumor).getStep());
+			glm::vec3 coor = voxelToCoord(i, resolution, tumor);
 			glm::vec3 tmpNormal = glm::normalize(removePos - coor);
 			// 确定原点
 			if (glm::dot(tmpNormal, averNormal) > maxDot) {
@@ -376,13 +402,9 @@ void Area::updateCutVertices(BaseModel * tumor) {
 	std::vector<GLfloat> cutVertices; // 还有法向量
 	// 在体素中找到二维空间原点
 	if (originIndex != -1) {
-		int originY = originIndex / (resolution.x * resolution.z);
-		int originZ = (originIndex - originY * resolution.x * resolution.z) / (resolution.x);
-		int originX = originIndex - originY * resolution.x * resolution.z - originZ * resolution.x;
-		origin = (*tumor).boxMin + glm::vec3(originX * (*tumor).getStep(), originY * (*tumor).getStep(), originZ * (*tumor).getStep());
+		origin = voxelToCoord(originIndex, resolution, tumor);
 		GLfloat distance = glm::distance(origin, removePos);
 		origin = origin + (removePos - origin) * (distance - cutRadius) / distance;
-		//cout << "ruler : " << (distance - cutRadius) / distance << endl;
 		// 法向量
 		originNormal = glm::normalize(removePos - origin);
 		originRight = glm::normalize(glm::cross(originNormal, glm::vec3(0, 0, 1)));
@@ -406,34 +428,17 @@ void Area::updateCutVertices(BaseModel * tumor) {
 	// 计算边缘体素的二维坐标
 	for (int i = 0; i < static_cast<int>(resolution.x * resolution.y * resolution.z); i++) {
 		if (i != originIndex && (*tumor).markVoxel[i] == 2) {
-			int iy = i / (resolution.x * resolution.z);
-			int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
-			int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
-			glm::vec3 coor = (*tumor).boxMin + glm::vec3(ix * (*tumor).getStep(), iy * (*tumor).getStep(), iz * (*tumor).getStep());
+			glm::vec3 coor = voxelToCoord(i, resolution, tumor);
+			voxel2D.push_back(get2DCoord(coor, tmpVertices, removePos, cutRadius, originNormal, origin, originRight, originUp, 1));
+			// 球体里外改一改
 			GLfloat distance = glm::distance(coor, removePos);
 			glm::vec3 newCoor = coor + (removePos - coor) * (distance - cutRadius) / distance;
-			// 计算平面上的坐标: 弧长
-			double rho = acos(glm::dot(originNormal, glm::normalize(newCoor - origin))) * cutRadius * glm::distance(newCoor, origin) / 10.0f;
-			// 和纵轴夹角（y正半轴
-			glm::vec3 OP = newCoor - origin;
-			glm::vec3 OH = glm::dot(OP, originNormal) * originNormal;
-			glm::vec3 OQ = OP - OH;
-			GLfloat theta = acos(glm::dot(glm::normalize(OQ), originRight));
-			if (glm::dot(glm::normalize(OQ), originUp) < 0) {
-				theta = -theta;
-			}
-			// voxel3D.push_back(coor);
-			voxel2D.push_back(glm::vec3(rho * cos(theta), rho * sin(theta), 200.0f));
-			// 球体里外改一改
 			if (ADD_RANDOM) {
 				newCoor += RAND_COOR * noise3d(newCoor) * glm::normalize(removePos - newCoor);
 			}
-			
 			cutVertices.push_back(newCoor.x);
 			cutVertices.push_back(newCoor.y);
 			cutVertices.push_back(newCoor.z);
-			// normal
-			//glm::vec3 normal = removePos - newCoor;
 			cutVertices.push_back(0.0f);
 			cutVertices.push_back(0.0f);
 			cutVertices.push_back(0.0f);
@@ -447,20 +452,8 @@ void Area::updateCutVertices(BaseModel * tumor) {
 	// 计算边缘顶点的二维空间坐标
 	std::vector<int> orderedIndices;
 	for (std::set<int>::iterator it = edgeIndices.begin(); it != edgeIndices.end(); it++) {
-		glm::vec3 coor = glm::vec3(tmpVertices[(*it) * 6], tmpVertices[(*it) * 6 + 1], tmpVertices[(*it) * 6 + 2]);
-		GLfloat distance = glm::distance(coor, removePos);
-		glm::vec3 newCoor = coor + (removePos - coor) * (distance - cutRadius) / distance;
-		// 计算球面距离
-		GLfloat rho = 5 * acos(glm::dot(originNormal, glm::normalize(coor - origin))) * cutRadius * glm::distance(coor, origin) / 10.0f;
-		// 计算和纵轴夹角（y正半轴
-		glm::vec3 OP = newCoor - origin;
-		glm::vec3 OH = glm::dot(OP, originNormal) * originNormal;
-		glm::vec3 OQ = OP - OH;
-		GLfloat theta = acos(glm::dot(glm::normalize(OQ), originRight));
-		if (glm::dot(glm::normalize(OQ), originUp) < 0) {
-			theta = -theta;
-		}
-		vertex2D.push_back(glm::vec2(rho * cos(theta), rho * sin(theta)));
+		glm::vec3 coor = glm::vec3(tmpVertices[(*it) * 6], tmpVertices[(*it) * 6 + 1], tmpVertices[(*it) * 6 + 2]);		
+		vertex2D.push_back(get2DCoord(coor, tmpVertices, removePos, cutRadius, originNormal, origin, originRight, originUp, 5));
 		orderedIndices.push_back(*it);
 		// 将原本在tumor边缘的顶点加入cutTumor中
 		for (int i = 0; i < 6; i++) {
@@ -496,9 +489,6 @@ void Area::updateCutVertices(BaseModel * tumor) {
 		for (int j = 0; j < 3; j++) {
 			verIndices.push_back(it->vertices[j] - 4);
 		}
-		GLfloat thresArea = 2.0f;	
-		//cout << "------------------------------------------" << endl;
-		//cout << verIndices[0] << " " << verIndices[1] << " " << verIndices[2] << endl;
 		subdivide(cutVertices.size()/6, verIndices, cutVertices, cutIndices, cutRadius, removePos, 0, hashMap, edgeBegin, edgeEnd, edges);
 	}
 	// 更新cutVertices的法向量
