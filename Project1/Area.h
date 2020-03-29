@@ -71,7 +71,7 @@ public:
 	
 	
 	void init();
-	void renderDepthBuffer(Shader& shadowShaer, std::vector<BaseModel>& models);
+	void renderDepthBuffer(Shader& shadowShaer, std::vector<BaseModel*>& models);
 	void displayGUI();
 
 	/*----------------------GENERAL----------------------*/
@@ -85,21 +85,22 @@ public:
 	void drawRuler(Shader& textureShader, Shader& pointShader);
 	
 	/*----------------------NEAREST_VESSEL----------------------*/
-	void setLocalCoordinate(glm::vec3 worldCoor, BaseModel& vessel);
+	void setLocalCoordinate(glm::vec3 worldCoor, BaseModel* vessel);
 
 	void tackleNearestVessel(Shader& shader, Shader& shadowShader, Shader& textureShader);
 
 	/*----------------------REMOVE_TUMOR----------------------*/
 	void setRemovePos(glm::vec3 pos);
 	void tackleRemoveTumor(Shader& shader, Shader& shadowShader);
-	void updateCutVertices(BaseModel& tumor);
-	void removeTumor(BaseModel& tumor);
+	void updateCutVertices(BaseModel* tumor);
+	void removeTumor(BaseModel* tumor);
 	int getRemoveMode() {
 		return removeMode;
 	}
 
 	void updateLightSpaceMatrix();
-	static std::vector<BaseModel> models;
+	static std::vector<BaseModel*> models;
+	static std::vector<BaseModel> cutTumor;
 private:
 	void initDepthBuffer();
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 400.0f);
@@ -133,7 +134,7 @@ private:
 	glm::vec3 NVLocalPos;
 	glm::vec3 nearestPos = glm::vec3(-10000.0f, -10000.0f, -10000.0f);
 	GLfloat vesselDistance = 0.0f;
-	void findNearest(BaseModel& vessel);
+	void findNearest(BaseModel* vessel);
 
 	/*----------------------REMOVE_TUMOR----------------------*/
 	int removeMode = 0;

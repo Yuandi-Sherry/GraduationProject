@@ -1,4 +1,4 @@
-#include "Area.h"
+ï»¿#include "Area.h"
 #include "Plane.h"
 // imgui
 #include "imgui/imgui.h"
@@ -8,6 +8,7 @@
 #include <set>
 #include "MyCylinder.h"
 #include "MyLine.h"
+#include <map>
 
 #include "utils.h"
 /*----------------------GENERAL----------------------*/
@@ -64,15 +65,17 @@ void Area::tackleRemoveTumor(Shader& shader, Shader& shadowShader) {
 		shader.use();
 		drawModels(shader, shadowShader);
 	}
-	else if (removeMode == 1) { // »ñÈ¡Êó±êÎ»ÖÃ×ª»»
+	else if (removeMode == 1) { // è·å–é¼ æ ‡ä½ç½®è½¬æ¢
 		drawModels(shader, shadowShader);
 		shader.use();
 		glm::mat4 model = glm::translate(glm::mat4(1.0f), removePos);
 		model = glm::translate(model, -BaseModel::modelCenter);
 		model = glm::scale(model, glm::vec3(cutRadius, cutRadius, cutRadius));
+		shader.setInt("type", 1);
 		shader.setMat4("model", transformMat * model);
-		shader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
+		shader.setVec3("color", glm::vec3(235.0f / 255, 122.0f / 255, 119.0f / 255));
 		mySphere.draw();
+		shader.setInt("type", 0);
 	}
 }
 
@@ -82,28 +85,173 @@ void Area::setRemovePos(glm::vec3 pos) {
 	removeMode = 1;
 }
 
-void Area::updateCutVertices(BaseModel & tumor) {
+glm::vec3 random3(glm::vec3 p)
+{
+	p = glm::vec3(glm::dot(p, glm::vec3(127.1, 311.7, 74.7)),
+		glm::dot(p, glm::vec3(269.5, 183.3, 246.1)),
+		glm::dot(p, glm::vec3(113.5, 271.9, 124.6)));
+
+	return -1.0f + 2.0f * (sin(p) * 43758.5453123f - floor(sin(p) * 43758.5453123f));
+}
+
+template<typename T>
+T mix(const T & x, const T & y, float & a) {
+	return x*(1-a) + y*a;
+}
+float noise3d(glm::vec3 p)
+{
+	glm::vec3 i = floor(p);
+	glm::vec3 f = fract(p);
+
+	glm::vec3 u = f * f * (3.0f - 2.0f * f);
+	/*mix(glm::dot(random3(i + glm::vec3(0.0, 0.0, 0.0)), f - glm::vec3(0.0, 0.0, 0.0)),
+		glm::dot(random3(i + glm::vec3(1.0, 0.0, 0.0)), f - glm::vec3(1.0, 0.0, 0.0)), u.x);*/
+	return mix(mix(mix(glm::dot(random3(i + glm::vec3(0.0, 0.0, 0.0)), f - glm::vec3(0.0, 0.0, 0.0)),
+		glm::dot(random3(i + glm::vec3(1.0, 0.0, 0.0)), f - glm::vec3(1.0, 0.0, 0.0)), u.x),
+		mix<float>(glm::dot(random3(i + glm::vec3(0.0, 1.0, 0.0)), f - glm::vec3(0.0, 1.0, 0.0)),
+			glm::dot(random3(i + glm::vec3(1.0, 1.0, 0.0)), f - glm::vec3(1.0, 1.0, 0.0)), u.x), u.y),
+		mix(mix<float>(glm::dot(random3(i + glm::vec3(0.0, 0.0, 1.0)), f - glm::vec3(0.0, 0.0, 1.0)),
+			glm::dot(random3(i + glm::vec3(1.0, 0.0, 1.0)), f - glm::vec3(1.0, 0.0, 1.0)), u.x),
+			mix<float>(glm::dot(random3(i + glm::vec3(0.0, 1.0, 1.0)), f - glm::vec3(0.0, 1.0, 1.0)),
+				glm::dot(random3(i + glm::vec3(1.0, 1.0, 1.0)), f - glm::vec3(1.0, 1.0, 1.0)), u.x), u.y), u.z);
+}
+#define ADD_RANDOM true
+#define RAND_COOR 0.3f
+int countSubdivision = 0;
+void subdivide(const int& verticesIndex, const vector<int>& verIndices, vector<GLfloat>& vertices,
+	vector<GLint>& indices, const int& cutRadius, const glm::vec3& removePos, const int& level, map<pair<int, int>, int>& hashMap,
+	const int& edgeBegin, const int& edgeEnd, set<int> &edges) {
+	
+	// åˆ¤æ–­æ³•å‘é‡æ–¹å‘ï¼Œ æ˜¯å¦éœ€è¦ä¿®æ”¹verIndicesçš„é¡ºåº
+	vector<glm::vec3> points = {
+		glm::vec3(vertices[verIndices[0] * 6], vertices[verIndices[0] * 6 + 1], vertices[verIndices[0] * 6 + 2]),
+		glm::vec3(vertices[verIndices[1] * 6], vertices[verIndices[1] * 6 + 1], vertices[verIndices[1] * 6 + 2]),
+		glm::vec3(vertices[verIndices[2] * 6], vertices[verIndices[2] * 6 + 1], vertices[verIndices[2] * 6 + 2])
+	};
+
+	glm::vec3 normal = glm::cross(points[0] - points[1], points[1] - points[2]);
+	
+	vector<int> verIndicesIn;
+	verIndicesIn.assign(verIndices.begin(), verIndices.end());
+	// å¦‚æœä¸ºè¾¹ç¼˜ï¼Œåˆ™åˆ¤æ–­æ³•å‘é‡å’Œè¾¹ç¼˜é¡¶ç‚¹æ³•å‘é‡åŒæ–¹å‘
+	int isEdge = 0;
+	for (int i = 0; i < 3; i++) {
+		if (verIndices[i] >= edgeBegin && verIndices[i] < edgeEnd || edges.find(verIndices[i])!= edges.end()) {
+			isEdge++;
+			if (isEdge > 1) {
+				glm::vec3 vertexNormal = glm::vec3(vertices[verIndices[i] * 6 + 3], vertices[verIndices[i] * 6 + 4], vertices[verIndices[i] * 6 + 5]);
+				if (glm::dot(normal, vertexNormal) < 0) {
+					int tmp = verIndicesIn[0];
+					verIndicesIn[0] = verIndicesIn[1];
+					verIndicesIn[1] = tmp;
+					points = {
+					glm::vec3(vertices[verIndicesIn[0] * 6], vertices[verIndicesIn[0] * 6 + 1], vertices[verIndicesIn[0] * 6 + 2]),
+					glm::vec3(vertices[verIndicesIn[1] * 6], vertices[verIndicesIn[1] * 6 + 1], vertices[verIndicesIn[1] * 6 + 2]),
+					glm::vec3(vertices[verIndicesIn[2] * 6], vertices[verIndicesIn[2] * 6 + 1], vertices[verIndicesIn[2] * 6 + 2])
+					};
+					normal = glm::cross(points[0] - points[1], points[1] - points[2]);
+				}
+				break;
+			}
+				
+		}
+	}
+	if (isEdge <= 1) {
+		if (glm::dot(normal, removePos - points[0]) < 0) {
+			int tmp = verIndicesIn[0];
+			verIndicesIn[0] = verIndicesIn[1];
+			verIndicesIn[1] = tmp;
+			points = {
+			glm::vec3(vertices[verIndicesIn[0] * 6], vertices[verIndicesIn[0] * 6 + 1], vertices[verIndicesIn[0] * 6 + 2]),
+			glm::vec3(vertices[verIndicesIn[1] * 6], vertices[verIndicesIn[1] * 6 + 1], vertices[verIndicesIn[1] * 6 + 2]),
+			glm::vec3(vertices[verIndicesIn[2] * 6], vertices[verIndicesIn[2] * 6 + 1], vertices[verIndicesIn[2] * 6 + 2])
+			};
+			normal = glm::cross(points[0] - points[1], points[1] - points[2]);
+		}
+	}
+	
+	
+	if (level < 2) {
+		vector<glm::vec3> newPoints = {
+			(points[0] + points[1]) / 2.0f,
+			(points[1] + points[2]) / 2.0f,
+			(points[2] + points[0]) / 2.0f
+		};
+		// å°†incenteræ”¾åœ¨çƒä½“è¡¨é¢
+		int newIndices[3];
+		for (int i = 0; i < 3; i++) {
+			pair<int, int> orderedPair = verIndicesIn[i] < verIndicesIn[(i + 1) % 3] ? make_pair(verIndicesIn[i], verIndicesIn[(i + 1) % 3]) :
+				make_pair(verIndicesIn[(i + 1) % 3], verIndicesIn[i]);
+			map<pair<int, int>, int>::iterator it = hashMap.find(orderedPair);
+			if (it != hashMap.end()) {
+				newIndices[i] = it->second;
+			}
+			else {
+				GLfloat distance = glm::distance(newPoints[i], removePos);
+				if ((verIndicesIn[i] >= edgeBegin && verIndicesIn[i] < edgeEnd || edges.find(verIndicesIn[i]) != edges.end())
+					&& (verIndicesIn[(i + 1) % 3] >= edgeBegin && verIndicesIn[(i + 1) % 3] < edgeEnd || edges.find(verIndicesIn[(i + 1) % 3]) != edges.end())) {
+					edges.insert(vertices.size() / 6);
+				}
+				else {
+					newPoints[i] = newPoints[i] + (removePos - newPoints[i]) * (distance - cutRadius) / distance;
+					if (ADD_RANDOM) {
+						newPoints[i] += RAND_COOR * noise3d(newPoints[i]) * glm::normalize(removePos - newPoints[i]);
+					}
+				}
+				
+				newIndices[i] = vertices.size() / 6;
+				hashMap[orderedPair] = newIndices[i];
+				if (hashMap.find(orderedPair) == hashMap.end()) {
+					countSubdivision++;
+				}
+				// é¡¶ç‚¹åæ ‡
+				vertices.push_back(newPoints[i].x);
+				vertices.push_back(newPoints[i].y);
+				vertices.push_back(newPoints[i].z);
+				// æ³•å‘é‡å ä½
+				vertices.push_back(0);
+				vertices.push_back(0);
+				vertices.push_back(0);
+			}
+		}
+		// å½“å‰è®¡ç®—æ’å…¥çš„ä¸‰è§’å½¢æ˜¯å¦éœ€è¦å†åˆ†
+
+		for (int i = 0; i < 3; i++) {
+			subdivide(vertices.size() / 6, { verIndicesIn[i], newIndices[i],newIndices[(i + 2) % 3] }, vertices, indices, cutRadius, removePos, level+1, hashMap, edgeBegin, edgeEnd, edges);
+		}
+		subdivide(vertices.size() / 6, { newIndices[0], newIndices[1], newIndices[2] }, vertices, indices, cutRadius, removePos, level+1, hashMap, edgeBegin, edgeEnd, edges);
+	}
+	else {
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				vertices[verIndicesIn[i] * 6 + 3 + j] += normal[j];
+			}
+		}
+		indices.insert(indices.end(), verIndicesIn.begin(), verIndicesIn.end());
+	}
+}
+
+void Area::updateCutVertices(BaseModel * tumor) {
 	voxel2D.clear();
 	voxel3D.clear();
 	vertex2D.clear();
-	vertex3D.clear();
 	combinedPoints.clear();
-	glm::vec3 resolution = tumor.getResolution();
-	// ¼ÇÂ¼ÒªÉ¾³ıµÄÍø¸ñ¶¥µã
-	std::vector<GLfloat> tmpVertices(*tumor.getVertices());
-	std::vector<int> tmpIndices(*tumor.getIndices());
+	glm::vec3 resolution = (*tumor).getResolution();
+	// è®°å½•è¦åˆ é™¤çš„ç½‘æ ¼é¡¶ç‚¹
+	std::vector<GLfloat> tmpVertices(*(*tumor).getVertices());
+	std::vector<int> tmpIndices(*(*tumor).getIndices());
 	std::vector<int> tobeDelete;
 	std::map<int, int> updateIndices;
 	for (int i = 0; i < tmpVertices.size() / 6; i++) {
 		glm::vec3 curVer = glm::vec3(tmpVertices[i * 6], tmpVertices[i * 6 + 1], tmpVertices[i * 6 + 2]);
 		GLfloat dis = glm::distance(curVer, removePos);
 		if (dis < cutRadius) {
-			// ¼ÇÂ¼ĞèÒªÉ¾³ıµÄµãÔÚverticesµÄindex
+			// è®°å½•éœ€è¦åˆ é™¤çš„ç‚¹åœ¨verticesçš„index
 			tobeDelete.push_back(i);
 		}
 	}
 
-	// ¼ÆËãÇ°ºóindicesµÄÓ³Éä¹ØÏµ
+	// è®¡ç®—å‰åindicesçš„æ˜ å°„å…³ç³»
 	int* newIndices = new int[tmpVertices.size() / 6];
 	for (int i = 0; i < tmpVertices.size() / 6; i++) {
 		newIndices[i] = i;
@@ -111,7 +259,7 @@ void Area::updateCutVertices(BaseModel & tumor) {
 	for (int i = 0, j = 0; i < tmpVertices.size() / 6 && j < tobeDelete.size(); i++) {
 		if (i == tobeDelete[j]) {
 			j++;
-			// Ö®ºóµÄÏÂ±ê¸üĞÂ
+			// ä¹‹åçš„ä¸‹æ ‡æ›´æ–°
 			newIndices[i] = -1;
 			for (int k = i + 1; k < tmpVertices.size() / 6; k++) {
 				newIndices[k] -= 1;
@@ -119,17 +267,17 @@ void Area::updateCutVertices(BaseModel & tumor) {
 		}
 	}
 
-	// ¼ÆËã±ßÔµ¶¥µã¹¹³ÉµÄÆ½ÃæµÄÆ½¾ù·¨ÏòÁ¿
-	glm::vec3 averNormal = glm::vec3(0, 0, 0); //±ßÔµ¶¥µãµÄÆ½¾ù·¨ÏòÁ¿
-	glm::vec3 averCenter = glm::vec3(0, 0, 0); //±ßÔµ¶¥µãµÄÆ½¾ù·¨ÏòÁ¿
-	std::set<int> edgeIndices; // ¼ÇÂ¼±ßÔµ¶¥µãÔÚ¡¾¸üĞÂºó¡¿verticesÖĞµÄÏÂ±ê
+	// è®¡ç®—è¾¹ç¼˜é¡¶ç‚¹æ„æˆçš„å¹³é¢çš„å¹³å‡æ³•å‘é‡
+	glm::vec3 averNormal = glm::vec3(0, 0, 0); //è¾¹ç¼˜é¡¶ç‚¹çš„å¹³å‡æ³•å‘é‡
+	glm::vec3 averCenter = glm::vec3(0, 0, 0); //è¾¹ç¼˜é¡¶ç‚¹çš„å¹³å‡æ³•å‘é‡
+	std::set<int> edgeIndices; // è®°å½•è¾¹ç¼˜é¡¶ç‚¹åœ¨ã€æ›´æ–°åã€‘verticesä¸­çš„ä¸‹æ ‡
 	for (int i = 0; i < tmpIndices.size() / 3; i++) {
-		//¼ÇÂ¼ºÍÒÆ³ıµãÏàÁ¬µÄÈı½ÇĞÎ
+		//è®°å½•å’Œç§»é™¤ç‚¹ç›¸è¿çš„ä¸‰è§’å½¢
 		if (newIndices[tmpIndices[i * 3]] == -1 || newIndices[tmpIndices[i * 3 + 1]] == -1 || newIndices[tmpIndices[i * 3 + 2]] == -1) {
-			// ¶ÔÊÇ-1µÄ¼ì²âÖ®Ç°ÊÇ·ñ¼ÓÈë£¬ÆäËûµÄ¼ÓÈë
+			// å¯¹æ˜¯-1çš„æ£€æµ‹ä¹‹å‰æ˜¯å¦åŠ å…¥ï¼Œå…¶ä»–çš„åŠ å…¥
 			for (int j = 0; j < 3; j++) {
 				if (newIndices[tmpIndices[i * 3 + j]] != -1) {
-					// Ö±½Ó·ÅÈëÓ³ÉäºóµÄindex
+					// ç›´æ¥æ”¾å…¥æ˜ å°„åçš„index
 					edgeIndices.insert(newIndices[tmpIndices[i * 3 + j]]);
 					averCenter += glm::vec3(tmpVertices[tmpIndices[i * 3 + j] * 6], tmpVertices[tmpIndices[i * 3 + j] * 6 + 1], tmpVertices[tmpIndices[i * 3 + j] * 6 + 2]);
 					averNormal += glm::vec3(tmpVertices[tmpIndices[i * 3 + j] * 6 + 3], tmpVertices[tmpIndices[i * 3 + j] * 6 + 4], tmpVertices[tmpIndices[i * 3 + j] * 6 + 5]);
@@ -137,11 +285,11 @@ void Area::updateCutVertices(BaseModel & tumor) {
 			}
 		}
 	}
-	// ¸üĞÂindices
+	// æ›´æ–°indices
 	for (int i = 0; i < tmpIndices.size() / 3; ) {
-		// É¾³ıºÍÒÆ³ıµãÏàÁ¬µÄÈı½ÇĞÎ
+		// åˆ é™¤å’Œç§»é™¤ç‚¹ç›¸è¿çš„ä¸‰è§’å½¢
 		if (newIndices[tmpIndices[i * 3]] == -1 || newIndices[tmpIndices[i * 3 + 1]] == -1 || newIndices[tmpIndices[i * 3 + 2]] == -1) {
-			// É¾³ı
+			// åˆ é™¤
 			tmpIndices.erase(tmpIndices.begin() + i * 3 + 2);
 			tmpIndices.erase(tmpIndices.begin() + i * 3 + 1);
 			tmpIndices.erase(tmpIndices.begin() + i * 3);
@@ -154,15 +302,11 @@ void Area::updateCutVertices(BaseModel & tumor) {
 		}
 	}
 	delete[] newIndices;
-	// É¾³ı¶ÔÓ¦µÄvertices
+	// åˆ é™¤å¯¹åº”çš„vertices
 	for (int i = 0; i < tobeDelete.size(); i++) {
-		int index = (tobeDelete[i] - i) * 6;
-		tmpVertices.erase(tmpVertices.begin() + index + 5);
-		tmpVertices.erase(tmpVertices.begin() + index + 4);
-		tmpVertices.erase(tmpVertices.begin() + index + 3);
-		tmpVertices.erase(tmpVertices.begin() + index + 2);
-		tmpVertices.erase(tmpVertices.begin() + index + 1);
-		tmpVertices.erase(tmpVertices.begin() + index);
+		for (int j = 5; j >=0; j--) {
+			tmpVertices.erase(tmpVertices.begin() + (tobeDelete[i] - i) * 6 + j);
+		}
 	}
 	int oldVerticesSize = tmpVertices.size() / 6;
 	averCenter /= edgeIndices.size();
@@ -171,35 +315,35 @@ void Area::updateCutVertices(BaseModel & tumor) {
 		averRadius += glm::distance(averCenter, glm::vec3(tmpVertices[(*it) * 6], tmpVertices[(*it) * 6 + 1], tmpVertices[(*it) * 6 + 2]));
 	}
 	averRadius /= edgeIndices.size();
-	// ¼ÆËãÀëaverNormal×î½üµÄÇòÃæ×ø±ê×÷Îª¶şÎ¬¿Õ¼äÔ­µã
+	// è®¡ç®—ç¦»averNormalæœ€è¿‘çš„çƒé¢åæ ‡ä½œä¸ºäºŒç»´ç©ºé—´åŸç‚¹
 	int originIndex = -1;
 	GLfloat maxDot = -1;
 
-	// ¾Ö²¿×ø±êÏµÎ»ÖÃ
-	std::vector<glm::vec3>* voxelsPos = tumor.getVoxelsPos();
-	// ÌåËØ¿Õ¼äµÄÏÂ±ê
-	std::vector<glm::vec3>* voxelsIndex = tumor.getVoxelsIndex();
+	// å±€éƒ¨åæ ‡ç³»ä½ç½®
+	std::vector<glm::vec3>* voxelsPos = (*tumor).getVoxelsPos();
+	// ä½“ç´ ç©ºé—´çš„ä¸‹æ ‡
+	std::vector<glm::vec3>* voxelsIndex = (*tumor).getVoxelsIndex();
 	std::set<int> edgeVoxelsIndex;
-	// ±ê¼Ç±ßÔµÌåËØ
+	// æ ‡è®°è¾¹ç¼˜ä½“ç´ 
 	for (int i = 0; i < voxelsPos->size(); ) {
-		// ÅĞ¶ÏÊÇ·ñÔÚÇòÀïÃæ
+		// åˆ¤æ–­æ˜¯å¦åœ¨çƒé‡Œé¢
 		GLfloat dis = glm::distance((*voxelsPos)[i], removePos);
 		if (dis < cutRadius) {
-			// ÒÆ³ı¾Ö²¿×ø±ê
+			// ç§»é™¤å±€éƒ¨åæ ‡
 			voxelsPos->erase(voxelsPos->begin() + i);
-			// ¼ÆËã±ê¼ÇÊı×éµÄµÄÏÂ±ê
+			// è®¡ç®—æ ‡è®°æ•°ç»„çš„çš„ä¸‹æ ‡
 			int tmpIndex = (voxelsIndex->begin() + i)->y * resolution.x * resolution.z + (voxelsIndex->begin() + i)->z * resolution.x + (voxelsIndex->begin() + i)->x;
-			// ¸üĞÂ±ê¼ÇÊı×é
-			tumor.markVoxel[tmpIndex] = 0;
-			// 26ÁÚÓò
+			// æ›´æ–°æ ‡è®°æ•°ç»„
+			(*tumor).markVoxel[tmpIndex] = 0;
+			// 26é‚»åŸŸ
 			std::vector<int> resultIndex;
 			myUtils::neighbors26(*(voxelsIndex->begin() + i), resolution, resultIndex);
-			// ±ê¼ÇÊı×éÖĞÎª1ÇÒÔÚresultÖĞµÄ±äÎª2£¬·ñÔòÈÔÈ»Îª1
+			// æ ‡è®°æ•°ç»„ä¸­ä¸º1ä¸”åœ¨resultä¸­çš„å˜ä¸º2ï¼Œå¦åˆ™ä»ç„¶ä¸º1
 			for (int j = 0; j < resultIndex.size(); j++) {
-				if (tumor.markVoxel[resultIndex[j]] == 1) {
-					// ½«¶ÔÓ¦Î»ÖÃ±ê¼ÇÎª2
-					tumor.markVoxel[resultIndex[j]] = 2;
-					// ¼ÇÂ¼Î»ÖÃ×ø±ê
+				if ((*tumor).markVoxel[resultIndex[j]] == 1) {
+					// å°†å¯¹åº”ä½ç½®æ ‡è®°ä¸º2
+					(*tumor).markVoxel[resultIndex[j]] = 2;
+					// è®°å½•ä½ç½®åæ ‡
 					edgeVoxelsIndex.insert(resultIndex[j]);
 				}
 			}
@@ -209,19 +353,19 @@ void Area::updateCutVertices(BaseModel & tumor) {
 			i++;
 		}
 	}
-	// ÔÚÌåËØÖĞÕÒµ½¶şÎ¬¿Õ¼äÔ­µã
+	// åœ¨ä½“ç´ ä¸­æ‰¾åˆ°äºŒç»´ç©ºé—´åŸç‚¹
 	glm::vec3 origin = glm::vec3(-10000.0f, -10000.0f, -10000.0f);
 	glm::vec3 originNormal;
-	glm::vec3 originRight; // ÈÎÒâÒ»¸ö·¨ÏòÁ¿µÄ´¹Ö±·½Ïò×÷Îªx+
+	glm::vec3 originRight; // ä»»æ„ä¸€ä¸ªæ³•å‘é‡çš„å‚ç›´æ–¹å‘ä½œä¸ºx+
 	glm::vec3 originUp;
 	for (int i = 0; i < static_cast<int>(resolution.x * resolution.y * resolution.z); i++) {
-		if (tumor.markVoxel[i] == 2) {
+		if ((*tumor).markVoxel[i] == 2) {
 			int iy = i / (resolution.x * resolution.z);
 			int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
 			int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
-			glm::vec3 coor = tumor.boxMin + glm::vec3(ix * tumor.getStep(), iy * tumor.getStep(), iz * tumor.getStep());
+			glm::vec3 coor = (*tumor).boxMin + glm::vec3(ix * (*tumor).getStep(), iy * (*tumor).getStep(), iz * (*tumor).getStep());
 			glm::vec3 tmpNormal = glm::normalize(removePos - coor);
-			// È·¶¨Ô­µã
+			// ç¡®å®šåŸç‚¹
 			if (glm::dot(tmpNormal, averNormal) > maxDot) {
 				maxDot = glm::dot(tmpNormal, averNormal);
 				originIndex = i;
@@ -229,17 +373,17 @@ void Area::updateCutVertices(BaseModel & tumor) {
 		}
 	}
 	std::vector<int> cutIndices;
-	std::vector<GLfloat> cutVertices; // »¹ÓĞ·¨ÏòÁ¿
-	// ÔÚÌåËØÖĞÕÒµ½¶şÎ¬¿Õ¼äÔ­µã
+	std::vector<GLfloat> cutVertices; // è¿˜æœ‰æ³•å‘é‡
+	// åœ¨ä½“ç´ ä¸­æ‰¾åˆ°äºŒç»´ç©ºé—´åŸç‚¹
 	if (originIndex != -1) {
 		int originY = originIndex / (resolution.x * resolution.z);
 		int originZ = (originIndex - originY * resolution.x * resolution.z) / (resolution.x);
 		int originX = originIndex - originY * resolution.x * resolution.z - originZ * resolution.x;
-		origin = tumor.boxMin + glm::vec3(originX * tumor.getStep(), originY * tumor.getStep(), originZ * tumor.getStep());
+		origin = (*tumor).boxMin + glm::vec3(originX * (*tumor).getStep(), originY * (*tumor).getStep(), originZ * (*tumor).getStep());
 		GLfloat distance = glm::distance(origin, removePos);
 		origin = origin + (removePos - origin) * (distance - cutRadius) / distance;
 		//cout << "ruler : " << (distance - cutRadius) / distance << endl;
-		// ·¨ÏòÁ¿
+		// æ³•å‘é‡
 		originNormal = glm::normalize(removePos - origin);
 		originRight = glm::normalize(glm::cross(originNormal, glm::vec3(0, 0, 1)));
 		originUp = glm::normalize(glm::cross(originNormal, originRight));
@@ -252,25 +396,25 @@ void Area::updateCutVertices(BaseModel & tumor) {
 		cutVertices.push_back(normal.x);
 		cutVertices.push_back(normal.y);
 		cutVertices.push_back(normal.z);
-		tumor.markVoxel[originIndex] = 0; // Õâ¸öÎ»ÖÃ¾Í²»´æÔÚÁË£¬¶ø¸ÄÎªtumorÄ£ĞÍÉÏµÄÎ»ÖÃÁË
+		(*tumor).markVoxel[originIndex] = 0; // è¿™ä¸ªä½ç½®å°±ä¸å­˜åœ¨äº†ï¼Œè€Œæ”¹ä¸ºtumoræ¨¡å‹ä¸Šçš„ä½ç½®äº†
 	}
 	else {
 		std::cout << "FAIL TO FIND ORIGIN" << std::endl;
 		return;
 	}
 	
-	// ¼ÆËã±ßÔµÌåËØµÄ¶şÎ¬×ø±ê
+	// è®¡ç®—è¾¹ç¼˜ä½“ç´ çš„äºŒç»´åæ ‡
 	for (int i = 0; i < static_cast<int>(resolution.x * resolution.y * resolution.z); i++) {
-		if (i != originIndex && tumor.markVoxel[i] == 2) {
+		if (i != originIndex && (*tumor).markVoxel[i] == 2) {
 			int iy = i / (resolution.x * resolution.z);
 			int iz = (i - iy * resolution.x * resolution.z) / (resolution.x);
 			int ix = i - iy * resolution.x * resolution.z - iz * resolution.x;
-			glm::vec3 coor = tumor.boxMin + glm::vec3(ix * tumor.getStep(), iy * tumor.getStep(), iz * tumor.getStep());
+			glm::vec3 coor = (*tumor).boxMin + glm::vec3(ix * (*tumor).getStep(), iy * (*tumor).getStep(), iz * (*tumor).getStep());
 			GLfloat distance = glm::distance(coor, removePos);
 			glm::vec3 newCoor = coor + (removePos - coor) * (distance - cutRadius) / distance;
-			// ¼ÆËãÆ½ÃæÉÏµÄ×ø±ê: »¡³¤
+			// è®¡ç®—å¹³é¢ä¸Šçš„åæ ‡: å¼§é•¿
 			double rho = acos(glm::dot(originNormal, glm::normalize(newCoor - origin))) * cutRadius * glm::distance(newCoor, origin) / 10.0f;
-			// ºÍ×İÖá¼Ğ½Ç£¨yÕı°ëÖá
+			// å’Œçºµè½´å¤¹è§’ï¼ˆyæ­£åŠè½´
 			glm::vec3 OP = newCoor - origin;
 			glm::vec3 OH = glm::dot(OP, originNormal) * originNormal;
 			glm::vec3 OQ = OP - OH;
@@ -280,11 +424,11 @@ void Area::updateCutVertices(BaseModel & tumor) {
 			}
 			// voxel3D.push_back(coor);
 			voxel2D.push_back(glm::vec3(rho * cos(theta), rho * sin(theta), 200.0f));
-			// ÇòÌåÀïÍâ¸ÄÒ»¸Ä
-			/*int tmpStep = 5;
-			double random = rand() % tmpStep;
-			random -= tmpStep/2;
-			newCoor += (GLfloat)random * glm::normalize(removePos - newCoor);*/
+			// çƒä½“é‡Œå¤–æ”¹ä¸€æ”¹
+			if (ADD_RANDOM) {
+				newCoor += RAND_COOR * noise3d(newCoor) * glm::normalize(removePos - newCoor);
+			}
+			
 			cutVertices.push_back(newCoor.x);
 			cutVertices.push_back(newCoor.y);
 			cutVertices.push_back(newCoor.z);
@@ -293,20 +437,22 @@ void Area::updateCutVertices(BaseModel & tumor) {
 			cutVertices.push_back(0.0f);
 			cutVertices.push_back(0.0f);
 			cutVertices.push_back(0.0f);
-			// »Ö¸´1
-			tumor.markVoxel[i] = 1;
+			// æ¢å¤1
+			(*tumor).markVoxel[i] = 1;
 		}
 	}
 
-	// ¼ÆËã±ßÔµ¶¥µãµÄ¶şÎ¬¿Õ¼ä×ø±ê
+	int edgeBegin = cutVertices.size() / 6;
+
+	// è®¡ç®—è¾¹ç¼˜é¡¶ç‚¹çš„äºŒç»´ç©ºé—´åæ ‡
 	std::vector<int> orderedIndices;
 	for (std::set<int>::iterator it = edgeIndices.begin(); it != edgeIndices.end(); it++) {
 		glm::vec3 coor = glm::vec3(tmpVertices[(*it) * 6], tmpVertices[(*it) * 6 + 1], tmpVertices[(*it) * 6 + 2]);
 		GLfloat distance = glm::distance(coor, removePos);
 		glm::vec3 newCoor = coor + (removePos - coor) * (distance - cutRadius) / distance;
-		// ¼ÆËãÇòÃæ¾àÀë
+		// è®¡ç®—çƒé¢è·ç¦»
 		GLfloat rho = 5 * acos(glm::dot(originNormal, glm::normalize(coor - origin))) * cutRadius * glm::distance(coor, origin) / 10.0f;
-		// ¼ÆËãºÍ×İÖá¼Ğ½Ç£¨yÕı°ëÖá
+		// è®¡ç®—å’Œçºµè½´å¤¹è§’ï¼ˆyæ­£åŠè½´
 		glm::vec3 OP = newCoor - origin;
 		glm::vec3 OH = glm::dot(OP, originNormal) * originNormal;
 		glm::vec3 OQ = OP - OH;
@@ -316,16 +462,14 @@ void Area::updateCutVertices(BaseModel & tumor) {
 		}
 		vertex2D.push_back(glm::vec2(rho * cos(theta), rho * sin(theta)));
 		orderedIndices.push_back(*it);
-		// ½«Ô­±¾ÔÚtumor±ßÔµµÄ¶¥µã¼ÓÈëcutTumorÖĞ
-		cutVertices.push_back(tmpVertices[(*it) * 6]);
-		cutVertices.push_back(tmpVertices[(*it) * 6+1]);
-		cutVertices.push_back(tmpVertices[(*it) * 6+2]);
-		cutVertices.push_back(tmpVertices[(*it) * 6+3]);
-		cutVertices.push_back(tmpVertices[(*it) * 6+4]);
-		cutVertices.push_back(tmpVertices[(*it) * 6+5]);
+		// å°†åŸæœ¬åœ¨tumorè¾¹ç¼˜çš„é¡¶ç‚¹åŠ å…¥cutTumorä¸­
+		for (int i = 0; i < 6; i++) {
+			cutVertices.push_back(tmpVertices[(*it) * 6+i]);
+		}
 	}
-	// -------------ÔÚ¶şÎ¬¿Õ¼ä¹¹ÔìÈı½ÇÆÊ·Ö-----------------
-	// ÒªÇóvoxelÔÚÇ°,vertexÔÚºó
+	int edgeEnd = cutVertices.size() / 6;
+	// -------------åœ¨äºŒç»´ç©ºé—´æ„é€ ä¸‰è§’å‰–åˆ†-----------------
+	// è¦æ±‚voxelåœ¨å‰,vertexåœ¨å
 	combinedPoints.assign(voxel2D.begin(), voxel2D.end());
 	combinedPoints.insert(combinedPoints.end(), vertex2D.begin(), vertex2D.end());
 	myUtils::generateMesh(combinedPoints, mesh);
@@ -333,132 +477,35 @@ void Area::updateCutVertices(BaseModel & tumor) {
 		mesh.addPoint(combinedPoints[i]);
 	}
 	mesh.deleteSuperTriangle();
-	/// ¸üĞÂÄ£ĞÍ
-	tumor.setVertices(tmpVertices);
-	tumor.setIndices(tmpIndices);
-	tumor.initVertexObject(); // ÎÒ²»ÖªµÀÕâÒ»²½ÎªÊ²Ã´ÒªÔÚModels.pushµÄÇ°Ãæ
-	// Ö×ÁöÇĞÃæµ¥¶À·Å³ö
-	// vertices: ºÍcombinedPointsË³ĞòÒ»ÖÂ
-	// indices: meshµÄorder-4¼´¿É
-	// ÏÈÊÇvoxel,ÔÙÊÇvertex
+	/// æ›´æ–°æ¨¡å‹
+	(*tumor).setVertices(tmpVertices);
+	(*tumor).setIndices(tmpIndices);
+	(*tumor).initVertexObject(); // æˆ‘ä¸çŸ¥é“è¿™ä¸€æ­¥ä¸ºä»€ä¹ˆè¦åœ¨Models.pushçš„å‰é¢
+	// è‚¿ç˜¤åˆ‡é¢å•ç‹¬æ”¾å‡º
+	// vertices: å’ŒcombinedPointsé¡ºåºä¸€è‡´
+	// indices: meshçš„order-4å³å¯
+	// å…ˆæ˜¯voxel,å†æ˜¯vertex
 	vector<GLfloat> interplotedVer;
 	int cutVerticesSize = cutVertices.size() / 6;
+	map<pair<int, int>, int> hashMap;
+	set<int> edges;
+	cout << "edges: " << edgeBegin << " " << edgeEnd << endl;
 	for (std::list<Triangle>::iterator it = mesh.triangleVector.begin(); it != mesh.triangleVector.end(); it++) {
-		// Èı¸öµã¶¼Îª¶¥µãÔòÈ¥³ı
-		vector<int> verIndices;
+		// ä¸‰ä¸ªç‚¹éƒ½ä¸ºé¡¶ç‚¹åˆ™å»é™¤
+		vector<int> verIndices; // å‰–åˆ†å¾—åˆ°çš„ä¸‰è§’å½¢ä¸‹æ ‡
 		for (int j = 0; j < 3; j++) {
 			verIndices.push_back(it->vertices[j] - 4);
 		}
-		// ÅĞ¶ÏÊÇ·ñĞèÒª²åÖµ
-		// if(ĞèÒª)
-		vector<glm::vec3> points = {
-			glm::vec3(cutVertices[verIndices[0] * 6], cutVertices[verIndices[0] * 6 + 1], cutVertices[verIndices[0] * 6 + 2]),
-			glm::vec3(cutVertices[verIndices[1] * 6], cutVertices[verIndices[1] * 6 + 1], cutVertices[verIndices[1] * 6 + 2]),
-			glm::vec3(cutVertices[verIndices[2] * 6], cutVertices[verIndices[2] * 6 + 1], cutVertices[verIndices[2] * 6 + 2])
-		};
-		// ÅĞ¶ÏÊÇ·ñÒÑ¾­ĞŞ¸Ä
-		GLfloat thresArea = 2.0f;
-		glm::vec3 normal = glm::cross(points[0]-points[1], points[1]-points[2]);
-		if (glm::distance(normal, glm::vec3(0,0,0))/2.0f > thresArea) {
-			// ¼ÆËãÄÚĞÄ×ø±ê
-			glm::vec3 incenter = myUtils::getInnerPoint(points[0], points[1], points[2]);
-			// ½«incenter·ÅÔÚÇòÌå±íÃæ
-			GLfloat distance = glm::distance(incenter, removePos);
-			incenter = incenter + (removePos - incenter) * (distance - cutRadius) / distance; 			
-			int tmpStep = 1;
-			double random = rand() % tmpStep;
-			random -= tmpStep / 2;
-			incenter += (GLfloat)random * glm::normalize(removePos - incenter);
-			// µ÷ÕûµÚÒ»¸öµÄÈı½ÇĞÎ
-			if (abs(glm::distance(points[0], removePos) - cutRadius) < 0.0001f && abs(glm::distance(points[1], removePos) - cutRadius) < 0.0001f && abs(glm::distance(points[2], removePos) - cutRadius) < 0.0001f) {
-				cout << "add random" << endl;
-				// ¼ÓÈëËæ»ú
-				int tmpStep = 2;
-				double random = rand() % tmpStep;
-				random -= tmpStep / 2;
-				for (int j = 0; j < 2; j++) {
-					points[j] += (GLfloat)random * glm::normalize(removePos - points[j]);
-					for (int k = 0; k < 3; k++) {
-						cutVertices[verIndices[j] * 6 + k] = points[j][k];
-					}
-				}
-				incenter += (GLfloat)random * glm::normalize(removePos - incenter);
-			}
-			// ½«ÄÚĞÄ×÷ÎªĞÂÔö¼ÓµÄ¶¥µã×ø±ê
-			interplotedVer.push_back(incenter.x);
-			interplotedVer.push_back(incenter.y);
-			interplotedVer.push_back(incenter.z);
-			// ¼ÆËã·¨ÏòÁ¿
-			glm::vec3 newNormal = glm::vec3(0.0f, 0.0f, 0.0f);
-			for (int k = 0; k < 3; k++) {
-				// std::cout << k << " " << (k % 3 + 1) % 3 << " " << ((k + 1) % 3 + 1) % 3 << std::endl;
-				glm::vec3 tmp = glm::normalize(glm::cross(points[(k%3+1)%3] - incenter, incenter - points[((k+1)%3+1)%3]));
-				if (glm::dot(tmp, removePos - incenter) < 0) {
-					tmp = -(tmp);
-				} 
-				newNormal += tmp;
-				// ºÍ²åÖµ¶¥µãÏàÁ¬µÄÁ½¸ö¶¥µã¸üĞÂ·¨ÏòÁ¿
-				tmp /= 2.0f;
-				cutVertices[verIndices[(k % 3 + 1) % 3] * 6 + 3] += tmp.x;
-				cutVertices[verIndices[(k % 3 + 1) % 3] * 6 + 4] += tmp.y;
-				cutVertices[verIndices[(k % 3 + 1) % 3] * 6 + 5] += tmp.z;
-				cutVertices[verIndices[((k + 1) % 3 + 1) % 3] * 6 + 3] += tmp.x;
-				cutVertices[verIndices[((k + 1) % 3 + 1) % 3] * 6 + 4] += tmp.y;
-				cutVertices[verIndices[((k + 1) % 3 + 1) % 3] * 6 + 5] += tmp.z;
-				// ²åÈëºÍ²åÖµ¶¥µã¹¹³ÉµÄ
-				cutIndices.push_back(cutVerticesSize + (interplotedVer.size() - 3) / 6);
-				cutIndices.push_back(verIndices[(k % 3 + 1) % 3]);
-				cutIndices.push_back(verIndices[((k + 1) % 3 + 1) % 3]);
-			}
-			//newNormal = glm::cross();
-			if (glm::dot(normal, removePos - incenter) < 0) {
-				normal = -normal;
-			}
-			//newNormal = normalize(removePos - incenter);
-			newNormal = normalize(newNormal);
-			interplotedVer.push_back(newNormal.x);
-			interplotedVer.push_back(newNormal.y);
-			interplotedVer.push_back(newNormal.z);
-		}
-		else {
-			if (abs(glm::distance(points[0], removePos)- cutRadius ) <0.0001f && abs(glm::distance(points[1], removePos) - cutRadius) < 0.0001f && abs(glm::distance(points[2], removePos)- cutRadius) < 0.0001f) {
-				cout << "add random" << endl;
-				// ¼ÓÈëËæ»ú
-				int tmpStep = 5;
-				double random = rand() % tmpStep;
-				random -= tmpStep / 2;
-				for (int j = 0; j < 3; j++) {
-					points[j] += (GLfloat)random * glm::normalize(removePos - points[j]);
-					for (int k = 0; k < 3; k++) {
-						cutVertices[verIndices[j] * 6 + k] = points[j][k];
-					}
-				}
-
-			}
-			cutIndices.insert(cutIndices.end(), verIndices.begin(), verIndices.end());
-			normal = normalize(normal);
-			for (int j = 0; j < 3; j++) {
-				if (glm::dot(normal, removePos - glm::vec3(cutVertices[verIndices[j] * 6], cutVertices[verIndices[j] * 6 + 1], cutVertices[verIndices[j] * 6 + 2])) < 0) {
-					cutVertices[verIndices[j] * 6 + 3] -= normal.x;
-					cutVertices[verIndices[j] * 6 + 4] -= normal.y;
-					cutVertices[verIndices[j] * 6 + 5] -= normal.z;
-				}
-				else {
-					cutVertices[verIndices[j] * 6 + 3] += normal.x;
-					cutVertices[verIndices[j] * 6 + 4] += normal.y;
-					cutVertices[verIndices[j] * 6 + 5] += normal.z;
-				}
-			}
-		}
+		GLfloat thresArea = 2.0f;	
+		//cout << "------------------------------------------" << endl;
+		//cout << verIndices[0] << " " << verIndices[1] << " " << verIndices[2] << endl;
+		subdivide(cutVertices.size()/6, verIndices, cutVertices, cutIndices, cutRadius, removePos, 0, hashMap, edgeBegin, edgeEnd, edges);
 	}
-		
-	// ¸üĞÂcutVerticesµÄ·¨ÏòÁ¿
-	cutVertices.insert(cutVertices.end(), interplotedVer.begin(), interplotedVer.end());
+	// æ›´æ–°cutVerticesçš„æ³•å‘é‡
 	BaseModel cutTumor(cutVertices, cutIndices, glm::vec3(235.0f/255, 122.0f/255, 119.0f/255));
 	cutTumor.initVertexObject();
-	// ¼ÓÈëModels
-	Area::models.push_back(cutTumor); // bug
-	modelsID.push_back(modelsID.size());
+	// åŠ å…¥Models
+	Area::cutTumor.push_back(cutTumor);
 }
 
 
@@ -476,7 +523,7 @@ void Area::updateLightSpaceMatrix() {
 	lightSpaceMatrix = lightProjection * lightView;
 }
 
-void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & models) {
+void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel*> & models) {
 	shadowShader.use();
 	shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
@@ -486,7 +533,7 @@ void Area::renderDepthBuffer(Shader & shadowShader, std::vector<BaseModel> & mod
 	model = glm::translate(model,-BaseModel::modelCenter);
 	shadowShader.setMat4("model", transformMat * model);
 	for (int i = 0; i < modelsID.size(); i++) {
-		models[modelsID[i]].draw();
+		models[modelsID[i]]->draw();
 	}
 	if (modeSelection == RULER || modeSelection == NEAREST_VESSEL) {
 		model = glm::translate(glm::mat4(1.0f), ruler.position);
@@ -520,22 +567,25 @@ void Area::drawModels(Shader & shader, Shader & shadowShader) {
 	shader.setInt("cut", 0);
 	shader.setMat4("projection", camera.getOrthology());
 	shader.setMat4("view", camera.GetViewMatrix());
-	std::vector<glm::vec3>* tmpVoxelPos = models[1].getVoxelsPos();
+	std::vector<glm::vec3>* tmpVoxelPos = (*models[1]).getVoxelsPos();
 	glm::mat4 model(1.0f);
 	model = glm::translate(glm::mat4(1.0f),-BaseModel::modelCenter);
 	shader.setMat4("model", transformMat * model);
 	shader.setInt("withLight", 1);
-	shader.setInt("isPlane", 0);
-	for (int i = 0; i < min((float)modelsID.size(),3.0f); i++) {
-		shader.setVec3("color", models[modelsID[i]].getColor());	
-		models[modelsID[i]].draw();			
+	for (int i = 0; i < modelsID.size(); i++) {
+		shader.setVec3("color", (*models[modelsID[i]]).getColor());	
+		(*models[modelsID[i]]).draw();
 	}
-	for (int i = 3; i < modelsID.size(); i++) {
-		shader.setVec3("color", models[modelsID[i]].getColor());
-		shader.setInt("hasNoise", 1);
-		models[modelsID[i]].draw();
-		shader.setInt("hasNoise", 0);
+	// main & tumor
+	if (cutTumor.size()> 0 && (modelsID.size() > 1 || modelsID[0] == 1)) {
+		shader.setInt("type", 2);
+		shader.setVec3("color", cutTumor[0].getColor());
+		for (int i = 0; i < cutTumor.size(); i++) {
+			cutTumor[i].draw();			
+		}
+		shader.setInt("type", 0);
 	}
+	
 }
 
 
@@ -546,7 +596,7 @@ void Area::drawRuler(Shader & textureShader, Shader& shader) {
 	textureShader.setVec3("lightPos", camera.Position);
 	textureShader.setMat4("projection", camera.getOrthology());
 	textureShader.setMat4("view", camera.GetViewMatrix());
-	//¸ÄÎª´Ó0¿Ì¶È¿ªÊ¼
+	//æ”¹ä¸ºä»0åˆ»åº¦å¼€å§‹
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, ruler.position);
 	model = glm::rotate(model, ruler.rotateAngle, glm::vec3(0, 0, 1));
@@ -567,12 +617,12 @@ void Area::drawRuler(Shader & textureShader, Shader& shader) {
 	shader.setVec3("lightPos", camera.Position);
 	shader.setInt("withLight", 1);
 	shader.setInt("withShadow", 0);
-	if (modeSelection == NEAREST_VESSEL)
-		shader.setVec3("color", glm::vec3(1.0f, 0.4f, 0.4f));
 	model = glm::scale(glm::translate(glm::mat4(1.0f), ruler.ends[0]), glm::vec3(3, 3, 3));
 	shader.setMat4("model", model);
 	mySphere.draw();
-	shader.setVec3("color", glm::vec3(0.5f, 0.8f, 0.3f));
+	
+	if (modeSelection == NEAREST_VESSEL)
+		shader.setVec3("color", glm::vec3(1.0f, 0.4f, 0.4f));
 	model = glm::scale(glm::translate(glm::mat4(1.0f), ruler.ends[1]), glm::vec3(3, 3, 3));
 	shader.setMat4("model", model);
 	mySphere.draw();
@@ -604,19 +654,19 @@ void Area::setRulerVertex(const glm::vec3& vertexPosition) {
 		updateRuler(ruler.ends[0], ruler.ends[1]);
 	}
 }
-
-void Area::updateRuler(const glm::vec3& pos1, const glm::vec3& pos2) { // ÊäÈë²ÎÊıÎªÊÀ½ç×ø±ê
+#define SCALERULER 18.3
+void Area::updateRuler(const glm::vec3& pos1, const glm::vec3& pos2) { // è¾“å…¥å‚æ•°ä¸ºä¸–ç•Œåæ ‡
 	// calculate ruler attributes
+	ruler.setCutFace(BaseModel::frontFace);
 	ruler.distance = glm::distance(pos1, pos2);	
 	ruler.ends[0] = pos1;
 	ruler.ends[1] = pos2;
 	ruler.ends[0].z = ruler.CUTFACE;
 	ruler.ends[1].z = ruler.CUTFACE;
 	GLfloat projLen = glm::distance(ruler.ends[0], ruler.ends[1]);
-	ruler.scaleSize = projLen / ruler.distance * 20 ;
-	ruler.position = pos1 - (pos1 - pos2) / ruler.scaleSize / 2.0f;
+	ruler.scaleSize = projLen / ruler.distance * SCALERULER;
+	ruler.position = (pos1 + pos2) / 2.0f + glm::normalize(pos2-pos1) * (ruler.scaleSize* 14.0f - projLen) / 2.0f;
 	ruler.position.z = ruler.CUTFACE;
-	// Ê¹pos1Îª¿Ì¶È0
 	ruler.rotateAngle = atan((pos1.y - pos2.y) / (pos1.x - pos2.x));
 }
 
@@ -636,16 +686,16 @@ void Area::tackleNearestVessel(Shader& shader, Shader& shadowShader, Shader& tex
 		drawRuler(textureShader, shader);
 	}
 }
-void Area::setLocalCoordinate(glm::vec3 worldCoor, BaseModel& vessel) {
+void Area::setLocalCoordinate(glm::vec3 worldCoor, BaseModel* vessel) {
 	NVLocalPos = glm::inverse(glm::translate(glm::mat4(1.0f),-BaseModel::modelCenter)) * glm::inverse(transformMat) * glm::vec4(worldCoor, 1.0f);
 	findNearest(vessel);
 }
 
-void Area::findNearest(BaseModel& vessel) {
+void Area::findNearest(BaseModel* vessel) {
 	GLfloat min = 10000.0f;
 	int minIndex = 0;
-	for (int i = 0; i < vessel.getVertices()->size() / 6; i++) {
-		glm::vec3 pos = glm::vec3((*vessel.getVertices())[i*6], (*vessel.getVertices())[i*6+1], (*vessel.getVertices())[i*6+2]);
+	for (int i = 0; i < (*vessel).getVertices()->size() / 6; i++) {
+		glm::vec3 pos = glm::vec3((*(*vessel).getVertices())[i*6], (*(*vessel).getVertices())[i*6+1], (*(*vessel).getVertices())[i*6+2]);
 		GLfloat dis = glm::distance(NVLocalPos, pos);
 		if (dis < min) {
 			min = dis;
@@ -653,18 +703,15 @@ void Area::findNearest(BaseModel& vessel) {
 		}
 	}
 	vesselDistance = min;
-	nearestPos = glm::vec3((*vessel.getVertices())[minIndex * 6], (*vessel.getVertices())[minIndex * 6 + 1], (*vessel.getVertices())[minIndex * 6 + 2]);
+	nearestPos = glm::vec3((*(*vessel).getVertices())[minIndex * 6], (*(*vessel).getVertices())[minIndex * 6 + 1], (*(*vessel).getVertices())[minIndex * 6 + 2]);
 	glm::mat4 model = glm::translate(glm::mat4(1.0f),-BaseModel::modelCenter);
 	model = transformMat * model;
-	updateRuler(model * glm::vec4(nearestPos, 1.0f), model * glm::vec4(NVLocalPos, 1.0f));
+	updateRuler(model * glm::vec4(NVLocalPos, 1.0f), model * glm::vec4(nearestPos, 1.0f));
 }
 
 
 
-void Area::removeTumor(BaseModel& tumor) {
+void Area::removeTumor(BaseModel* tumor) {
 	updateCutVertices(tumor);
-	cout << "tumor 3 " << &tumor << endl;
-	//tumor.initVertexObject();
-	cout << "end " << endl;
 	removeMode = 0;	
 }

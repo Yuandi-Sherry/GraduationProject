@@ -149,27 +149,5 @@ void main() {
 	FragPos = voxelPos.xyz;
 	EmitVertex();
 
-	// -----------------------------------------------------------
-
-	/*ProjectPos = pos[0].xyz;
-	gl_Position = pos[0];
-	voxelPos = viewInverse * projectionInverse[projectIndex] * gl_Position;  
-	FragPos = voxelPos.xyz;
-	EmitVertex();
-
-	ProjectPos = pos[1].xyz;
-	gl_Position = pos[1];
-	voxelPos = viewInverse * projectionInverse[projectIndex] * gl_Position;  
-	FragPos = voxelPos.xyz;
-	EmitVertex();
-
-	ProjectPos = pos[2].xyz;
-	gl_Position = pos[2];
-	voxelPos = viewInverse * projectionInverse[projectIndex] * gl_Position;  
-	FragPos = voxelPos.xyz;
-	EmitVertex();*/
-
-	// -----------------------------------------------------------
-
     EndPrimitive();
 }

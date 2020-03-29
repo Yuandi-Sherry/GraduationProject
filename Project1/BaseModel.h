@@ -58,14 +58,16 @@ public:
 	}
 	int* markVoxel; // 0->挖去的，1-> 原有的，2->挖去位置周围的
 	glm::vec3 boxMin;
+	static GLfloat frontFace;
 protected:
+	
 	std::vector<GLfloat> vertices;
 	std::vector<int> indices;
 	GLuint VAO, VBO, EBO;
 	glm::vec3 color;
 	// voxel
 	GLfloat xMax = -10000.0f, xMin = 10000.0f, yMax = -10000.0f, yMin = 10000.0f, zMax = -10000.0f, zMin = 10000.0f;
-	const GLfloat step = 3;
+	const GLfloat step = 3.0f;
 	GLuint m_cntBuffer;
 	std::vector<glm::vec3> voxelPos;
 	std::vector<glm::vec3> voxelIndex;

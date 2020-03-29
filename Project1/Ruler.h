@@ -5,15 +5,19 @@
 #include <stb_image.h>
 #include "Shader.h"
 #include "Camera.h"
+#include "BaseModel.h"
 class Ruler
 {
 public:
 	Ruler() {
-
+        
 	}
 	~Ruler() {
 
 	}
+    void setCutFace(const GLfloat & frontFace) {
+        CUTFACE = frontFace;
+    }
 	void initVertexObject();
 	void generateTexture();
 	void draw();
@@ -26,7 +30,7 @@ public:
     };
     GLfloat rotateAngle = 0;
     GLfloat scaleSize = 1;
-    GLfloat CUTFACE = 150.0f;
+    GLfloat CUTFACE = BaseModel::frontFace;
     GLfloat distance = 0.0f;
 private:
 	std::vector<GLfloat> vertices = {

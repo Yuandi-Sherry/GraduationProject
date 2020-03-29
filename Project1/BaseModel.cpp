@@ -63,9 +63,13 @@ BaseModel::BaseModel(const char *cfilename, glm::vec3 color)
 			}
 		}
 	}
+	if (frontFace < zMax) {
+		frontFace = zMax;
+	}
 	inVer.close();
 	modelCenter += glm::vec3((xMax+xMin)/6.0f, (yMax + yMin) / 6.0f, (zMax + zMin) / 6.0f);
-	cout << "center " << modelCenter.x << " " << modelCenter.y << " " << modelCenter.z << endl;
+	
+	frontFace -= modelCenter.z;
 	indices.clear();
 	std::string outNameIndices(cfilename, cfilename + strlen(cfilename));
 	outNameIndices.insert(strlen(cfilename) - 4, "_indices");
@@ -256,7 +260,6 @@ void BaseModel::voxelization() {
 		else {
 			markVoxel[markIndex[j]] = 0;
 		}
-
 	}
 
 	// 膨胀 t 次
