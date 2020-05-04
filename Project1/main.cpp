@@ -61,6 +61,9 @@ std::vector<BaseModel *> Area::models = {};
 std::vector<BaseModel> Area::cutTumor = {};
 GLfloat BaseModel::frontFace = -10000.0f;
 vector<Area*> areas;
+glm::vec3 Area::resolution = glm::vec3(0.0f);
+GLfloat debugAmbient = 1.0f, debugDiffuse = 1.0f, debugSpecular = 1.0f;
+GLfloat neiDis = 0.5f;
 int main()
 {
 	areas.assign({&mainArea, &vesselArea, &tumorArea, &bonesArea});
@@ -118,7 +121,7 @@ int main()
 	tumor.initVertexObject();
 	bones.initVertexObject();
 	tumor.voxelization();
-	
+	Area::resolution = tumor.getResolution();
 	// configure global opengl state
 	// -----------------------------
 	glEnable(GL_MULTISAMPLE);
@@ -153,6 +156,11 @@ int main()
 	ourShader.setFloat("ambientStrength", ambientPara);
 	ourShader.setFloat("diffuseStrength", diffusePara);
 	ourShader.setFloat("specularStrength", specularPara);
+
+	ourShader.setFloat("debugAmbient", debugAmbient);
+	ourShader.setFloat("debugDiffuse", debugDiffuse);
+	ourShader.setFloat("debugSpecular", debugSpecular);
+	
 	textureShader.use();
 	textureShader.setFloat("ambientStrength", ambientPara);
 	textureShader.setFloat("diffuseStrength", diffusePara);
@@ -160,7 +168,6 @@ int main()
 	// game loop
 	while (!glfwWindowShouldClose(window))
 	{
-		
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -174,7 +181,7 @@ int main()
 
 		ourShader.use();
 		ourShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-		ourShader.setInt("withLight", 1);
+		ourShader.setFloat("neiDis", neiDis);
 		
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -204,7 +211,7 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::Begin("Options", NULL, ImGuiWindowFlags_MenuBar);
-
+		ImGui::SliderFloat("neiDis", &neiDis, 0, 300);
 		currentArea->displayGUI();
 		ImGui::End();
 

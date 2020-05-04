@@ -30,10 +30,10 @@ public:
 		this->vertices.assign(vers.begin(), vers.end());
 
 	}
-	std::vector<int>* getIndices() {
+	std::vector<GLuint>* getIndices() {
 		return &indices;
 	}
-	void setIndices(const std::vector<int> ind) {
+	void setIndices(const std::vector<GLuint> ind) {
 		this->indices.assign(ind.begin(), ind.end());
 	}
 	void initVertexObject();
@@ -62,7 +62,7 @@ public:
 protected:
 	
 	std::vector<GLfloat> vertices;
-	std::vector<int> indices;
+	std::vector<GLuint> indices;
 	GLuint VAO, VBO, EBO;
 	glm::vec3 color;
 	// voxel

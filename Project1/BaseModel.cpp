@@ -114,7 +114,6 @@ void BaseModel::initVertexObject() {
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	cout << "debug  1  " << vertices.size();
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), &(vertices.front()), GL_STATIC_DRAW);
 
 	glGenBuffers(1, &EBO);

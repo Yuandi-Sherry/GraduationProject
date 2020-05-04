@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <iomanip>
+#include <set>
 
 // openGL headers
 // glm
@@ -97,10 +98,14 @@ public:
 	int getRemoveMode() {
 		return removeMode;
 	}
+	static glm::vec3 resolution;
+	static std::vector<BaseModel> cutTumor;
+
 
 	void updateLightSpaceMatrix();
 	static std::vector<BaseModel*> models;
-	static std::vector<BaseModel> cutTumor;
+	
+
 private:
 	void initDepthBuffer();
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 400.0f);
@@ -146,6 +151,11 @@ private:
 	std::vector<glm::vec2> vertex2D;
 	std::vector<glm::vec2> combinedPoints;
 	Delaunay mesh;
+	set<int> deleteVertices(vector<GLfloat>& tmpVertices, vector<GLuint>& tmpIndices, BaseModel* tumor);
+	void deleteVoxels(BaseModel* tumor);
+	void calculate2DOrigin(BaseModel* tumor, const glm::vec3& averNormal,
+		int& originIndex, glm::vec3& origin, glm::vec3& originUp, glm::vec3& originRight, glm::vec3& originNormal
+	);
 };
 
 
