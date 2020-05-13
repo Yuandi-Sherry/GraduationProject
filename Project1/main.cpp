@@ -211,7 +211,7 @@ int main()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::Begin("Options", NULL, ImGuiWindowFlags_MenuBar);
-		ImGui::SliderFloat("neiDis", &neiDis, 0, 300);
+		//ImGui::SliderFloat("neiDis", &neiDis, 0, 300);
 		currentArea->displayGUI();
 		ImGui::End();
 

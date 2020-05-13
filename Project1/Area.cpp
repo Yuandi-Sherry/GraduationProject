@@ -670,9 +670,9 @@ void Area::displayGUI() {
 	// adjust the radius of removing tumor
 	if (modeSelection == REMOVE_TUMOR) {
 		ImGui::SliderFloat("remove rumor radius: ", &cutRadius, 0, 20);
-		ImGui::SliderFloat("debugAmbient: ", &debugAmbient, 0, 1);
+		/*ImGui::SliderFloat("debugAmbient: ", &debugAmbient, 0, 1);
 		ImGui::SliderFloat("debugDiffuse: ", &debugDiffuse, 0, 1);
-		ImGui::SliderFloat("debugSpecular: ", &debugSpecular, 0, 1);
+		ImGui::SliderFloat("debugSpecular: ", &debugSpecular, 0, 1);*/
 	}
 }
 /*----------------------RULER----------------------*/
